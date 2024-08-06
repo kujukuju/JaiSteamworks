@@ -1,7 +1,7 @@
 //
 // This file was auto-generated using the following command:
 //
-// jai ../ generate.jai
+// jai generate.jai
 //
 
 
@@ -32,7 +32,24 @@ AccountID_t :: uint32;
 // Party Beacon ID
 PartyBeaconID_t :: uint64;
 
-SteamIPAddress_t :: struct {}
+ESteamIPType :: enum u32 {
+    ESteamIPTypeIPv4 :: 0;
+    ESteamIPTypeIPv6 :: 1;
+
+    k_ESteamIPTypeIPv4 :: ESteamIPTypeIPv4;
+    k_ESteamIPTypeIPv6 :: ESteamIPTypeIPv6;
+}
+
+SteamIPAddress_t :: struct {
+    union {
+        m_unIPv4:    uint32; // Host order
+        m_rgubIPv6:  [16] uint8; // Network order! Same as inaddr_in6.  (0011:2233:4455:6677:8899:aabb:ccdd:eeff)
+
+        m_ipv6Qword: [2] uint64; // big endian
+    }
+
+    m_eType: ESteamIPType;
+}
 
 // Steam universes.  Each universe is a self-contained Steam instance.
 EUniverse :: enum u32 {
@@ -212,6 +229,43 @@ EVoiceResult :: enum u32 {
     k_EVoiceResultReceiverDidNotAnswer :: EVoiceResultReceiverDidNotAnswer;
 }
 
+// Result codes to GSHandleClientDeny/Kick
+EDenyReason :: enum u32 {
+    EDenyInvalid                 :: 0;
+    EDenyInvalidVersion          :: 1;
+    EDenyGeneric                 :: 2;
+    EDenyNotLoggedOn             :: 3;
+    EDenyNoLicense               :: 4;
+    EDenyCheater                 :: 5;
+    EDenyLoggedInElseWhere       :: 6;
+    EDenyUnknownText             :: 7;
+    EDenyIncompatibleAnticheat   :: 8;
+    EDenyMemoryCorruption        :: 9;
+    EDenyIncompatibleSoftware    :: 10;
+    EDenySteamConnectionLost     :: 11;
+    EDenySteamConnectionError    :: 12;
+    EDenySteamResponseTimedOut   :: 13;
+    EDenySteamValidationStalled  :: 14;
+    EDenySteamOwnerLeftGuestUser :: 15;
+
+    k_EDenyInvalid                 :: EDenyInvalid;
+    k_EDenyInvalidVersion          :: EDenyInvalidVersion;
+    k_EDenyGeneric                 :: EDenyGeneric;
+    k_EDenyNotLoggedOn             :: EDenyNotLoggedOn;
+    k_EDenyNoLicense               :: EDenyNoLicense;
+    k_EDenyCheater                 :: EDenyCheater;
+    k_EDenyLoggedInElseWhere       :: EDenyLoggedInElseWhere;
+    k_EDenyUnknownText             :: EDenyUnknownText;
+    k_EDenyIncompatibleAnticheat   :: EDenyIncompatibleAnticheat;
+    k_EDenyMemoryCorruption        :: EDenyMemoryCorruption;
+    k_EDenyIncompatibleSoftware    :: EDenyIncompatibleSoftware;
+    k_EDenySteamConnectionLost     :: EDenySteamConnectionLost;
+    k_EDenySteamConnectionError    :: EDenySteamConnectionError;
+    k_EDenySteamResponseTimedOut   :: EDenySteamResponseTimedOut;
+    k_EDenySteamValidationStalled  :: EDenySteamValidationStalled;
+    k_EDenySteamOwnerLeftGuestUser :: EDenySteamOwnerLeftGuestUser;
+}
+
 // return type of GetAuthSessionTicket
 HAuthTicket :: uint32;
 
@@ -230,6 +284,33 @@ EBeginAuthSessionResult :: enum u32 {
     k_EBeginAuthSessionResultInvalidVersion   :: EBeginAuthSessionResultInvalidVersion;
     k_EBeginAuthSessionResultGameMismatch     :: EBeginAuthSessionResultGameMismatch;
     k_EBeginAuthSessionResultExpiredTicket    :: EBeginAuthSessionResultExpiredTicket;
+}
+
+// Callback values for callback ValidateAuthTicketResponse_t which is a response to BeginAuthSession
+EAuthSessionResponse :: enum u32 {
+    EAuthSessionResponseOK                               :: 0;
+    EAuthSessionResponseUserNotConnectedToSteam          :: 1;
+    EAuthSessionResponseNoLicenseOrExpired               :: 2;
+    EAuthSessionResponseVACBanned                        :: 3;
+    EAuthSessionResponseLoggedInElseWhere                :: 4;
+    EAuthSessionResponseVACCheckTimedOut                 :: 5;
+    EAuthSessionResponseAuthTicketCanceled               :: 6;
+    EAuthSessionResponseAuthTicketInvalidAlreadyUsed     :: 7;
+    EAuthSessionResponseAuthTicketInvalid                :: 8;
+    EAuthSessionResponsePublisherIssuedBan               :: 9;
+    EAuthSessionResponseAuthTicketNetworkIdentityFailure :: 10;
+
+    k_EAuthSessionResponseOK                               :: EAuthSessionResponseOK;
+    k_EAuthSessionResponseUserNotConnectedToSteam          :: EAuthSessionResponseUserNotConnectedToSteam;
+    k_EAuthSessionResponseNoLicenseOrExpired               :: EAuthSessionResponseNoLicenseOrExpired;
+    k_EAuthSessionResponseVACBanned                        :: EAuthSessionResponseVACBanned;
+    k_EAuthSessionResponseLoggedInElseWhere                :: EAuthSessionResponseLoggedInElseWhere;
+    k_EAuthSessionResponseVACCheckTimedOut                 :: EAuthSessionResponseVACCheckTimedOut;
+    k_EAuthSessionResponseAuthTicketCanceled               :: EAuthSessionResponseAuthTicketCanceled;
+    k_EAuthSessionResponseAuthTicketInvalidAlreadyUsed     :: EAuthSessionResponseAuthTicketInvalidAlreadyUsed;
+    k_EAuthSessionResponseAuthTicketInvalid                :: EAuthSessionResponseAuthTicketInvalid;
+    k_EAuthSessionResponsePublisherIssuedBan               :: EAuthSessionResponsePublisherIssuedBan;
+    k_EAuthSessionResponseAuthTicketNetworkIdentityFailure :: EAuthSessionResponseAuthTicketNetworkIdentityFailure;
 }
 
 // results from UserHasLicenseForApp
@@ -312,6 +393,55 @@ EChatEntryType :: enum u32 {
 }
 
 //-----------------------------------------------------------------------------
+// Purpose: Chat Room Enter Responses
+//-----------------------------------------------------------------------------
+EChatRoomEnterResponse :: enum u32 {
+    EChatRoomEnterResponseSuccess           :: 1;
+    EChatRoomEnterResponseDoesntExist       :: 2;
+    EChatRoomEnterResponseNotAllowed        :: 3;
+    EChatRoomEnterResponseFull              :: 4;
+    EChatRoomEnterResponseError             :: 5;
+    EChatRoomEnterResponseBanned            :: 6;
+    EChatRoomEnterResponseLimited           :: 7;
+    EChatRoomEnterResponseClanDisabled      :: 8;
+    EChatRoomEnterResponseCommunityBan      :: 9;
+    EChatRoomEnterResponseMemberBlockedYou  :: 10;
+    EChatRoomEnterResponseYouBlockedMember  :: 11;
+
+    EChatRoomEnterResponseRatelimitExceeded :: 15;
+
+    k_EChatRoomEnterResponseSuccess           :: EChatRoomEnterResponseSuccess;
+    k_EChatRoomEnterResponseDoesntExist       :: EChatRoomEnterResponseDoesntExist;
+    k_EChatRoomEnterResponseNotAllowed        :: EChatRoomEnterResponseNotAllowed;
+    k_EChatRoomEnterResponseFull              :: EChatRoomEnterResponseFull;
+    k_EChatRoomEnterResponseError             :: EChatRoomEnterResponseError;
+    k_EChatRoomEnterResponseBanned            :: EChatRoomEnterResponseBanned;
+    k_EChatRoomEnterResponseLimited           :: EChatRoomEnterResponseLimited;
+    k_EChatRoomEnterResponseClanDisabled      :: EChatRoomEnterResponseClanDisabled;
+    k_EChatRoomEnterResponseCommunityBan      :: EChatRoomEnterResponseCommunityBan;
+    k_EChatRoomEnterResponseMemberBlockedYou  :: EChatRoomEnterResponseMemberBlockedYou;
+    k_EChatRoomEnterResponseYouBlockedMember  :: EChatRoomEnterResponseYouBlockedMember;
+
+    k_EChatRoomEnterResponseRatelimitExceeded :: EChatRoomEnterResponseRatelimitExceeded;
+}
+
+// Special flags for Chat accounts - they go in the top 8 bits
+// of the steam ID's "instance", leaving 12 for the actual instances
+EChatSteamIDInstanceFlags :: enum u32 {
+    EChatAccountInstanceMask  :: 4095;
+
+    EChatInstanceFlagClan     :: 524288;
+    EChatInstanceFlagLobby    :: 262144;
+    EChatInstanceFlagMMSLobby :: 131072;
+
+    k_EChatAccountInstanceMask  :: EChatAccountInstanceMask;
+
+    k_EChatInstanceFlagClan     :: EChatInstanceFlagClan;
+    k_EChatInstanceFlagLobby    :: EChatInstanceFlagLobby;
+    k_EChatInstanceFlagMMSLobby :: EChatInstanceFlagMMSLobby;
+}
+
+//-----------------------------------------------------------------------------
 // Purpose: Possible positions to tell the overlay to show notifications in
 //-----------------------------------------------------------------------------
 ENotificationPosition :: enum s32 {
@@ -326,6 +456,186 @@ ENotificationPosition :: enum s32 {
     k_EPositionTopRight    :: EPositionTopRight;
     k_EPositionBottomLeft  :: EPositionBottomLeft;
     k_EPositionBottomRight :: EPositionBottomRight;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Broadcast upload result details
+//-----------------------------------------------------------------------------
+EBroadcastUploadResult :: enum u32 {
+    EBroadcastUploadResultNone              :: 0;
+    EBroadcastUploadResultOK                :: 1;
+    EBroadcastUploadResultInitFailed        :: 2;
+    EBroadcastUploadResultFrameFailed       :: 3;
+    EBroadcastUploadResultTimeout           :: 4;
+    EBroadcastUploadResultBandwidthExceeded :: 5;
+    EBroadcastUploadResultLowFPS            :: 6;
+    EBroadcastUploadResultMissingKeyFrames  :: 7;
+    EBroadcastUploadResultNoConnection      :: 8;
+    EBroadcastUploadResultRelayFailed       :: 9;
+    EBroadcastUploadResultSettingsChanged   :: 10;
+    EBroadcastUploadResultMissingAudio      :: 11;
+    EBroadcastUploadResultTooFarBehind      :: 12;
+    EBroadcastUploadResultTranscodeBehind   :: 13;
+    EBroadcastUploadResultNotAllowedToPlay  :: 14;
+    EBroadcastUploadResultBusy              :: 15;
+    EBroadcastUploadResultBanned            :: 16;
+    EBroadcastUploadResultAlreadyActive     :: 17;
+    EBroadcastUploadResultForcedOff         :: 18;
+    EBroadcastUploadResultAudioBehind       :: 19;
+    EBroadcastUploadResultShutdown          :: 20;
+    EBroadcastUploadResultDisconnect        :: 21;
+    EBroadcastUploadResultVideoInitFailed   :: 22;
+    EBroadcastUploadResultAudioInitFailed   :: 23;
+
+    k_EBroadcastUploadResultNone              :: EBroadcastUploadResultNone;
+    k_EBroadcastUploadResultOK                :: EBroadcastUploadResultOK;
+    k_EBroadcastUploadResultInitFailed        :: EBroadcastUploadResultInitFailed;
+    k_EBroadcastUploadResultFrameFailed       :: EBroadcastUploadResultFrameFailed;
+    k_EBroadcastUploadResultTimeout           :: EBroadcastUploadResultTimeout;
+    k_EBroadcastUploadResultBandwidthExceeded :: EBroadcastUploadResultBandwidthExceeded;
+    k_EBroadcastUploadResultLowFPS            :: EBroadcastUploadResultLowFPS;
+    k_EBroadcastUploadResultMissingKeyFrames  :: EBroadcastUploadResultMissingKeyFrames;
+    k_EBroadcastUploadResultNoConnection      :: EBroadcastUploadResultNoConnection;
+    k_EBroadcastUploadResultRelayFailed       :: EBroadcastUploadResultRelayFailed;
+    k_EBroadcastUploadResultSettingsChanged   :: EBroadcastUploadResultSettingsChanged;
+    k_EBroadcastUploadResultMissingAudio      :: EBroadcastUploadResultMissingAudio;
+    k_EBroadcastUploadResultTooFarBehind      :: EBroadcastUploadResultTooFarBehind;
+    k_EBroadcastUploadResultTranscodeBehind   :: EBroadcastUploadResultTranscodeBehind;
+    k_EBroadcastUploadResultNotAllowedToPlay  :: EBroadcastUploadResultNotAllowedToPlay;
+    k_EBroadcastUploadResultBusy              :: EBroadcastUploadResultBusy;
+    k_EBroadcastUploadResultBanned            :: EBroadcastUploadResultBanned;
+    k_EBroadcastUploadResultAlreadyActive     :: EBroadcastUploadResultAlreadyActive;
+    k_EBroadcastUploadResultForcedOff         :: EBroadcastUploadResultForcedOff;
+    k_EBroadcastUploadResultAudioBehind       :: EBroadcastUploadResultAudioBehind;
+    k_EBroadcastUploadResultShutdown          :: EBroadcastUploadResultShutdown;
+    k_EBroadcastUploadResultDisconnect        :: EBroadcastUploadResultDisconnect;
+    k_EBroadcastUploadResultVideoInitFailed   :: EBroadcastUploadResultVideoInitFailed;
+    k_EBroadcastUploadResultAudioInitFailed   :: EBroadcastUploadResultAudioInitFailed;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Reasons a user may not use the Community Market.
+//          Used in MarketEligibilityResponse_t.
+//-----------------------------------------------------------------------------
+EMarketNotAllowedReasonFlags :: enum u32 {
+    None                             :: 0;
+
+    TemporaryFailure                 :: 1;
+
+    AccountDisabled                  :: 2;
+
+    AccountLockedDown                :: 4;
+
+    AccountLimited                   :: 8;
+
+    TradeBanned                      :: 16;
+
+    AccountNotTrusted                :: 32;
+
+    SteamGuardNotEnabled             :: 64;
+
+    SteamGuardOnlyRecentlyEnabled    :: 128;
+
+    RecentPasswordReset              :: 256;
+
+    NewPaymentMethod                 :: 512;
+
+    InvalidCookie                    :: 1024;
+
+    UsingNewDevice                   :: 2048;
+
+    RecentSelfRefund                 :: 4096;
+
+    NewPaymentMethodCannotBeVerified :: 8192;
+
+    NoRecentPurchases                :: 16384;
+
+    AcceptedWalletGift               :: 32768;
+
+    k_EMarketNotAllowedReason_None                             :: None;
+
+    k_EMarketNotAllowedReason_TemporaryFailure                 :: TemporaryFailure;
+
+    k_EMarketNotAllowedReason_AccountDisabled                  :: AccountDisabled;
+
+    k_EMarketNotAllowedReason_AccountLockedDown                :: AccountLockedDown;
+
+    k_EMarketNotAllowedReason_AccountLimited                   :: AccountLimited;
+
+    k_EMarketNotAllowedReason_TradeBanned                      :: TradeBanned;
+
+    k_EMarketNotAllowedReason_AccountNotTrusted                :: AccountNotTrusted;
+
+    k_EMarketNotAllowedReason_SteamGuardNotEnabled             :: SteamGuardNotEnabled;
+
+    k_EMarketNotAllowedReason_SteamGuardOnlyRecentlyEnabled    :: SteamGuardOnlyRecentlyEnabled;
+
+    k_EMarketNotAllowedReason_RecentPasswordReset              :: RecentPasswordReset;
+
+    k_EMarketNotAllowedReason_NewPaymentMethod                 :: NewPaymentMethod;
+
+    k_EMarketNotAllowedReason_InvalidCookie                    :: InvalidCookie;
+
+    k_EMarketNotAllowedReason_UsingNewDevice                   :: UsingNewDevice;
+
+    k_EMarketNotAllowedReason_RecentSelfRefund                 :: RecentSelfRefund;
+
+    k_EMarketNotAllowedReason_NewPaymentMethodCannotBeVerified :: NewPaymentMethodCannotBeVerified;
+
+    k_EMarketNotAllowedReason_NoRecentPurchases                :: NoRecentPurchases;
+
+    k_EMarketNotAllowedReason_AcceptedWalletGift               :: AcceptedWalletGift;
+}
+
+//
+// describes XP / progress restrictions to apply for games with duration control /
+// anti-indulgence enabled for minor Steam China users.
+//
+// WARNING: DO NOT RENUMBER
+EDurationControlProgress :: enum u32 {
+    EDurationControlProgress_Full   :: 0;
+    EDurationControlProgress_Half   :: 1;
+    EDurationControlProgress_None   :: 2;
+
+    EDurationControl_ExitSoon_3h    :: 3;
+    EDurationControl_ExitSoon_5h    :: 4;
+    EDurationControl_ExitSoon_Night :: 5;
+
+    k_EDurationControlProgress_Full   :: EDurationControlProgress_Full;
+    k_EDurationControlProgress_Half   :: EDurationControlProgress_Half;
+    k_EDurationControlProgress_None   :: EDurationControlProgress_None;
+
+    k_EDurationControl_ExitSoon_3h    :: EDurationControl_ExitSoon_3h;
+    k_EDurationControl_ExitSoon_5h    :: EDurationControl_ExitSoon_5h;
+    k_EDurationControl_ExitSoon_Night :: EDurationControl_ExitSoon_Night;
+}
+
+//
+// describes which notification timer has expired, for steam china duration control feature
+//
+// WARNING: DO NOT RENUMBER
+EDurationControlNotification :: enum u32 {
+    None           :: 0;
+    _1Hour         :: 1;
+
+    _3Hours        :: 2;
+    HalfProgress   :: 3;
+    NoProgress     :: 4;
+
+    ExitSoon_3h    :: 5;
+    ExitSoon_5h    :: 6;
+    ExitSoon_Night :: 7;
+
+    k_EDurationControlNotification_None           :: None;
+    k_EDurationControlNotification_1Hour          :: _1Hour;
+
+    k_EDurationControlNotification_3Hours         :: _3Hours;
+    k_EDurationControlNotification_HalfProgress   :: HalfProgress;
+    k_EDurationControlNotification_NoProgress     :: NoProgress;
+
+    k_EDurationControlNotification_ExitSoon_3h    :: ExitSoon_3h;
+    k_EDurationControlNotification_ExitSoon_5h    :: ExitSoon_5h;
+    k_EDurationControlNotification_ExitSoon_Night :: ExitSoon_Night;
 }
 
 //
@@ -343,8 +653,71 @@ EDurationControlOnlineState :: enum u32 {
     k_EDurationControlOnlineState_OnlineHighPri :: OnlineHighPri;
 }
 
+EBetaBranchFlags :: enum u32 {
+    None      :: 0;
+    Default   :: 1;
+    Available :: 2;
+    Private   :: 4;
+    Selected  :: 8;
+    Installed :: 16;
+
+    k_EBetaBranch_None      :: None;
+    k_EBetaBranch_Default   :: Default;
+    k_EBetaBranch_Available :: Available;
+    k_EBetaBranch_Private   :: Private;
+    k_EBetaBranch_Selected  :: Selected;
+    k_EBetaBranch_Installed :: Installed;
+}
+
 // Steam ID structure (64 bits total)
-CSteamID :: struct {}
+CSteamID :: struct {
+    // 64 bits total
+    SteamID_t :: union {
+        SteamIDComponent_t :: struct {
+            m_unAccountID:       uint32; // unique account identifier
+            m_unAccountInstance: u32; // dynamic instance ID
+            #place m_unAccountInstance; /*bitfield 20*/ m_EAccountType:      u32; // type of account - can't show as EAccountType, due to signed / unsigned difference
+            #place m_unAccountInstance; /*bitfield 24*/ m_EUniverse:         EUniverse; // universe this account belongs to
+        }
+
+        m_comp:        SteamIDComponent_t;
+
+        m_unAll64Bits: uint64;
+    }
+
+    m_steamid: SteamID_t;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: encapsulates an appID/modID pair
+//-----------------------------------------------------------------------------
+CGameID :: struct {
+    EGameIDType :: enum u32 {
+        EGameIDTypeApp      :: 0;
+        EGameIDTypeGameMod  :: 1;
+        EGameIDTypeShortcut :: 2;
+        EGameIDTypeP2P      :: 3;
+
+        k_EGameIDTypeApp      :: EGameIDTypeApp;
+        k_EGameIDTypeGameMod  :: EGameIDTypeGameMod;
+        k_EGameIDTypeShortcut :: EGameIDTypeShortcut;
+        k_EGameIDTypeP2P      :: EGameIDTypeP2P;
+    }
+
+    //
+    // Internal stuff.  Use the accessors above if possible
+    //
+    GameID_t :: struct {
+        m_nAppID: u32;
+        #place m_nAppID; /*bitfield 24*/ m_nType:  u32;
+        m_nModID: u32;
+    }
+
+    union {
+        m_ulGameID: uint64;
+        m_gameID:   GameID_t;
+    }
+}
 
 EGameSearchErrorCode_t :: enum u32 {
     OK                                :: 1;
@@ -409,8 +782,259 @@ HSteamPipe :: int32;
 // handle to single instance of a steam user
 HSteamUser :: int32;
 
+SteamErrMsg :: [1024] u8;
+
 // function prototype
 SteamAPIWarningMessageHook_t :: #type (unknown0: s32, unknown1: *u8) -> void #c_call;
+
+// Dispatch all queued Steamworks callbacks.
+//
+// This is safe to call from multiple threads simultaneously,
+// but if you choose to do this, callback code could be executed on any thread.
+// One alternative is to call SteamAPI_RunCallbacks from the main thread only,
+// and call SteamAPI_ReleaseCurrentThreadMemory regularly on other threads.
+SteamAPI_RunCallbacks :: () -> void #foreign libsteam_api;
+
+// Dispatch callbacks relevant to the gameserver client and interfaces.
+// To register for these, you need to use STEAM_GAMESERVER_CALLBACK.
+// (Or call SetGameserverFlag on your CCallbackBase object.)
+SteamGameServer_RunCallbacks :: () -> void #foreign libsteam_api;
+
+//-----------------------------------------------------------------------------
+// Purpose: base for callbacks and call results - internal implementation detail
+//-----------------------------------------------------------------------------
+CCallbackBase :: struct {
+    vtable: *CCallbackBase_VTable;
+    k :: enum u32 {
+        ECallbackFlagsRegistered :: 1;
+        ECallbackFlagsGameServer :: 2;
+        k_ECallbackFlagsRegistered :: ECallbackFlagsRegistered;
+        k_ECallbackFlagsGameServer :: ECallbackFlagsGameServer;
+    }
+    m_nCallbackFlags: uint8;
+    m_iCallback:      s32;
+}
+CCallbackBase_VTable :: struct #type_info_none {
+    Run: *void;
+
+    Run_1: *void;
+
+    GetCallbackSizeBytes: *void;
+}
+
+
+// Internal functions used to locate/create interfaces
+SteamAPI_GetHSteamPipe :: () -> HSteamPipe #foreign libsteam_api;
+SteamAPI_GetHSteamUser :: () -> HSteamUser #foreign libsteam_api;
+SteamGameServer_GetHSteamPipe :: () -> HSteamPipe #foreign libsteam_api;
+SteamGameServer_GetHSteamUser :: () -> HSteamUser #foreign libsteam_api;
+SteamInternal_ContextInit :: (pContextInitData: *void) -> *void #foreign libsteam_api;
+SteamInternal_CreateInterface :: (ver: *u8) -> *void #foreign libsteam_api;
+SteamInternal_FindOrCreateUserInterface :: (hSteamUser: HSteamUser, pszVersion: *u8) -> *void #foreign libsteam_api;
+SteamInternal_FindOrCreateGameServerInterface :: (hSteamUser: HSteamUser, pszVersion: *u8) -> *void #foreign libsteam_api;
+
+// Internal functions used by the utility CCallback objects to receive callbacks
+SteamAPI_RegisterCallback :: (pCallback: *CCallbackBase, iCallback: s32) -> void #foreign libsteam_api;
+SteamAPI_UnregisterCallback :: (pCallback: *CCallbackBase) -> void #foreign libsteam_api;
+
+// Internal functions used by the utility CCallResult objects to receive async call results
+SteamAPI_RegisterCallResult :: (pCallback: *CCallbackBase, hAPICall: SteamAPICall_t) -> void #foreign libsteam_api;
+SteamAPI_UnregisterCallResult :: (pCallback: *CCallbackBase, hAPICall: SteamAPICall_t) -> void #foreign libsteam_api;
+
+/// Internal structure used in manual callback dispatch
+CallbackMsg_t :: struct {
+    m_hSteamUser: HSteamUser; // Specific user to whom this callback applies.
+    m_iCallback:  s32; // Callback identifier.  (Corresponds to the k_iCallback enum in the callback structure.)
+    m_pubParam:   *uint8; // Points to the callback structure
+    m_cubParam:   s32; // Size of the data pointed to by m_pubParam
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Base values for callback identifiers, each callback must
+//			have a unique ID.
+//-----------------------------------------------------------------------------
+anon_enum :: enum u32 {
+    k_iSteamUserCallbacks :: 100;
+}
+anon_enum_1 :: enum u32 {
+    k_iSteamGameServerCallbacks :: 200;
+}
+anon_enum_2 :: enum u32 {
+    k_iSteamFriendsCallbacks :: 300;
+}
+anon_enum_3 :: enum u32 {
+    k_iSteamBillingCallbacks :: 400;
+}
+anon_enum_4 :: enum u32 {
+    k_iSteamMatchmakingCallbacks :: 500;
+}
+anon_enum_5 :: enum u32 {
+    k_iSteamContentServerCallbacks :: 600;
+}
+anon_enum_6 :: enum u32 {
+    k_iSteamUtilsCallbacks :: 700;
+}
+anon_enum_7 :: enum u32 {
+    k_iSteamAppsCallbacks :: 1000;
+}
+anon_enum_8 :: enum u32 {
+    k_iSteamUserStatsCallbacks :: 1100;
+}
+anon_enum_9 :: enum u32 {
+    k_iSteamNetworkingCallbacks :: 1200;
+}
+anon_enum_10 :: enum u32 {
+    k_iSteamNetworkingSocketsCallbacks :: 1220;
+}
+anon_enum_11 :: enum u32 {
+    k_iSteamNetworkingMessagesCallbacks :: 1250;
+}
+anon_enum_12 :: enum u32 {
+    k_iSteamNetworkingUtilsCallbacks :: 1280;
+}
+anon_enum_13 :: enum u32 {
+    k_iSteamRemoteStorageCallbacks :: 1300;
+}
+anon_enum_14 :: enum u32 {
+    k_iSteamGameServerItemsCallbacks :: 1500;
+}
+anon_enum_15 :: enum u32 {
+    k_iSteamGameCoordinatorCallbacks :: 1700;
+}
+anon_enum_16 :: enum u32 {
+    k_iSteamGameServerStatsCallbacks :: 1800;
+}
+anon_enum_17 :: enum u32 {
+    k_iSteam2AsyncCallbacks :: 1900;
+}
+anon_enum_18 :: enum u32 {
+    k_iSteamGameStatsCallbacks :: 2000;
+}
+anon_enum_19 :: enum u32 {
+    k_iSteamHTTPCallbacks :: 2100;
+}
+anon_enum_20 :: enum u32 {
+    k_iSteamScreenshotsCallbacks :: 2300;
+}
+
+// NOTE: 2500-2599 are reserved
+anon_enum_21 :: enum u32 {
+    k_iSteamStreamLauncherCallbacks :: 2600;
+}
+anon_enum_22 :: enum u32 {
+    k_iSteamControllerCallbacks :: 2800;
+}
+anon_enum_23 :: enum u32 {
+    k_iSteamUGCCallbacks :: 3400;
+}
+anon_enum_24 :: enum u32 {
+    k_iSteamStreamClientCallbacks :: 3500;
+}
+anon_enum_25 :: enum u32 {
+    k_iSteamMusicCallbacks :: 4000;
+}
+anon_enum_26 :: enum u32 {
+    k_iSteamMusicRemoteCallbacks :: 4100;
+}
+anon_enum_27 :: enum u32 {
+    k_iSteamGameNotificationCallbacks :: 4400;
+}
+anon_enum_28 :: enum u32 {
+    k_iSteamHTMLSurfaceCallbacks :: 4500;
+}
+anon_enum_29 :: enum u32 {
+    k_iSteamVideoCallbacks :: 4600;
+}
+anon_enum_30 :: enum u32 {
+    k_iSteamInventoryCallbacks :: 4700;
+}
+anon_enum_31 :: enum u32 {
+    k_ISteamParentalSettingsCallbacks :: 5000;
+}
+anon_enum_32 :: enum u32 {
+    k_iSteamGameSearchCallbacks :: 5200;
+}
+anon_enum_33 :: enum u32 {
+    k_iSteamPartiesCallbacks :: 5300;
+}
+anon_enum_34 :: enum u32 {
+    k_iSteamSTARCallbacks :: 5500;
+}
+anon_enum_35 :: enum u32 {
+    k_iSteamRemotePlayCallbacks :: 5700;
+}
+anon_enum_36 :: enum u32 {
+    k_iSteamChatCallbacks :: 5900;
+}
+anon_enum_37 :: enum u32 {
+    k_iSteamTimelineCallbacks :: 6000;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: interface to app data
+//-----------------------------------------------------------------------------
+ISteamApps :: struct {
+    vtable: *ISteamApps_VTable;
+}
+ISteamApps_VTable :: struct #type_info_none {
+    BIsSubscribed: *void;
+    BIsLowViolence: *void;
+    BIsCybercafe: *void;
+    BIsVACBanned: *void;
+    GetCurrentGameLanguage: *void;
+    GetAvailableGameLanguages: *void;
+
+    BIsSubscribedApp: *void;
+
+    BIsDlcInstalled: *void;
+
+    GetEarliestPurchaseUnixTime: *void;
+
+    BIsSubscribedFromFreeWeekend: *void;
+
+    GetDLCCount: *void;
+
+    BGetDLCDataByIndex: *void;
+
+    InstallDLC: *void;
+    UninstallDLC: *void;
+
+    RequestAppProofOfPurchaseKey: *void;
+
+    GetCurrentBetaName: *void;
+    MarkContentCorrupt: *void;
+    GetInstalledDepots: *void;
+
+    GetAppInstallDir: *void;
+    BIsAppInstalled: *void;
+
+    GetAppOwner: *void;
+
+    GetLaunchQueryParam: *void;
+
+    GetDlcDownloadProgress: *void;
+
+    GetAppBuildId: *void;
+
+    RequestAllProofOfPurchaseKeys: *void;
+
+    GetFileDetails: *void;
+
+    GetLaunchCommandLine: *void;
+
+    BIsSubscribedFromFamilySharing: *void;
+
+    BIsTimedTrial: *void;
+
+    SetDlcContext: *void;
+
+    GetNumBetas: *void;
+
+    GetBetaInfo: *void;
+
+    SetActiveBeta: *void;
+}
+
 
 // Forward declare all of the Steam interfaces.  (Do we really need to do this?)
 ISteamClient :: struct {
@@ -496,1706 +1120,44 @@ ISteamClient_VTable :: struct #type_info_none {
     DestroyAllInterfaces: *void;
 }
 
-vtable :: (obj: *ISteamClient) -> *ISteamClient_VTable { return obj.vtable; }
 
-
-//-----------------------------------------------------------------------------
-// Purpose: Functions for accessing and manipulating a steam account
-//			associated with one client instance
-//-----------------------------------------------------------------------------
-ISteamUser :: struct {
-    vtable: *ISteamUser_VTable;
-}
-ISteamUser_VTable :: struct #type_info_none {
-    GetHSteamUser: *void;
-
-    BLoggedOn: *void;
-
-    GetSteamID: *void;
-
-    InitiateGameConnection_DEPRECATED: *void;
-
-    TerminateGameConnection_DEPRECATED: *void;
-
-    TrackAppUsageEvent: *void;
-
-    GetUserDataFolder: *void;
-
-    StartVoiceRecording: *void;
-
-    StopVoiceRecording: *void;
-
-    GetAvailableVoice: *void;
-
-    GetVoice: *void;
-
-    DecompressVoice: *void;
-
-    GetVoiceOptimalSampleRate: *void;
-
-    GetAuthSessionTicket: *void;
-
-    GetAuthTicketForWebApi: *void;
-
-    BeginAuthSession: *void;
-
-    EndAuthSession: *void;
-
-    CancelAuthTicket: *void;
-
-    UserHasLicenseForApp: *void;
-
-    BIsBehindNAT: *void;
-
-    AdvertiseGame: *void;
-
-    RequestEncryptedAppTicket: *void;
-
-    GetEncryptedAppTicket: *void;
-
-    GetGameBadgeLevel: *void;
-
-    GetPlayerSteamLevel: *void;
-
-    RequestStoreAuthURL: *void;
-
-    BIsPhoneVerified: *void;
-
-    BIsTwoFactorEnabled: *void;
-
-    BIsPhoneIdentifying: *void;
-
-    BIsPhoneRequiringVerification: *void;
-
-    GetMarketEligibility: *void;
-
-    GetDurationControl: *void;
-
-    BSetDurationControlOnlineState: *void;
-}
-
-vtable :: (obj: *ISteamUser) -> *ISteamUser_VTable { return obj.vtable; }
-
-
-//-----------------------------------------------------------------------------
-// Purpose: set of relationships to other users
-//-----------------------------------------------------------------------------
-EFriendRelationship :: enum u32 {
-    EFriendRelationshipNone                 :: 0;
-    EFriendRelationshipBlocked              :: 1;
-    EFriendRelationshipRequestRecipient     :: 2;
-    EFriendRelationshipFriend               :: 3;
-    EFriendRelationshipRequestInitiator     :: 4;
-    EFriendRelationshipIgnored              :: 5;
-    EFriendRelationshipIgnoredFriend        :: 6;
-    EFriendRelationshipSuggested_DEPRECATED :: 7;
-
-    EFriendRelationshipMax                  :: 8;
-
-    k_EFriendRelationshipNone                 :: EFriendRelationshipNone;
-    k_EFriendRelationshipBlocked              :: EFriendRelationshipBlocked;
-    k_EFriendRelationshipRequestRecipient     :: EFriendRelationshipRequestRecipient;
-    k_EFriendRelationshipFriend               :: EFriendRelationshipFriend;
-    k_EFriendRelationshipRequestInitiator     :: EFriendRelationshipRequestInitiator;
-    k_EFriendRelationshipIgnored              :: EFriendRelationshipIgnored;
-    k_EFriendRelationshipIgnoredFriend        :: EFriendRelationshipIgnoredFriend;
-    k_EFriendRelationshipSuggested_DEPRECATED :: EFriendRelationshipSuggested_DEPRECATED;
-
-    k_EFriendRelationshipMax                  :: EFriendRelationshipMax;
-}
-
-// friends group identifier type
-FriendsGroupID_t :: int16;
-
-//-----------------------------------------------------------------------------
-// Purpose: list of states a friend can be in
-//-----------------------------------------------------------------------------
-EPersonaState :: enum u32 {
-    EPersonaStateOffline        :: 0;
-    EPersonaStateOnline         :: 1;
-    EPersonaStateBusy           :: 2;
-    EPersonaStateAway           :: 3;
-    EPersonaStateSnooze         :: 4;
-    EPersonaStateLookingToTrade :: 5;
-    EPersonaStateLookingToPlay  :: 6;
-    EPersonaStateInvisible      :: 7;
-    EPersonaStateMax            :: 8;
-
-    k_EPersonaStateOffline        :: EPersonaStateOffline;
-    k_EPersonaStateOnline         :: EPersonaStateOnline;
-    k_EPersonaStateBusy           :: EPersonaStateBusy;
-    k_EPersonaStateAway           :: EPersonaStateAway;
-    k_EPersonaStateSnooze         :: EPersonaStateSnooze;
-    k_EPersonaStateLookingToTrade :: EPersonaStateLookingToTrade;
-    k_EPersonaStateLookingToPlay  :: EPersonaStateLookingToPlay;
-    k_EPersonaStateInvisible      :: EPersonaStateInvisible;
-    k_EPersonaStateMax            :: EPersonaStateMax;
-}
-
-FriendGameInfo_t :: struct {}
-
-// These values are passed as parameters to the store
-EOverlayToStoreFlag :: enum u32 {
-    None             :: 0;
-    AddToCart        :: 1;
-    AddToCartAndShow :: 2;
-
-    k_EOverlayToStoreFlag_None             :: None;
-    k_EOverlayToStoreFlag_AddToCart        :: AddToCart;
-    k_EOverlayToStoreFlag_AddToCartAndShow :: AddToCartAndShow;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Tells Steam where to place the browser window inside the overlay
-//-----------------------------------------------------------------------------
-EActivateGameOverlayToWebPageMode :: enum u32 {
-    Default :: 0;
-
-    Modal   :: 1;
-
-    k_EActivateGameOverlayToWebPageMode_Default :: Default;
-
-    k_EActivateGameOverlayToWebPageMode_Modal   :: Modal;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: See GetProfileItemPropertyString and GetProfileItemPropertyUint
-//-----------------------------------------------------------------------------
-ECommunityProfileItemType :: enum u32 {
-    AnimatedAvatar        :: 0;
-    AvatarFrame           :: 1;
-    ProfileModifier       :: 2;
-    ProfileBackground     :: 3;
-    MiniProfileBackground :: 4;
-
-    k_ECommunityProfileItemType_AnimatedAvatar        :: AnimatedAvatar;
-    k_ECommunityProfileItemType_AvatarFrame           :: AvatarFrame;
-    k_ECommunityProfileItemType_ProfileModifier       :: ProfileModifier;
-    k_ECommunityProfileItemType_ProfileBackground     :: ProfileBackground;
-    k_ECommunityProfileItemType_MiniProfileBackground :: MiniProfileBackground;
-}
-
-ECommunityProfileItemProperty :: enum u32 {
-    ImageSmall     :: 0;
-    ImageLarge     :: 1;
-    InternalName   :: 2;
-    Title          :: 3;
-    Description    :: 4;
-    AppID          :: 5;
-    TypeID         :: 6;
-    Class          :: 7;
-    MovieWebM      :: 8;
-    MovieMP4       :: 9;
-    MovieWebMSmall :: 10;
-    MovieMP4Small  :: 11;
-
-    k_ECommunityProfileItemProperty_ImageSmall     :: ImageSmall;
-    k_ECommunityProfileItemProperty_ImageLarge     :: ImageLarge;
-    k_ECommunityProfileItemProperty_InternalName   :: InternalName;
-    k_ECommunityProfileItemProperty_Title          :: Title;
-    k_ECommunityProfileItemProperty_Description    :: Description;
-    k_ECommunityProfileItemProperty_AppID          :: AppID;
-    k_ECommunityProfileItemProperty_TypeID         :: TypeID;
-    k_ECommunityProfileItemProperty_Class          :: Class;
-    k_ECommunityProfileItemProperty_MovieWebM      :: MovieWebM;
-    k_ECommunityProfileItemProperty_MovieMP4       :: MovieMP4;
-    k_ECommunityProfileItemProperty_MovieWebMSmall :: MovieWebMSmall;
-    k_ECommunityProfileItemProperty_MovieMP4Small  :: MovieMP4Small;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: interface to accessing information about individual users,
-//			that can be a friend, in a group, on a game server or in a lobby with the local user
-//-----------------------------------------------------------------------------
-ISteamFriends :: struct {
-    vtable: *ISteamFriends_VTable;
-}
-ISteamFriends_VTable :: struct #type_info_none {
-    GetPersonaName: *void;
-
-    SetPersonaName: *void;
-
-    GetPersonaState: *void;
-
-    GetFriendCount: *void;
-
-    GetFriendByIndex: *void;
-
-    GetFriendRelationship: *void;
-
-    GetFriendPersonaState: *void;
-
-    GetFriendPersonaName: *void;
-
-    GetFriendGamePlayed: *void;
-
-    GetFriendPersonaNameHistory: *void;
-
-    GetFriendSteamLevel: *void;
-
-    GetPlayerNickname: *void;
-
-    GetFriendsGroupCount: *void;
-
-    GetFriendsGroupIDByIndex: *void;
-
-    GetFriendsGroupName: *void;
-
-    GetFriendsGroupMembersCount: *void;
-
-    GetFriendsGroupMembersList: *void;
-
-    HasFriend: *void;
-
-    GetClanCount: *void;
-    GetClanByIndex: *void;
-    GetClanName: *void;
-    GetClanTag: *void;
-
-    GetClanActivityCounts: *void;
-
-    DownloadClanActivityCounts: *void;
-
-    GetFriendCountFromSource: *void;
-    GetFriendFromSourceByIndex: *void;
-
-    IsUserInSource: *void;
-
-    SetInGameVoiceSpeaking: *void;
-
-    ActivateGameOverlay: *void;
-
-    ActivateGameOverlayToUser: *void;
-
-    ActivateGameOverlayToWebPage: *void;
-
-    ActivateGameOverlayToStore: *void;
-
-    SetPlayedWith: *void;
-
-    ActivateGameOverlayInviteDialog: *void;
-
-    GetSmallFriendAvatar: *void;
-
-    GetMediumFriendAvatar: *void;
-
-    GetLargeFriendAvatar: *void;
-
-    RequestUserInformation: *void;
-
-    RequestClanOfficerList: *void;
-
-    GetClanOwner: *void;
-
-    GetClanOfficerCount: *void;
-
-    GetClanOfficerByIndex: *void;
-
-    GetUserRestrictions: *void;
-
-    SetRichPresence: *void;
-    ClearRichPresence: *void;
-    GetFriendRichPresence: *void;
-    GetFriendRichPresenceKeyCount: *void;
-    GetFriendRichPresenceKeyByIndex: *void;
-
-    RequestFriendRichPresence: *void;
-
-    InviteUserToGame: *void;
-
-    GetCoplayFriendCount: *void;
-    GetCoplayFriend: *void;
-    GetFriendCoplayTime: *void;
-    GetFriendCoplayGame: *void;
-
-    JoinClanChatRoom: *void;
-    LeaveClanChatRoom: *void;
-    GetClanChatMemberCount: *void;
-    GetChatMemberByIndex: *void;
-    SendClanChatMessage: *void;
-    GetClanChatMessage: *void;
-    IsClanChatAdmin: *void;
-
-    IsClanChatWindowOpenInSteam: *void;
-    OpenClanChatWindowInSteam: *void;
-    CloseClanChatWindowInSteam: *void;
-
-    SetListenForFriendsMessages: *void;
-    ReplyToFriendMessage: *void;
-    GetFriendMessage: *void;
-
-    GetFollowerCount: *void;
-
-    IsFollowing: *void;
-
-    EnumerateFollowingList: *void;
-
-    IsClanPublic: *void;
-    IsClanOfficialGameGroup: *void;
-
-    GetNumChatsWithUnreadPriorityMessages: *void;
-
-    ActivateGameOverlayRemotePlayTogetherInviteDialog: *void;
-
-    RegisterProtocolInOverlayBrowser: *void;
-
-    ActivateGameOverlayInviteDialogConnectString: *void;
-
-    RequestEquippedProfileItems: *void;
-    BHasEquippedProfileItem: *void;
-    GetProfileItemPropertyString: *void;
-    GetProfileItemPropertyUint: *void;
-}
-
-vtable :: (obj: *ISteamFriends) -> *ISteamFriends_VTable { return obj.vtable; }
-
-
-// Steam API call failure results
-ESteamAPICallFailure :: enum s32 {
-    ESteamAPICallFailureNone               :: -1;
-    ESteamAPICallFailureSteamGone          :: 0;
-    ESteamAPICallFailureNetworkFailure     :: 1;
-
-    ESteamAPICallFailureInvalidHandle      :: 2;
-    ESteamAPICallFailureMismatchedCallback :: 3;
-
-    k_ESteamAPICallFailureNone               :: ESteamAPICallFailureNone;
-    k_ESteamAPICallFailureSteamGone          :: ESteamAPICallFailureSteamGone;
-    k_ESteamAPICallFailureNetworkFailure     :: ESteamAPICallFailureNetworkFailure;
-
-    k_ESteamAPICallFailureInvalidHandle      :: ESteamAPICallFailureInvalidHandle;
-    k_ESteamAPICallFailureMismatchedCallback :: ESteamAPICallFailureMismatchedCallback;
-}
-
-// Input modes for the Big Picture gamepad text entry
-EGamepadTextInputMode :: enum u32 {
-    EGamepadTextInputModeNormal   :: 0;
-    EGamepadTextInputModePassword :: 1;
-
-    k_EGamepadTextInputModeNormal   :: EGamepadTextInputModeNormal;
-    k_EGamepadTextInputModePassword :: EGamepadTextInputModePassword;
-}
-
-// Controls number of allowed lines for the Big Picture gamepad text entry
-EGamepadTextInputLineMode :: enum u32 {
-    EGamepadTextInputLineModeSingleLine    :: 0;
-    EGamepadTextInputLineModeMultipleLines :: 1;
-
-    k_EGamepadTextInputLineModeSingleLine    :: EGamepadTextInputLineModeSingleLine;
-    k_EGamepadTextInputLineModeMultipleLines :: EGamepadTextInputLineModeMultipleLines;
-}
-
-EFloatingGamepadTextInputMode :: enum u32 {
-    EFloatingGamepadTextInputModeModeSingleLine    :: 0;
-    EFloatingGamepadTextInputModeModeMultipleLines :: 1;
-    EFloatingGamepadTextInputModeModeEmail         :: 2;
-    EFloatingGamepadTextInputModeModeNumeric       :: 3;
-
-    k_EFloatingGamepadTextInputModeModeSingleLine    :: EFloatingGamepadTextInputModeModeSingleLine;
-    k_EFloatingGamepadTextInputModeModeMultipleLines :: EFloatingGamepadTextInputModeModeMultipleLines;
-    k_EFloatingGamepadTextInputModeModeEmail         :: EFloatingGamepadTextInputModeModeEmail;
-    k_EFloatingGamepadTextInputModeModeNumeric       :: EFloatingGamepadTextInputModeModeNumeric;
-}
-
-// The context where text filtering is being done
-ETextFilteringContext :: enum u32 {
-    ETextFilteringContextUnknown     :: 0;
-    ETextFilteringContextGameContent :: 1;
-    ETextFilteringContextChat        :: 2;
-    ETextFilteringContextName        :: 3;
-
-    k_ETextFilteringContextUnknown     :: ETextFilteringContextUnknown;
-    k_ETextFilteringContextGameContent :: ETextFilteringContextGameContent;
-    k_ETextFilteringContextChat        :: ETextFilteringContextChat;
-    k_ETextFilteringContextName        :: ETextFilteringContextName;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: interface to user independent utility functions
-//-----------------------------------------------------------------------------
-ISteamUtils :: struct {
-    vtable: *ISteamUtils_VTable;
-}
-ISteamUtils_VTable :: struct #type_info_none {
-    GetSecondsSinceAppActive: *void;
-    GetSecondsSinceComputerActive: *void;
-
-    GetConnectedUniverse: *void;
-
-    GetServerRealTime: *void;
-
-    GetIPCountry: *void;
-
-    GetImageSize: *void;
-
-    GetImageRGBA: *void;
-
-    GetCSERIPPort: *void;
-
-    GetCurrentBatteryPower: *void;
-
-    GetAppID: *void;
-
-    SetOverlayNotificationPosition: *void;
-
-    IsAPICallCompleted: *void;
-    GetAPICallFailureReason: *void;
-    GetAPICallResult: *void;
-
-    RunFrame: *void;
-
-    GetIPCCallCount: *void;
-
-    SetWarningMessageHook: *void;
-
-    IsOverlayEnabled: *void;
-
-    BOverlayNeedsPresent: *void;
-
-    CheckFileSignature: *void;
-
-    ShowGamepadTextInput: *void;
-
-    GetEnteredGamepadTextLength: *void;
-    GetEnteredGamepadTextInput: *void;
-
-    GetSteamUILanguage: *void;
-
-    IsSteamRunningInVR: *void;
-
-    SetOverlayNotificationInset: *void;
-
-    IsSteamInBigPictureMode: *void;
-
-    StartVRDashboard: *void;
-
-    IsVRHeadsetStreamingEnabled: *void;
-
-    SetVRHeadsetStreamingEnabled: *void;
-
-    IsSteamChinaLauncher: *void;
-
-    InitFilterText: *void;
-
-    FilterText: *void;
-
-    GetIPv6ConnectivityState: *void;
-
-    IsSteamRunningOnSteamDeck: *void;
-
-    ShowFloatingGamepadTextInput: *void;
-
-    SetGameLauncherMode: *void;
-
-    DismissFloatingGamepadTextInput: *void;
-
-    DismissGamepadTextInput: *void;
-}
-
-vtable :: (obj: *ISteamUtils) -> *ISteamUtils_VTable { return obj.vtable; }
-
-
-/// Store key/value pair used in matchmaking queries.
-///
-/// Actually, the name Key/Value is a bit misleading.  The "key" is better
-/// understood as "filter operation code" and the "value" is the operand to this
-/// filter operation.  The meaning of the operand depends upon the filter.
-MatchMakingKeyValuePair_t :: struct {}
-
-EMatchMakingServerResponse :: enum u32 {
-    ServerResponded               :: 0;
-    ServerFailedToRespond         :: 1;
-    NoServersListedOnMasterServer :: 2;
-
-    eServerResponded               :: ServerResponded;
-    eServerFailedToRespond         :: ServerFailedToRespond;
-    eNoServersListedOnMasterServer :: NoServersListedOnMasterServer;
-}
-
-// servernetadr_t is all the addressing info the serverbrowser needs to know about a game server,
-// namely: its IP, its connection port, and its query port.
-servernetadr_t :: struct {}
-
-//-----------------------------------------------------------------------------
-// Purpose: Data describing a single server
-//-----------------------------------------------------------------------------
-gameserveritem_t :: struct {}
-
-// lobby type description
-ELobbyType :: enum u32 {
-    ELobbyTypePrivate       :: 0;
-    ELobbyTypeFriendsOnly   :: 1;
-    ELobbyTypePublic        :: 2;
-    ELobbyTypeInvisible     :: 3;
-
-    ELobbyTypePrivateUnique :: 4;
-
-    k_ELobbyTypePrivate       :: ELobbyTypePrivate;
-    k_ELobbyTypeFriendsOnly   :: ELobbyTypeFriendsOnly;
-    k_ELobbyTypePublic        :: ELobbyTypePublic;
-    k_ELobbyTypeInvisible     :: ELobbyTypeInvisible;
-
-    k_ELobbyTypePrivateUnique :: ELobbyTypePrivateUnique;
-}
-
-// lobby search filter tools
-ELobbyComparison :: enum s32 {
-    ELobbyComparisonEqualToOrLessThan    :: -2;
-    ELobbyComparisonLessThan             :: -1;
-    ELobbyComparisonEqual                :: 0;
-    ELobbyComparisonGreaterThan          :: 1;
-    ELobbyComparisonEqualToOrGreaterThan :: 2;
-    ELobbyComparisonNotEqual             :: 3;
-
-    k_ELobbyComparisonEqualToOrLessThan    :: ELobbyComparisonEqualToOrLessThan;
-    k_ELobbyComparisonLessThan             :: ELobbyComparisonLessThan;
-    k_ELobbyComparisonEqual                :: ELobbyComparisonEqual;
-    k_ELobbyComparisonGreaterThan          :: ELobbyComparisonGreaterThan;
-    k_ELobbyComparisonEqualToOrGreaterThan :: ELobbyComparisonEqualToOrGreaterThan;
-    k_ELobbyComparisonNotEqual             :: ELobbyComparisonNotEqual;
-}
-
-// lobby search distance. Lobby results are sorted from closest to farthest.
-ELobbyDistanceFilter :: enum u32 {
-    ELobbyDistanceFilterClose     :: 0;
-    ELobbyDistanceFilterDefault   :: 1;
-    ELobbyDistanceFilterFar       :: 2;
-    ELobbyDistanceFilterWorldwide :: 3;
-
-    k_ELobbyDistanceFilterClose     :: ELobbyDistanceFilterClose;
-    k_ELobbyDistanceFilterDefault   :: ELobbyDistanceFilterDefault;
-    k_ELobbyDistanceFilterFar       :: ELobbyDistanceFilterFar;
-    k_ELobbyDistanceFilterWorldwide :: ELobbyDistanceFilterWorldwide;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Functions for match making services for clients to get to favorites
-//			and to operate on game lobbies.
-//-----------------------------------------------------------------------------
-ISteamMatchmaking :: struct {
-    vtable: *ISteamMatchmaking_VTable;
-}
-ISteamMatchmaking_VTable :: struct #type_info_none {
-    GetFavoriteGameCount: *void;
-
-    GetFavoriteGame: *void;
-
-    AddFavoriteGame: *void;
-
-    RemoveFavoriteGame: *void;
-
-    RequestLobbyList: *void;
-
-    AddRequestLobbyListStringFilter: *void;
-
-    AddRequestLobbyListNumericalFilter: *void;
-
-    AddRequestLobbyListNearValueFilter: *void;
-
-    AddRequestLobbyListFilterSlotsAvailable: *void;
-
-    AddRequestLobbyListDistanceFilter: *void;
-
-    AddRequestLobbyListResultCountFilter: *void;
-
-    AddRequestLobbyListCompatibleMembersFilter: *void;
-
-    GetLobbyByIndex: *void;
-
-    CreateLobby: *void;
-
-    JoinLobby: *void;
-
-    LeaveLobby: *void;
-
-    InviteUserToLobby: *void;
-
-    GetNumLobbyMembers: *void;
-
-    GetLobbyMemberByIndex: *void;
-
-    GetLobbyData: *void;
-
-    SetLobbyData: *void;
-
-    GetLobbyDataCount: *void;
-
-    GetLobbyDataByIndex: *void;
-
-    DeleteLobbyData: *void;
-
-    GetLobbyMemberData: *void;
-
-    SetLobbyMemberData: *void;
-
-    SendLobbyChatMsg: *void;
-
-    GetLobbyChatEntry: *void;
-
-    RequestLobbyData: *void;
-
-    SetLobbyGameServer: *void;
-
-    GetLobbyGameServer: *void;
-
-    SetLobbyMemberLimit: *void;
-
-    GetLobbyMemberLimit: *void;
-
-    SetLobbyType: *void;
-
-    SetLobbyJoinable: *void;
-
-    GetLobbyOwner: *void;
-
-    SetLobbyOwner: *void;
-
-    SetLinkedLobby: *void;
-}
-
-vtable :: (obj: *ISteamMatchmaking) -> *ISteamMatchmaking_VTable { return obj.vtable; }
-
-
-//-----------------------------------------------------------------------------
-// Typedef for handle type you will receive when requesting server list.
-//-----------------------------------------------------------------------------
-HServerListRequest :: *void;
-
-//-----------------------------------------------------------------------------
-// Purpose: Callback interface for receiving responses after a server list refresh
-// or an individual server update.
-//
-// Since you get these callbacks after requesting full list refreshes you will
-// usually implement this interface inside an object like CServerBrowser.  If that
-// object is getting destructed you should use ISteamMatchMakingServers()->CancelQuery()
-// to cancel any in-progress queries so you don't get a callback into the destructed
-// object and crash.
-//-----------------------------------------------------------------------------
-ISteamMatchmakingServerListResponse :: struct {
-    vtable: *ISteamMatchmakingServerListResponse_VTable;
-}
-ISteamMatchmakingServerListResponse_VTable :: struct #type_info_none {
-    ServerResponded: *void;
-
-    ServerFailedToRespond: *void;
-
-    RefreshComplete: *void;
-}
-
-vtable :: (obj: *ISteamMatchmakingServerListResponse) -> *ISteamMatchmakingServerListResponse_VTable { return obj.vtable; }
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Callback interface for receiving responses after pinging an individual server
-//
-// These callbacks all occur in response to querying an individual server
-// via the ISteamMatchmakingServers()->PingServer() call below.  If you are
-// destructing an object that implements this interface then you should call
-// ISteamMatchmakingServers()->CancelServerQuery() passing in the handle to the query
-// which is in progress.  Failure to cancel in progress queries when destructing
-// a callback handler may result in a crash when a callback later occurs.
-//-----------------------------------------------------------------------------
-ISteamMatchmakingPingResponse :: struct {
-    vtable: *ISteamMatchmakingPingResponse_VTable;
-}
-ISteamMatchmakingPingResponse_VTable :: struct #type_info_none {
-    ServerResponded: *void;
-
-    ServerFailedToRespond: *void;
-}
-
-vtable :: (obj: *ISteamMatchmakingPingResponse) -> *ISteamMatchmakingPingResponse_VTable { return obj.vtable; }
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Callback interface for receiving responses after requesting details on
-// who is playing on a particular server.
-//
-// These callbacks all occur in response to querying an individual server
-// via the ISteamMatchmakingServers()->PlayerDetails() call below.  If you are
-// destructing an object that implements this interface then you should call
-// ISteamMatchmakingServers()->CancelServerQuery() passing in the handle to the query
-// which is in progress.  Failure to cancel in progress queries when destructing
-// a callback handler may result in a crash when a callback later occurs.
-//-----------------------------------------------------------------------------
-ISteamMatchmakingPlayersResponse :: struct {
-    vtable: *ISteamMatchmakingPlayersResponse_VTable;
-}
-ISteamMatchmakingPlayersResponse_VTable :: struct #type_info_none {
-    AddPlayerToList: *void;
-
-    PlayersFailedToRespond: *void;
-
-    PlayersRefreshComplete: *void;
-}
-
-vtable :: (obj: *ISteamMatchmakingPlayersResponse) -> *ISteamMatchmakingPlayersResponse_VTable { return obj.vtable; }
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Callback interface for receiving responses after requesting rules
-// details on a particular server.
-//
-// These callbacks all occur in response to querying an individual server
-// via the ISteamMatchmakingServers()->ServerRules() call below.  If you are
-// destructing an object that implements this interface then you should call
-// ISteamMatchmakingServers()->CancelServerQuery() passing in the handle to the query
-// which is in progress.  Failure to cancel in progress queries when destructing
-// a callback handler may result in a crash when a callback later occurs.
-//-----------------------------------------------------------------------------
-ISteamMatchmakingRulesResponse :: struct {
-    vtable: *ISteamMatchmakingRulesResponse_VTable;
-}
-ISteamMatchmakingRulesResponse_VTable :: struct #type_info_none {
-    RulesResponded: *void;
-
-    RulesFailedToRespond: *void;
-
-    RulesRefreshComplete: *void;
-}
-
-vtable :: (obj: *ISteamMatchmakingRulesResponse) -> *ISteamMatchmakingRulesResponse_VTable { return obj.vtable; }
-
-
-//-----------------------------------------------------------------------------
-// Typedef for handle type you will receive when querying details on an individual server.
-//-----------------------------------------------------------------------------
-HServerQuery :: s32;
-
-//-----------------------------------------------------------------------------
-// Purpose: Functions for match making services for clients to get to game lists and details
-//-----------------------------------------------------------------------------
-ISteamMatchmakingServers :: struct {
-    vtable: *ISteamMatchmakingServers_VTable;
-}
-ISteamMatchmakingServers_VTable :: struct #type_info_none {
-    RequestInternetServerList: *void;
-    RequestLANServerList: *void;
-    RequestFriendsServerList: *void;
-    RequestFavoritesServerList: *void;
-    RequestHistoryServerList: *void;
-    RequestSpectatorServerList: *void;
-
-    ReleaseRequest: *void;
-
-    GetServerDetails: *void;
-
-    CancelQuery: *void;
-
-    RefreshQuery: *void;
-
-    IsRefreshing: *void;
-
-    GetServerCount: *void;
-
-    RefreshServer: *void;
-
-    PingServer: *void;
-
-    PlayerDetails: *void;
-
-    ServerRules: *void;
-
-    CancelServerQuery: *void;
-}
-
-vtable :: (obj: *ISteamMatchmakingServers) -> *ISteamMatchmakingServers_VTable { return obj.vtable; }
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Functions for match making services for clients to get to favorites
-//			and to operate on game lobbies.
-//-----------------------------------------------------------------------------
-ISteamGameSearch :: struct {
-    vtable: *ISteamGameSearch_VTable;
-}
-ISteamGameSearch_VTable :: struct #type_info_none {
-    AddGameSearchParams: *void;
-
-    SearchForGameWithLobby: *void;
-
-    SearchForGameSolo: *void;
-
-    AcceptGame: *void;
-    DeclineGame: *void;
-
-    RetrieveConnectionDetails: *void;
-
-    EndGameSearch: *void;
-
-    SetGameHostParams: *void;
-
-    SetConnectionDetails: *void;
-
-    RequestPlayersForGame: *void;
-
-    HostConfirmGameStart: *void;
-
-    CancelRequestPlayersForGame: *void;
-
-    SubmitPlayerResult: *void;
-
-    EndGame: *void;
-}
-
-vtable :: (obj: *ISteamGameSearch) -> *ISteamGameSearch_VTable { return obj.vtable; }
-
-
-SteamPartyBeaconLocation_t :: struct {}
-
-ESteamPartyBeaconLocationData :: enum u32 {
-    ESteamPartyBeaconLocationDataInvalid       :: 0;
-    ESteamPartyBeaconLocationDataName          :: 1;
-    ESteamPartyBeaconLocationDataIconURLSmall  :: 2;
-    ESteamPartyBeaconLocationDataIconURLMedium :: 3;
-    ESteamPartyBeaconLocationDataIconURLLarge  :: 4;
-
-    k_ESteamPartyBeaconLocationDataInvalid       :: ESteamPartyBeaconLocationDataInvalid;
-    k_ESteamPartyBeaconLocationDataName          :: ESteamPartyBeaconLocationDataName;
-    k_ESteamPartyBeaconLocationDataIconURLSmall  :: ESteamPartyBeaconLocationDataIconURLSmall;
-    k_ESteamPartyBeaconLocationDataIconURLMedium :: ESteamPartyBeaconLocationDataIconURLMedium;
-    k_ESteamPartyBeaconLocationDataIconURLLarge  :: ESteamPartyBeaconLocationDataIconURLLarge;
-}
-
-ISteamParties :: struct {
-    vtable: *ISteamParties_VTable;
-}
-ISteamParties_VTable :: struct #type_info_none {
-    GetNumActiveBeacons: *void;
-    GetBeaconByIndex: *void;
-    GetBeaconDetails: *void;
-
-    JoinParty: *void;
-
-    GetNumAvailableBeaconLocations: *void;
-    GetAvailableBeaconLocations: *void;
-
-    CreateBeacon: *void;
-
-    OnReservationCompleted: *void;
-
-    CancelReservation: *void;
-
-    ChangeNumOpenSlots: *void;
-
-    DestroyBeacon: *void;
-
-    GetBeaconLocationData: *void;
-}
-
-vtable :: (obj: *ISteamParties) -> *ISteamParties_VTable { return obj.vtable; }
-
-
-SteamParamStringArray_t :: struct {}
-
-// A handle to a piece of user generated content
-UGCHandle_t :: uint64;
-PublishedFileUpdateHandle_t :: uint64;
-PublishedFileId_t :: uint64;
-
-// Handle for writing to Steam Cloud
-UGCFileWriteStreamHandle_t :: uint64;
-
-ERemoteStoragePlatform :: enum u32 {
-    ERemoteStoragePlatformNone    :: 0;
-    ERemoteStoragePlatformWindows :: 1;
-    ERemoteStoragePlatformOSX     :: 2;
-    ERemoteStoragePlatformPS3     :: 4;
-    ERemoteStoragePlatformLinux   :: 8;
-    ERemoteStoragePlatformSwitch  :: 16;
-    ERemoteStoragePlatformAndroid :: 32;
-    ERemoteStoragePlatformIOS     :: 64;
-
-    ERemoteStoragePlatformAll     :: 4294967295;
-
-    k_ERemoteStoragePlatformNone    :: ERemoteStoragePlatformNone;
-    k_ERemoteStoragePlatformWindows :: ERemoteStoragePlatformWindows;
-    k_ERemoteStoragePlatformOSX     :: ERemoteStoragePlatformOSX;
-    k_ERemoteStoragePlatformPS3     :: ERemoteStoragePlatformPS3;
-    k_ERemoteStoragePlatformLinux   :: ERemoteStoragePlatformLinux;
-    k_ERemoteStoragePlatformSwitch  :: ERemoteStoragePlatformSwitch;
-    k_ERemoteStoragePlatformAndroid :: ERemoteStoragePlatformAndroid;
-    k_ERemoteStoragePlatformIOS     :: ERemoteStoragePlatformIOS;
-
-    k_ERemoteStoragePlatformAll     :: ERemoteStoragePlatformAll;
-}
-
-ERemoteStoragePublishedFileVisibility :: enum u32 {
-    ERemoteStoragePublishedFileVisibilityPublic      :: 0;
-    ERemoteStoragePublishedFileVisibilityFriendsOnly :: 1;
-    ERemoteStoragePublishedFileVisibilityPrivate     :: 2;
-    ERemoteStoragePublishedFileVisibilityUnlisted    :: 3;
-
-    k_ERemoteStoragePublishedFileVisibilityPublic      :: ERemoteStoragePublishedFileVisibilityPublic;
-    k_ERemoteStoragePublishedFileVisibilityFriendsOnly :: ERemoteStoragePublishedFileVisibilityFriendsOnly;
-    k_ERemoteStoragePublishedFileVisibilityPrivate     :: ERemoteStoragePublishedFileVisibilityPrivate;
-    k_ERemoteStoragePublishedFileVisibilityUnlisted    :: ERemoteStoragePublishedFileVisibilityUnlisted;
-}
-
-EWorkshopFileType :: enum u32 {
-    EWorkshopFileTypeFirst                  :: 0;
-
-    EWorkshopFileTypeCommunity              :: 0;
-    EWorkshopFileTypeMicrotransaction       :: 1;
-    EWorkshopFileTypeCollection             :: 2;
-    EWorkshopFileTypeArt                    :: 3;
-    EWorkshopFileTypeVideo                  :: 4;
-    EWorkshopFileTypeScreenshot             :: 5;
-    EWorkshopFileTypeGame                   :: 6;
-    EWorkshopFileTypeSoftware               :: 7;
-    EWorkshopFileTypeConcept                :: 8;
-    EWorkshopFileTypeWebGuide               :: 9;
-    EWorkshopFileTypeIntegratedGuide        :: 10;
-    EWorkshopFileTypeMerch                  :: 11;
-    EWorkshopFileTypeControllerBinding      :: 12;
-    EWorkshopFileTypeSteamworksAccessInvite :: 13;
-    EWorkshopFileTypeSteamVideo             :: 14;
-    EWorkshopFileTypeGameManagedItem        :: 15;
-    EWorkshopFileTypeClip                   :: 16;
-
-    EWorkshopFileTypeMax                    :: 17;
-
-    k_EWorkshopFileTypeFirst                  :: EWorkshopFileTypeFirst;
-
-    k_EWorkshopFileTypeCommunity              :: EWorkshopFileTypeCommunity;
-    k_EWorkshopFileTypeMicrotransaction       :: EWorkshopFileTypeMicrotransaction;
-    k_EWorkshopFileTypeCollection             :: EWorkshopFileTypeCollection;
-    k_EWorkshopFileTypeArt                    :: EWorkshopFileTypeArt;
-    k_EWorkshopFileTypeVideo                  :: EWorkshopFileTypeVideo;
-    k_EWorkshopFileTypeScreenshot             :: EWorkshopFileTypeScreenshot;
-    k_EWorkshopFileTypeGame                   :: EWorkshopFileTypeGame;
-    k_EWorkshopFileTypeSoftware               :: EWorkshopFileTypeSoftware;
-    k_EWorkshopFileTypeConcept                :: EWorkshopFileTypeConcept;
-    k_EWorkshopFileTypeWebGuide               :: EWorkshopFileTypeWebGuide;
-    k_EWorkshopFileTypeIntegratedGuide        :: EWorkshopFileTypeIntegratedGuide;
-    k_EWorkshopFileTypeMerch                  :: EWorkshopFileTypeMerch;
-    k_EWorkshopFileTypeControllerBinding      :: EWorkshopFileTypeControllerBinding;
-    k_EWorkshopFileTypeSteamworksAccessInvite :: EWorkshopFileTypeSteamworksAccessInvite;
-    k_EWorkshopFileTypeSteamVideo             :: EWorkshopFileTypeSteamVideo;
-    k_EWorkshopFileTypeGameManagedItem        :: EWorkshopFileTypeGameManagedItem;
-    k_EWorkshopFileTypeClip                   :: EWorkshopFileTypeClip;
-
-    k_EWorkshopFileTypeMax                    :: EWorkshopFileTypeMax;
-}
-
-EWorkshopFileAction :: enum u32 {
-    EWorkshopFileActionPlayed    :: 0;
-    EWorkshopFileActionCompleted :: 1;
-
-    k_EWorkshopFileActionPlayed    :: EWorkshopFileActionPlayed;
-    k_EWorkshopFileActionCompleted :: EWorkshopFileActionCompleted;
-}
-
-EWorkshopEnumerationType :: enum u32 {
-    EWorkshopEnumerationTypeRankedByVote            :: 0;
-    EWorkshopEnumerationTypeRecent                  :: 1;
-    EWorkshopEnumerationTypeTrending                :: 2;
-    EWorkshopEnumerationTypeFavoritesOfFriends      :: 3;
-    EWorkshopEnumerationTypeVotedByFriends          :: 4;
-    EWorkshopEnumerationTypeContentByFriends        :: 5;
-    EWorkshopEnumerationTypeRecentFromFollowedUsers :: 6;
-
-    k_EWorkshopEnumerationTypeRankedByVote            :: EWorkshopEnumerationTypeRankedByVote;
-    k_EWorkshopEnumerationTypeRecent                  :: EWorkshopEnumerationTypeRecent;
-    k_EWorkshopEnumerationTypeTrending                :: EWorkshopEnumerationTypeTrending;
-    k_EWorkshopEnumerationTypeFavoritesOfFriends      :: EWorkshopEnumerationTypeFavoritesOfFriends;
-    k_EWorkshopEnumerationTypeVotedByFriends          :: EWorkshopEnumerationTypeVotedByFriends;
-    k_EWorkshopEnumerationTypeContentByFriends        :: EWorkshopEnumerationTypeContentByFriends;
-    k_EWorkshopEnumerationTypeRecentFromFollowedUsers :: EWorkshopEnumerationTypeRecentFromFollowedUsers;
-}
-
-EWorkshopVideoProvider :: enum u32 {
-    EWorkshopVideoProviderNone    :: 0;
-    EWorkshopVideoProviderYoutube :: 1;
-
-    k_EWorkshopVideoProviderNone    :: EWorkshopVideoProviderNone;
-    k_EWorkshopVideoProviderYoutube :: EWorkshopVideoProviderYoutube;
-}
-
-EUGCReadAction :: enum u32 {
-    ContinueReadingUntilFinished :: 0;
-
-    ContinueReading              :: 1;
-
-    Close                        :: 2;
-
-    k_EUGCRead_ContinueReadingUntilFinished :: ContinueReadingUntilFinished;
-
-    k_EUGCRead_ContinueReading              :: ContinueReading;
-
-    k_EUGCRead_Close                        :: Close;
-}
-
-ERemoteStorageLocalFileChange :: enum u32 {
-    Invalid     :: 0;
-
-    FileUpdated :: 1;
-
-    FileDeleted :: 2;
-
-    k_ERemoteStorageLocalFileChange_Invalid     :: Invalid;
-
-    k_ERemoteStorageLocalFileChange_FileUpdated :: FileUpdated;
-
-    k_ERemoteStorageLocalFileChange_FileDeleted :: FileDeleted;
-}
-
-ERemoteStorageFilePathType :: enum u32 {
-    Invalid     :: 0;
-
-    Absolute    :: 1;
-
-    APIFilename :: 2;
-
-    k_ERemoteStorageFilePathType_Invalid     :: Invalid;
-
-    k_ERemoteStorageFilePathType_Absolute    :: Absolute;
-
-    k_ERemoteStorageFilePathType_APIFilename :: APIFilename;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Functions for accessing, reading and writing files stored remotely
-//			and cached locally
-//-----------------------------------------------------------------------------
-ISteamRemoteStorage :: struct {
-    vtable: *ISteamRemoteStorage_VTable;
-}
-ISteamRemoteStorage_VTable :: struct #type_info_none {
-    FileWrite: *void;
-    FileRead: *void;
-
-    FileWriteAsync: *void;
-
-    FileReadAsync: *void;
-    FileReadAsyncComplete: *void;
-
-    FileForget: *void;
-    FileDelete: *void;
-
-    FileShare: *void;
-    SetSyncPlatforms: *void;
-
-    FileWriteStreamOpen: *void;
-    FileWriteStreamWriteChunk: *void;
-    FileWriteStreamClose: *void;
-    FileWriteStreamCancel: *void;
-
-    FileExists: *void;
-    FilePersisted: *void;
-    GetFileSize: *void;
-    GetFileTimestamp: *void;
-    GetSyncPlatforms: *void;
-
-    GetFileCount: *void;
-    GetFileNameAndSize: *void;
-
-    GetQuota: *void;
-    IsCloudEnabledForAccount: *void;
-    IsCloudEnabledForApp: *void;
-    SetCloudEnabledForApp: *void;
-
-    UGCDownload: *void;
-
-    GetUGCDownloadProgress: *void;
-
-    GetUGCDetails: *void;
-
-    UGCRead: *void;
-
-    GetCachedUGCCount: *void;
-    GetCachedUGCHandle: *void;
-
-    PublishWorkshopFile: *void;
-    CreatePublishedFileUpdateRequest: *void;
-    UpdatePublishedFileFile: *void;
-    UpdatePublishedFilePreviewFile: *void;
-    UpdatePublishedFileTitle: *void;
-    UpdatePublishedFileDescription: *void;
-    UpdatePublishedFileVisibility: *void;
-    UpdatePublishedFileTags: *void;
-
-    CommitPublishedFileUpdate: *void;
-
-    GetPublishedFileDetails: *void;
-
-    DeletePublishedFile: *void;
-
-    EnumerateUserPublishedFiles: *void;
-
-    SubscribePublishedFile: *void;
-
-    EnumerateUserSubscribedFiles: *void;
-
-    UnsubscribePublishedFile: *void;
-    UpdatePublishedFileSetChangeDescription: *void;
-
-    GetPublishedItemVoteDetails: *void;
-
-    UpdateUserPublishedItemVote: *void;
-
-    GetUserPublishedItemVoteDetails: *void;
-
-    EnumerateUserSharedWorkshopFiles: *void;
-
-    PublishVideo: *void;
-
-    SetUserPublishedFileAction: *void;
-
-    EnumeratePublishedFilesByUserAction: *void;
-
-    EnumeratePublishedWorkshopFiles: *void;
-
-    UGCDownloadToLocation: *void;
-
-    GetLocalFileChangeCount: *void;
-    GetLocalFileChange: *void;
-
-    BeginFileWriteBatch: *void;
-    EndFileWriteBatch: *void;
-}
-
-vtable :: (obj: *ISteamRemoteStorage) -> *ISteamRemoteStorage_VTable { return obj.vtable; }
-
-
-// handle to a single leaderboard
-SteamLeaderboard_t :: uint64;
-
-// handle to a set of downloaded entries in a leaderboard
-SteamLeaderboardEntries_t :: uint64;
-
-// type of data request, when downloading leaderboard entries
-ELeaderboardDataRequest :: enum u32 {
-    ELeaderboardDataRequestGlobal           :: 0;
-    ELeaderboardDataRequestGlobalAroundUser :: 1;
-    ELeaderboardDataRequestFriends          :: 2;
-    ELeaderboardDataRequestUsers            :: 3;
-
-    k_ELeaderboardDataRequestGlobal           :: ELeaderboardDataRequestGlobal;
-    k_ELeaderboardDataRequestGlobalAroundUser :: ELeaderboardDataRequestGlobalAroundUser;
-    k_ELeaderboardDataRequestFriends          :: ELeaderboardDataRequestFriends;
-    k_ELeaderboardDataRequestUsers            :: ELeaderboardDataRequestUsers;
-}
-
-// the sort order of a leaderboard
-ELeaderboardSortMethod :: enum u32 {
-    ELeaderboardSortMethodNone       :: 0;
-    ELeaderboardSortMethodAscending  :: 1;
-    ELeaderboardSortMethodDescending :: 2;
-
-    k_ELeaderboardSortMethodNone       :: ELeaderboardSortMethodNone;
-    k_ELeaderboardSortMethodAscending  :: ELeaderboardSortMethodAscending;
-    k_ELeaderboardSortMethodDescending :: ELeaderboardSortMethodDescending;
-}
-
-// the display type (used by the Steam Community web site) for a leaderboard
-ELeaderboardDisplayType :: enum u32 {
-    ELeaderboardDisplayTypeNone             :: 0;
-    ELeaderboardDisplayTypeNumeric          :: 1;
-    ELeaderboardDisplayTypeTimeSeconds      :: 2;
-    ELeaderboardDisplayTypeTimeMilliSeconds :: 3;
-
-    k_ELeaderboardDisplayTypeNone             :: ELeaderboardDisplayTypeNone;
-    k_ELeaderboardDisplayTypeNumeric          :: ELeaderboardDisplayTypeNumeric;
-    k_ELeaderboardDisplayTypeTimeSeconds      :: ELeaderboardDisplayTypeTimeSeconds;
-    k_ELeaderboardDisplayTypeTimeMilliSeconds :: ELeaderboardDisplayTypeTimeMilliSeconds;
-}
-
-ELeaderboardUploadScoreMethod :: enum u32 {
-    ELeaderboardUploadScoreMethodNone        :: 0;
-    ELeaderboardUploadScoreMethodKeepBest    :: 1;
-    ELeaderboardUploadScoreMethodForceUpdate :: 2;
-
-    k_ELeaderboardUploadScoreMethodNone        :: ELeaderboardUploadScoreMethodNone;
-    k_ELeaderboardUploadScoreMethodKeepBest    :: ELeaderboardUploadScoreMethodKeepBest;
-    k_ELeaderboardUploadScoreMethodForceUpdate :: ELeaderboardUploadScoreMethodForceUpdate;
-}
-
-LeaderboardEntry_t :: struct {}
-
-//-----------------------------------------------------------------------------
-// Purpose: Functions for accessing stats, achievements, and leaderboard information
-//-----------------------------------------------------------------------------
-ISteamUserStats :: struct {
-    vtable: *ISteamUserStats_VTable;
-}
-ISteamUserStats_VTable :: struct #type_info_none {
-    RequestCurrentStats: *void;
-
-    GetStat: *void;
-
-    GetStat_1: *void;
-
-    SetStat: *void;
-
-    SetStat_1: *void;
-
-    UpdateAvgRateStat: *void;
-
-    GetAchievement: *void;
-    SetAchievement: *void;
-    ClearAchievement: *void;
-
-    GetAchievementAndUnlockTime: *void;
-
-    StoreStats: *void;
-
-    GetAchievementIcon: *void;
-
-    GetAchievementDisplayAttribute: *void;
-
-    IndicateAchievementProgress: *void;
-
-    GetNumAchievements: *void;
-
-    GetAchievementName: *void;
-
-    RequestUserStats: *void;
-
-    GetUserStat: *void;
-
-    GetUserStat_1: *void;
-
-    GetUserAchievement: *void;
-
-    GetUserAchievementAndUnlockTime: *void;
-
-    ResetAllStats: *void;
-
-    FindOrCreateLeaderboard: *void;
-
-    FindLeaderboard: *void;
-
-    GetLeaderboardName: *void;
-
-    GetLeaderboardEntryCount: *void;
-
-    GetLeaderboardSortMethod: *void;
-
-    GetLeaderboardDisplayType: *void;
-
-    DownloadLeaderboardEntries: *void;
-
-    DownloadLeaderboardEntriesForUsers: *void;
-
-    GetDownloadedLeaderboardEntry: *void;
-
-    UploadLeaderboardScore: *void;
-
-    AttachLeaderboardUGC: *void;
-
-    GetNumberOfCurrentPlayers: *void;
-
-    RequestGlobalAchievementPercentages: *void;
-
-    GetMostAchievedAchievementInfo: *void;
-
-    GetNextMostAchievedAchievementInfo: *void;
-
-    GetAchievementAchievedPercent: *void;
-
-    RequestGlobalStats: *void;
-
-    GetGlobalStat: *void;
-
-    GetGlobalStat_1: *void;
-
-    GetGlobalStatHistory: *void;
-
-    GetGlobalStatHistory_1: *void;
-
-    GetAchievementProgressLimits: *void;
-
-    GetAchievementProgressLimits_1: *void;
-}
-
-vtable :: (obj: *ISteamUserStats) -> *ISteamUserStats_VTable { return obj.vtable; }
-
-
-//-----------------------------------------------------------------------------
-// Purpose: interface to app data
-//-----------------------------------------------------------------------------
-ISteamApps :: struct {
-    vtable: *ISteamApps_VTable;
-}
-ISteamApps_VTable :: struct #type_info_none {
-    BIsSubscribed: *void;
-    BIsLowViolence: *void;
-    BIsCybercafe: *void;
-    BIsVACBanned: *void;
-    GetCurrentGameLanguage: *void;
-    GetAvailableGameLanguages: *void;
-
-    BIsSubscribedApp: *void;
-
-    BIsDlcInstalled: *void;
-
-    GetEarliestPurchaseUnixTime: *void;
-
-    BIsSubscribedFromFreeWeekend: *void;
-
-    GetDLCCount: *void;
-
-    BGetDLCDataByIndex: *void;
-
-    InstallDLC: *void;
-    UninstallDLC: *void;
-
-    RequestAppProofOfPurchaseKey: *void;
-
-    GetCurrentBetaName: *void;
-    MarkContentCorrupt: *void;
-    GetInstalledDepots: *void;
-
-    GetAppInstallDir: *void;
-    BIsAppInstalled: *void;
-
-    GetAppOwner: *void;
-
-    GetLaunchQueryParam: *void;
-
-    GetDlcDownloadProgress: *void;
-
-    GetAppBuildId: *void;
-
-    RequestAllProofOfPurchaseKeys: *void;
-
-    GetFileDetails: *void;
-
-    GetLaunchCommandLine: *void;
-
-    BIsSubscribedFromFamilySharing: *void;
-
-    BIsTimedTrial: *void;
-
-    SetDlcContext: *void;
-
-    GetNumBetas: *void;
-
-    GetBetaInfo: *void;
-
-    SetActiveBeta: *void;
-}
-
-vtable :: (obj: *ISteamApps) -> *ISteamApps_VTable { return obj.vtable; }
-
-
-// SendP2PPacket() send types
-// Typically k_EP2PSendUnreliable is what you want for UDP-like packets, k_EP2PSendReliable for TCP-like packets
-EP2PSend :: enum u32 {
-    EP2PSendUnreliable            :: 0;
-
-    EP2PSendUnreliableNoDelay     :: 1;
-
-    EP2PSendReliable              :: 2;
-
-    EP2PSendReliableWithBuffering :: 3;
-
-    k_EP2PSendUnreliable            :: EP2PSendUnreliable;
-
-    k_EP2PSendUnreliableNoDelay     :: EP2PSendUnreliableNoDelay;
-
-    k_EP2PSendReliable              :: EP2PSendReliable;
-
-    k_EP2PSendReliableWithBuffering :: EP2PSendReliableWithBuffering;
-}
-
-P2PSessionState_t :: struct {}
-
-// handle to a socket
-SNetSocket_t :: uint32;
-SNetListenSocket_t :: uint32;
-
-// describes how the socket is currently connected
-ESNetSocketConnectionType :: enum u32 {
-    ESNetSocketConnectionTypeNotConnected :: 0;
-    ESNetSocketConnectionTypeUDP          :: 1;
-    ESNetSocketConnectionTypeUDPRelay     :: 2;
-
-    k_ESNetSocketConnectionTypeNotConnected :: ESNetSocketConnectionTypeNotConnected;
-    k_ESNetSocketConnectionTypeUDP          :: ESNetSocketConnectionTypeUDP;
-    k_ESNetSocketConnectionTypeUDPRelay     :: ESNetSocketConnectionTypeUDPRelay;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Functions for making connections and sending data between clients,
-//			traversing NAT's where possible
-//
-// NOTE: This interface is deprecated and may be removed in a future release of
-///      the Steamworks SDK.  Please see ISteamNetworkingSockets and
-///      ISteamNetworkingMessages
-//-----------------------------------------------------------------------------
-ISteamNetworking :: struct {
-    vtable: *ISteamNetworking_VTable;
-}
-ISteamNetworking_VTable :: struct #type_info_none {
-    SendP2PPacket: *void;
-
-    IsP2PPacketAvailable: *void;
-
-    ReadP2PPacket: *void;
-
-    AcceptP2PSessionWithUser: *void;
-
-    CloseP2PSessionWithUser: *void;
-
-    CloseP2PChannelWithUser: *void;
-
-    GetP2PSessionState: *void;
-
-    AllowP2PPacketRelay: *void;
-
-    CreateListenSocket: *void;
-
-    CreateP2PConnectionSocket: *void;
-    CreateConnectionSocket: *void;
-
-    DestroySocket: *void;
-
-    DestroyListenSocket: *void;
-
-    SendDataOnSocket: *void;
-
-    IsDataAvailableOnSocket: *void;
-
-    RetrieveDataFromSocket: *void;
-
-    IsDataAvailable: *void;
-
-    RetrieveData: *void;
-
-    GetSocketInfo: *void;
-
-    GetListenSocketInfo: *void;
-
-    GetSocketConnectionType: *void;
-
-    GetMaxPacketSize: *void;
-}
-
-vtable :: (obj: *ISteamNetworking) -> *ISteamNetworking_VTable { return obj.vtable; }
-
-
-// Handle is valid for the lifetime of your process and no longer
-ScreenshotHandle :: uint32;
-
-EVRScreenshotType :: enum u32 {
+EInputSourceMode :: enum u32 {
     None           :: 0;
-    Mono           :: 1;
-    Stereo         :: 2;
-    MonoCubemap    :: 3;
-    MonoPanorama   :: 4;
-    StereoPanorama :: 5;
+    Dpad           :: 1;
+    Buttons        :: 2;
+    FourButtons    :: 3;
+    AbsoluteMouse  :: 4;
+    RelativeMouse  :: 5;
+    JoystickMove   :: 6;
+    JoystickMouse  :: 7;
+    JoystickCamera :: 8;
+    ScrollWheel    :: 9;
+    Trigger        :: 10;
+    TouchMenu      :: 11;
+    MouseJoystick  :: 12;
+    MouseRegion    :: 13;
+    RadialMenu     :: 14;
+    SingleButton   :: 15;
+    Switches       :: 16;
 
-    k_EVRScreenshotType_None           :: None;
-    k_EVRScreenshotType_Mono           :: Mono;
-    k_EVRScreenshotType_Stereo         :: Stereo;
-    k_EVRScreenshotType_MonoCubemap    :: MonoCubemap;
-    k_EVRScreenshotType_MonoPanorama   :: MonoPanorama;
-    k_EVRScreenshotType_StereoPanorama :: StereoPanorama;
+    k_EInputSourceMode_None           :: None;
+    k_EInputSourceMode_Dpad           :: Dpad;
+    k_EInputSourceMode_Buttons        :: Buttons;
+    k_EInputSourceMode_FourButtons    :: FourButtons;
+    k_EInputSourceMode_AbsoluteMouse  :: AbsoluteMouse;
+    k_EInputSourceMode_RelativeMouse  :: RelativeMouse;
+    k_EInputSourceMode_JoystickMove   :: JoystickMove;
+    k_EInputSourceMode_JoystickMouse  :: JoystickMouse;
+    k_EInputSourceMode_JoystickCamera :: JoystickCamera;
+    k_EInputSourceMode_ScrollWheel    :: ScrollWheel;
+    k_EInputSourceMode_Trigger        :: Trigger;
+    k_EInputSourceMode_TouchMenu      :: TouchMenu;
+    k_EInputSourceMode_MouseJoystick  :: MouseJoystick;
+    k_EInputSourceMode_MouseRegion    :: MouseRegion;
+    k_EInputSourceMode_RadialMenu     :: RadialMenu;
+    k_EInputSourceMode_SingleButton   :: SingleButton;
+    k_EInputSourceMode_Switches       :: Switches;
 }
-
-//-----------------------------------------------------------------------------
-// Purpose: Functions for adding screenshots to the user's screenshot library
-//-----------------------------------------------------------------------------
-ISteamScreenshots :: struct {
-    vtable: *ISteamScreenshots_VTable;
-}
-ISteamScreenshots_VTable :: struct #type_info_none {
-    WriteScreenshot: *void;
-
-    AddScreenshotToLibrary: *void;
-
-    TriggerScreenshot: *void;
-
-    HookScreenshots: *void;
-
-    SetLocation: *void;
-
-    TagUser: *void;
-
-    TagPublishedFile: *void;
-
-    IsScreenshotsHooked: *void;
-
-    AddVRScreenshotToLibrary: *void;
-}
-
-vtable :: (obj: *ISteamScreenshots) -> *ISteamScreenshots_VTable { return obj.vtable; }
-
-
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
-AudioPlayback_Status :: enum u32 {
-    Undefined :: 0;
-    Playing   :: 1;
-    Paused    :: 2;
-    Idle      :: 3;
-
-    AudioPlayback_Undefined :: Undefined;
-    AudioPlayback_Playing   :: Playing;
-    AudioPlayback_Paused    :: Paused;
-    AudioPlayback_Idle      :: Idle;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Functions to control music playback in the steam client
-//-----------------------------------------------------------------------------
-ISteamMusic :: struct {
-    vtable: *ISteamMusic_VTable;
-}
-ISteamMusic_VTable :: struct #type_info_none {
-    BIsEnabled: *void;
-    BIsPlaying: *void;
-
-    GetPlaybackStatus: *void;
-
-    Play: *void;
-    Pause: *void;
-    PlayPrevious: *void;
-    PlayNext: *void;
-
-    SetVolume: *void;
-    GetVolume: *void;
-}
-
-vtable :: (obj: *ISteamMusic) -> *ISteamMusic_VTable { return obj.vtable; }
-
-
-ISteamMusicRemote :: struct {
-    vtable: *ISteamMusicRemote_VTable;
-}
-ISteamMusicRemote_VTable :: struct #type_info_none {
-    RegisterSteamMusicRemote: *void;
-    DeregisterSteamMusicRemote: *void;
-    BIsCurrentMusicRemote: *void;
-    BActivationSuccess: *void;
-
-    SetDisplayName: *void;
-    SetPNGIcon_64x64: *void;
-
-    EnablePlayPrevious: *void;
-    EnablePlayNext: *void;
-    EnableShuffled: *void;
-    EnableLooped: *void;
-    EnableQueue: *void;
-    EnablePlaylists: *void;
-
-    UpdatePlaybackStatus: *void;
-    UpdateShuffled: *void;
-    UpdateLooped: *void;
-    UpdateVolume: *void;
-
-    CurrentEntryWillChange: *void;
-    CurrentEntryIsAvailable: *void;
-    UpdateCurrentEntryText: *void;
-    UpdateCurrentEntryElapsedSeconds: *void;
-    UpdateCurrentEntryCoverArt: *void;
-    CurrentEntryDidChange: *void;
-
-    QueueWillChange: *void;
-    ResetQueueEntries: *void;
-    SetQueueEntry: *void;
-    SetCurrentQueueEntry: *void;
-    QueueDidChange: *void;
-
-    PlaylistWillChange: *void;
-    ResetPlaylistEntries: *void;
-    SetPlaylistEntry: *void;
-    SetCurrentPlaylistEntry: *void;
-    PlaylistDidChange: *void;
-}
-
-vtable :: (obj: *ISteamMusicRemote) -> *ISteamMusicRemote_VTable { return obj.vtable; }
-
-
-// This enum is used in client API methods, do not re-number existing values.
-EHTTPMethod :: enum u32 {
-    EHTTPMethodInvalid :: 0;
-    EHTTPMethodGET     :: 1;
-    EHTTPMethodHEAD    :: 2;
-    EHTTPMethodPOST    :: 3;
-    EHTTPMethodPUT     :: 4;
-    EHTTPMethodDELETE  :: 5;
-    EHTTPMethodOPTIONS :: 6;
-    EHTTPMethodPATCH   :: 7;
-
-    k_EHTTPMethodInvalid :: EHTTPMethodInvalid;
-    k_EHTTPMethodGET     :: EHTTPMethodGET;
-    k_EHTTPMethodHEAD    :: EHTTPMethodHEAD;
-    k_EHTTPMethodPOST    :: EHTTPMethodPOST;
-    k_EHTTPMethodPUT     :: EHTTPMethodPUT;
-    k_EHTTPMethodDELETE  :: EHTTPMethodDELETE;
-    k_EHTTPMethodOPTIONS :: EHTTPMethodOPTIONS;
-    k_EHTTPMethodPATCH   :: EHTTPMethodPATCH;
-}
-
-// Handle to a HTTP Request handle
-HTTPRequestHandle :: uint32;
-
-HTTPCookieContainerHandle :: uint32;
-
-//-----------------------------------------------------------------------------
-// Purpose: interface to http client
-//-----------------------------------------------------------------------------
-ISteamHTTP :: struct {
-    vtable: *ISteamHTTP_VTable;
-}
-ISteamHTTP_VTable :: struct #type_info_none {
-    CreateHTTPRequest: *void;
-
-    SetHTTPRequestContextValue: *void;
-
-    SetHTTPRequestNetworkActivityTimeout: *void;
-
-    SetHTTPRequestHeaderValue: *void;
-
-    SetHTTPRequestGetOrPostParameter: *void;
-
-    SendHTTPRequest: *void;
-
-    SendHTTPRequestAndStreamResponse: *void;
-
-    DeferHTTPRequest: *void;
-
-    PrioritizeHTTPRequest: *void;
-
-    GetHTTPResponseHeaderSize: *void;
-
-    GetHTTPResponseHeaderValue: *void;
-
-    GetHTTPResponseBodySize: *void;
-
-    GetHTTPResponseBodyData: *void;
-
-    GetHTTPStreamingResponseBodyData: *void;
-
-    ReleaseHTTPRequest: *void;
-
-    GetHTTPDownloadProgressPct: *void;
-
-    SetHTTPRequestRawPostBody: *void;
-
-    CreateCookieContainer: *void;
-
-    ReleaseCookieContainer: *void;
-
-    SetCookie: *void;
-
-    SetHTTPRequestCookieContainer: *void;
-
-    SetHTTPRequestUserAgentInfo: *void;
-
-    SetHTTPRequestRequiresVerifiedCertificate: *void;
-
-    SetHTTPRequestAbsoluteTimeoutMS: *void;
-
-    GetHTTPRequestWasTimedOut: *void;
-}
-
-vtable :: (obj: *ISteamHTTP) -> *ISteamHTTP_VTable { return obj.vtable; }
-
 
 // Note: Please do not use action origins as a way to identify controller types. There is no
 // guarantee that they will be added in a contiguous manner - use GetInputTypeForHandle instead.
@@ -3117,6 +2079,16 @@ EControllerHapticLocation :: enum u32 {
     k_EControllerHapticLocation_Both  :: Both;
 }
 
+EControllerHapticType :: enum u32 {
+    Off   :: 0;
+    Tick  :: 1;
+    Click :: 2;
+
+    k_EControllerHapticType_Off   :: Off;
+    k_EControllerHapticType_Tick  :: Tick;
+    k_EControllerHapticType_Click :: Click;
+}
+
 ESteamInputType :: enum u32 {
     Unknown              :: 0;
     SteamController      :: 1;
@@ -3155,6 +2127,32 @@ ESteamInputType :: enum u32 {
     k_ESteamInputType_MaximumPossibleValue :: MaximumPossibleValue;
 }
 
+// Individual values are used by the GetSessionInputConfigurationSettings bitmask
+ESteamInputConfigurationEnableType :: enum u32 {
+    None        :: 0;
+    Playstation :: 1;
+    Xbox        :: 2;
+    Generic     :: 4;
+    Switch      :: 8;
+
+    k_ESteamInputConfigurationEnableType_None        :: None;
+    k_ESteamInputConfigurationEnableType_Playstation :: Playstation;
+    k_ESteamInputConfigurationEnableType_Xbox        :: Xbox;
+    k_ESteamInputConfigurationEnableType_Generic     :: Generic;
+    k_ESteamInputConfigurationEnableType_Switch      :: Switch;
+}
+
+// These values are passed into SetLEDColor
+ESteamInputLEDFlag :: enum u32 {
+    SetColor           :: 0;
+
+    RestoreUserDefault :: 1;
+
+    k_ESteamInputLEDFlag_SetColor           :: SetColor;
+
+    k_ESteamInputLEDFlag_RestoreUserDefault :: RestoreUserDefault;
+}
+
 // These values are passed into GetGlyphPNGForActionOrigin
 ESteamInputGlyphSize :: enum u32 {
     Small  :: 0;
@@ -3168,6 +2166,32 @@ ESteamInputGlyphSize :: enum u32 {
     k_ESteamInputGlyphSize_Count  :: Count;
 }
 
+ESteamInputGlyphStyle :: enum u32 {
+    Knockout         :: 0;
+
+    Light            :: 1;
+    Dark             :: 2;
+
+    NeutralColorABXY :: 16;
+    SolidABXY        :: 32;
+
+    ESteamInputGlyphStyle_Knockout         :: Knockout;
+
+    ESteamInputGlyphStyle_Light            :: Light;
+    ESteamInputGlyphStyle_Dark             :: Dark;
+
+    ESteamInputGlyphStyle_NeutralColorABXY :: NeutralColorABXY;
+    ESteamInputGlyphStyle_SolidABXY        :: SolidABXY;
+}
+
+ESteamInputActionEventType :: enum u32 {
+    DigitalAction :: 0;
+    AnalogAction  :: 1;
+
+    ESteamInputActionEventType_DigitalAction :: DigitalAction;
+    ESteamInputActionEventType_AnalogAction  :: AnalogAction;
+}
+
 // InputHandle_t is used to refer to a specific controller.
 // This handle will consistently identify a controller, even if it is disconnected and re-connected
 InputHandle_t :: uint64;
@@ -3178,17 +2202,67 @@ InputActionSetHandle_t :: uint64;
 InputDigitalActionHandle_t :: uint64;
 InputAnalogActionHandle_t :: uint64;
 
-InputAnalogActionData_t :: struct {}
+InputAnalogActionData_t :: struct {
+    // Type of data coming from this action, this will match what got specified in the action set
+    eMode:   EInputSourceMode;
 
-InputDigitalActionData_t :: struct {}
+    // The current state of this action; will be delta updates for mouse actions
+    x:       float;
+    // The current state of this action; will be delta updates for mouse actions
+    y:       float;
 
-InputMotionData_t :: struct {}
+    // Whether or not this action is currently available to be bound in the active action set
+    bActive: bool;
+}
+
+InputDigitalActionData_t :: struct {
+    // The current state of this action; will be true if currently pressed
+    bState:  bool;
+
+    // Whether or not this action is currently available to be bound in the active action set
+    bActive: bool;
+}
+
+InputMotionData_t :: struct {
+    // Sensor-fused absolute rotation; will drift in heading toward average
+    rotQuatX:  float;
+    rotQuatY:  float;
+    rotQuatZ:  float;
+    rotQuatW:  float;
+
+    // Positional acceleration
+    posAccelX: float;
+    posAccelY: float;
+    posAccelZ: float;
+
+    // Angular velocity
+    rotVelX:   float;
+    rotVelY:   float;
+    rotVelZ:   float;
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: when callbacks are enabled this fires each time a controller action
 // state changes
 //-----------------------------------------------------------------------------
-SteamInputActionEvent_t :: struct {}
+SteamInputActionEvent_t :: struct {
+    controllerHandle: InputHandle_t;
+    eEventType:       ESteamInputActionEventType;
+    AnalogAction_t :: struct {
+        actionHandle:     InputAnalogActionHandle_t;
+        analogActionData: InputAnalogActionData_t;
+    }
+
+    DigitalAction_t :: struct {
+        actionHandle:      InputDigitalActionHandle_t;
+        digitalActionData: InputDigitalActionData_t;
+    }
+
+    union {
+        analogAction:  AnalogAction_t;
+        digitalAction: DigitalAction_t;
+    }
+}
 
 //-----------------------------------------------------------------------------
 // Forward declaration for ScePadTriggerEffectParam, defined in isteamdualsense.h
@@ -3296,8 +2370,6 @@ ISteamInput_VTable :: struct #type_info_none {
 
     SetDualSenseTriggerEffect: *void;
 }
-
-vtable :: (obj: *ISteamInput) -> *ISteamInput_VTable { return obj.vtable; }
 
 
 // Note: Please do not use action origins as a way to identify controller types. There is no
@@ -4110,6 +3182,14 @@ EControllerActionOrigin :: enum u32 {
     k_EControllerActionOrigin_MaximumPossibleValue             :: MaximumPossibleValue;
 }
 
+ESteamControllerLEDFlag :: enum u32 {
+    SetColor           :: 0;
+    RestoreUserDefault :: 1;
+
+    k_ESteamControllerLEDFlag_SetColor           :: SetColor;
+    k_ESteamControllerLEDFlag_RestoreUserDefault :: RestoreUserDefault;
+}
+
 // ControllerHandle_t is used to refer to a specific controller.
 // This handle will consistently identify a controller, even if it is disconnected and re-connected
 ControllerHandle_t :: uint64;
@@ -4192,362 +3272,535 @@ ISteamController_VTable :: struct #type_info_none {
     GetControllerBindingRevision: *void;
 }
 
-vtable :: (obj: *ISteamController) -> *ISteamController_VTable { return obj.vtable; }
-
-
-UGCQueryHandle_t :: uint64;
-UGCUpdateHandle_t :: uint64;
-
-// Matching UGC types for queries
-EUGCMatchingUGCType :: enum s32 {
-    Items              :: 0;
-    Items_Mtx          :: 1;
-    Items_ReadyToUse   :: 2;
-    Collections        :: 3;
-    Artwork            :: 4;
-    Videos             :: 5;
-    Screenshots        :: 6;
-    AllGuides          :: 7;
-    WebGuides          :: 8;
-    IntegratedGuides   :: 9;
-    UsableInGame       :: 10;
-    ControllerBindings :: 11;
-    GameManagedItems   :: 12;
-    All                :: -1;
-
-    k_EUGCMatchingUGCType_Items              :: Items;
-    k_EUGCMatchingUGCType_Items_Mtx          :: Items_Mtx;
-    k_EUGCMatchingUGCType_Items_ReadyToUse   :: Items_ReadyToUse;
-    k_EUGCMatchingUGCType_Collections        :: Collections;
-    k_EUGCMatchingUGCType_Artwork            :: Artwork;
-    k_EUGCMatchingUGCType_Videos             :: Videos;
-    k_EUGCMatchingUGCType_Screenshots        :: Screenshots;
-    k_EUGCMatchingUGCType_AllGuides          :: AllGuides;
-    k_EUGCMatchingUGCType_WebGuides          :: WebGuides;
-    k_EUGCMatchingUGCType_IntegratedGuides   :: IntegratedGuides;
-    k_EUGCMatchingUGCType_UsableInGame       :: UsableInGame;
-    k_EUGCMatchingUGCType_ControllerBindings :: ControllerBindings;
-    k_EUGCMatchingUGCType_GameManagedItems   :: GameManagedItems;
-    k_EUGCMatchingUGCType_All                :: All;
-}
-
-// Different lists of published UGC for a user.
-// If the current logged in user is different than the specified user, then some options may not be allowed.
-EUserUGCList :: enum u32 {
-    Published     :: 0;
-    VotedOn       :: 1;
-    VotedUp       :: 2;
-    VotedDown     :: 3;
-    WillVoteLater :: 4;
-    Favorited     :: 5;
-    Subscribed    :: 6;
-    UsedOrPlayed  :: 7;
-    Followed      :: 8;
-
-    k_EUserUGCList_Published     :: Published;
-    k_EUserUGCList_VotedOn       :: VotedOn;
-    k_EUserUGCList_VotedUp       :: VotedUp;
-    k_EUserUGCList_VotedDown     :: VotedDown;
-    k_EUserUGCList_WillVoteLater :: WillVoteLater;
-    k_EUserUGCList_Favorited     :: Favorited;
-    k_EUserUGCList_Subscribed    :: Subscribed;
-    k_EUserUGCList_UsedOrPlayed  :: UsedOrPlayed;
-    k_EUserUGCList_Followed      :: Followed;
-}
-
-// Sort order for user published UGC lists (defaults to creation order descending)
-EUserUGCListSortOrder :: enum u32 {
-    CreationOrderDesc    :: 0;
-    CreationOrderAsc     :: 1;
-    TitleAsc             :: 2;
-    LastUpdatedDesc      :: 3;
-    SubscriptionDateDesc :: 4;
-    VoteScoreDesc        :: 5;
-    ForModeration        :: 6;
-
-    k_EUserUGCListSortOrder_CreationOrderDesc    :: CreationOrderDesc;
-    k_EUserUGCListSortOrder_CreationOrderAsc     :: CreationOrderAsc;
-    k_EUserUGCListSortOrder_TitleAsc             :: TitleAsc;
-    k_EUserUGCListSortOrder_LastUpdatedDesc      :: LastUpdatedDesc;
-    k_EUserUGCListSortOrder_SubscriptionDateDesc :: SubscriptionDateDesc;
-    k_EUserUGCListSortOrder_VoteScoreDesc        :: VoteScoreDesc;
-    k_EUserUGCListSortOrder_ForModeration        :: ForModeration;
-}
-
-// Combination of sorting and filtering for queries across all UGC
-EUGCQuery :: enum u32 {
-    RankedByVote                                  :: 0;
-    RankedByPublicationDate                       :: 1;
-    AcceptedForGameRankedByAcceptanceDate         :: 2;
-    RankedByTrend                                 :: 3;
-    FavoritedByFriendsRankedByPublicationDate     :: 4;
-    CreatedByFriendsRankedByPublicationDate       :: 5;
-    RankedByNumTimesReported                      :: 6;
-    CreatedByFollowedUsersRankedByPublicationDate :: 7;
-    NotYetRated                                   :: 8;
-    RankedByTotalVotesAsc                         :: 9;
-    RankedByVotesUp                               :: 10;
-    RankedByTextSearch                            :: 11;
-    RankedByTotalUniqueSubscriptions              :: 12;
-    RankedByPlaytimeTrend                         :: 13;
-    RankedByTotalPlaytime                         :: 14;
-    RankedByAveragePlaytimeTrend                  :: 15;
-    RankedByLifetimeAveragePlaytime               :: 16;
-    RankedByPlaytimeSessionsTrend                 :: 17;
-    RankedByLifetimePlaytimeSessions              :: 18;
-    RankedByLastUpdatedDate                       :: 19;
-
-    k_EUGCQuery_RankedByVote                                  :: RankedByVote;
-    k_EUGCQuery_RankedByPublicationDate                       :: RankedByPublicationDate;
-    k_EUGCQuery_AcceptedForGameRankedByAcceptanceDate         :: AcceptedForGameRankedByAcceptanceDate;
-    k_EUGCQuery_RankedByTrend                                 :: RankedByTrend;
-    k_EUGCQuery_FavoritedByFriendsRankedByPublicationDate     :: FavoritedByFriendsRankedByPublicationDate;
-    k_EUGCQuery_CreatedByFriendsRankedByPublicationDate       :: CreatedByFriendsRankedByPublicationDate;
-    k_EUGCQuery_RankedByNumTimesReported                      :: RankedByNumTimesReported;
-    k_EUGCQuery_CreatedByFollowedUsersRankedByPublicationDate :: CreatedByFollowedUsersRankedByPublicationDate;
-    k_EUGCQuery_NotYetRated                                   :: NotYetRated;
-    k_EUGCQuery_RankedByTotalVotesAsc                         :: RankedByTotalVotesAsc;
-    k_EUGCQuery_RankedByVotesUp                               :: RankedByVotesUp;
-    k_EUGCQuery_RankedByTextSearch                            :: RankedByTextSearch;
-    k_EUGCQuery_RankedByTotalUniqueSubscriptions              :: RankedByTotalUniqueSubscriptions;
-    k_EUGCQuery_RankedByPlaytimeTrend                         :: RankedByPlaytimeTrend;
-    k_EUGCQuery_RankedByTotalPlaytime                         :: RankedByTotalPlaytime;
-    k_EUGCQuery_RankedByAveragePlaytimeTrend                  :: RankedByAveragePlaytimeTrend;
-    k_EUGCQuery_RankedByLifetimeAveragePlaytime               :: RankedByLifetimeAveragePlaytime;
-    k_EUGCQuery_RankedByPlaytimeSessionsTrend                 :: RankedByPlaytimeSessionsTrend;
-    k_EUGCQuery_RankedByLifetimePlaytimeSessions              :: RankedByLifetimePlaytimeSessions;
-    k_EUGCQuery_RankedByLastUpdatedDate                       :: RankedByLastUpdatedDate;
-}
-
-EItemUpdateStatus :: enum u32 {
-    EItemUpdateStatusInvalid              :: 0;
-    EItemUpdateStatusPreparingConfig      :: 1;
-    EItemUpdateStatusPreparingContent     :: 2;
-    EItemUpdateStatusUploadingContent     :: 3;
-    EItemUpdateStatusUploadingPreviewFile :: 4;
-    EItemUpdateStatusCommittingChanges    :: 5;
-
-    k_EItemUpdateStatusInvalid              :: EItemUpdateStatusInvalid;
-    k_EItemUpdateStatusPreparingConfig      :: EItemUpdateStatusPreparingConfig;
-    k_EItemUpdateStatusPreparingContent     :: EItemUpdateStatusPreparingContent;
-    k_EItemUpdateStatusUploadingContent     :: EItemUpdateStatusUploadingContent;
-    k_EItemUpdateStatusUploadingPreviewFile :: EItemUpdateStatusUploadingPreviewFile;
-    k_EItemUpdateStatusCommittingChanges    :: EItemUpdateStatusCommittingChanges;
-}
-
-EItemStatistic :: enum u32 {
-    NumSubscriptions                    :: 0;
-    NumFavorites                        :: 1;
-    NumFollowers                        :: 2;
-    NumUniqueSubscriptions              :: 3;
-    NumUniqueFavorites                  :: 4;
-    NumUniqueFollowers                  :: 5;
-    NumUniqueWebsiteViews               :: 6;
-    ReportScore                         :: 7;
-    NumSecondsPlayed                    :: 8;
-    NumPlaytimeSessions                 :: 9;
-    NumComments                         :: 10;
-    NumSecondsPlayedDuringTimePeriod    :: 11;
-    NumPlaytimeSessionsDuringTimePeriod :: 12;
-
-    k_EItemStatistic_NumSubscriptions                    :: NumSubscriptions;
-    k_EItemStatistic_NumFavorites                        :: NumFavorites;
-    k_EItemStatistic_NumFollowers                        :: NumFollowers;
-    k_EItemStatistic_NumUniqueSubscriptions              :: NumUniqueSubscriptions;
-    k_EItemStatistic_NumUniqueFavorites                  :: NumUniqueFavorites;
-    k_EItemStatistic_NumUniqueFollowers                  :: NumUniqueFollowers;
-    k_EItemStatistic_NumUniqueWebsiteViews               :: NumUniqueWebsiteViews;
-    k_EItemStatistic_ReportScore                         :: ReportScore;
-    k_EItemStatistic_NumSecondsPlayed                    :: NumSecondsPlayed;
-    k_EItemStatistic_NumPlaytimeSessions                 :: NumPlaytimeSessions;
-    k_EItemStatistic_NumComments                         :: NumComments;
-    k_EItemStatistic_NumSecondsPlayedDuringTimePeriod    :: NumSecondsPlayedDuringTimePeriod;
-    k_EItemStatistic_NumPlaytimeSessionsDuringTimePeriod :: NumPlaytimeSessionsDuringTimePeriod;
-}
-
-EItemPreviewType :: enum u32 {
-    Image                          :: 0;
-    YouTubeVideo                   :: 1;
-    Sketchfab                      :: 2;
-    EnvironmentMap_HorizontalCross :: 3;
-
-    EnvironmentMap_LatLong         :: 4;
-    Clip                           :: 5;
-    ReservedMax                    :: 255;
-
-    k_EItemPreviewType_Image                          :: Image;
-    k_EItemPreviewType_YouTubeVideo                   :: YouTubeVideo;
-    k_EItemPreviewType_Sketchfab                      :: Sketchfab;
-    k_EItemPreviewType_EnvironmentMap_HorizontalCross :: EnvironmentMap_HorizontalCross;
-
-    k_EItemPreviewType_EnvironmentMap_LatLong         :: EnvironmentMap_LatLong;
-    k_EItemPreviewType_Clip                           :: Clip;
-    k_EItemPreviewType_ReservedMax                    :: ReservedMax;
-}
-
-EUGCContentDescriptorID :: enum u32 {
-    NudityOrSexualContent   :: 1;
-    FrequentViolenceOrGore  :: 2;
-    AdultOnlySexualContent  :: 3;
-    GratuitousSexualContent :: 4;
-    AnyMatureContent        :: 5;
-
-    k_EUGCContentDescriptor_NudityOrSexualContent   :: NudityOrSexualContent;
-    k_EUGCContentDescriptor_FrequentViolenceOrGore  :: FrequentViolenceOrGore;
-    k_EUGCContentDescriptor_AdultOnlySexualContent  :: AdultOnlySexualContent;
-    k_EUGCContentDescriptor_GratuitousSexualContent :: GratuitousSexualContent;
-    k_EUGCContentDescriptor_AnyMatureContent        :: AnyMatureContent;
-}
-
-// Details for a single published file/UGC
-SteamUGCDetails_t :: struct {}
 
 //-----------------------------------------------------------------------------
-// Purpose: Steam UGC support API
+// Purpose: set of relationships to other users
 //-----------------------------------------------------------------------------
-ISteamUGC :: struct {
-    vtable: *ISteamUGC_VTable;
-}
-ISteamUGC_VTable :: struct #type_info_none {
-    CreateQueryUserUGCRequest: *void;
+EFriendRelationship :: enum u32 {
+    EFriendRelationshipNone                 :: 0;
+    EFriendRelationshipBlocked              :: 1;
+    EFriendRelationshipRequestRecipient     :: 2;
+    EFriendRelationshipFriend               :: 3;
+    EFriendRelationshipRequestInitiator     :: 4;
+    EFriendRelationshipIgnored              :: 5;
+    EFriendRelationshipIgnoredFriend        :: 6;
+    EFriendRelationshipSuggested_DEPRECATED :: 7;
 
-    CreateQueryAllUGCRequest: *void;
+    EFriendRelationshipMax                  :: 8;
 
-    CreateQueryAllUGCRequest_1: *void;
+    k_EFriendRelationshipNone                 :: EFriendRelationshipNone;
+    k_EFriendRelationshipBlocked              :: EFriendRelationshipBlocked;
+    k_EFriendRelationshipRequestRecipient     :: EFriendRelationshipRequestRecipient;
+    k_EFriendRelationshipFriend               :: EFriendRelationshipFriend;
+    k_EFriendRelationshipRequestInitiator     :: EFriendRelationshipRequestInitiator;
+    k_EFriendRelationshipIgnored              :: EFriendRelationshipIgnored;
+    k_EFriendRelationshipIgnoredFriend        :: EFriendRelationshipIgnoredFriend;
+    k_EFriendRelationshipSuggested_DEPRECATED :: EFriendRelationshipSuggested_DEPRECATED;
 
-    CreateQueryUGCDetailsRequest: *void;
-
-    SendQueryUGCRequest: *void;
-
-    GetQueryUGCResult: *void;
-    GetQueryUGCNumTags: *void;
-    GetQueryUGCTag: *void;
-    GetQueryUGCTagDisplayName: *void;
-    GetQueryUGCPreviewURL: *void;
-    GetQueryUGCMetadata: *void;
-    GetQueryUGCChildren: *void;
-    GetQueryUGCStatistic: *void;
-    GetQueryUGCNumAdditionalPreviews: *void;
-    GetQueryUGCAdditionalPreview: *void;
-    GetQueryUGCNumKeyValueTags: *void;
-
-    GetQueryUGCKeyValueTag: *void;
-
-    GetQueryUGCKeyValueTag_1: *void;
-
-    GetNumSupportedGameVersions: *void;
-    GetSupportedGameVersionData: *void;
-
-    GetQueryUGCContentDescriptors: *void;
-
-    ReleaseQueryUGCRequest: *void;
-
-    AddRequiredTag: *void;
-    AddRequiredTagGroup: *void;
-    AddExcludedTag: *void;
-    SetReturnOnlyIDs: *void;
-    SetReturnKeyValueTags: *void;
-    SetReturnLongDescription: *void;
-    SetReturnMetadata: *void;
-    SetReturnChildren: *void;
-    SetReturnAdditionalPreviews: *void;
-    SetReturnTotalOnly: *void;
-    SetReturnPlaytimeStats: *void;
-    SetLanguage: *void;
-    SetAllowCachedResponse: *void;
-    SetAdminQuery: *void;
-
-    SetCloudFileNameFilter: *void;
-
-    SetMatchAnyTag: *void;
-    SetSearchText: *void;
-    SetRankedByTrendDays: *void;
-    SetTimeCreatedDateRange: *void;
-    SetTimeUpdatedDateRange: *void;
-    AddRequiredKeyValueTag: *void;
-
-    RequestUGCDetails: *void;
-
-    CreateItem: *void;
-
-    StartItemUpdate: *void;
-
-    SetItemTitle: *void;
-    SetItemDescription: *void;
-    SetItemUpdateLanguage: *void;
-    SetItemMetadata: *void;
-    SetItemVisibility: *void;
-    SetItemTags: *void;
-    SetItemContent: *void;
-    SetItemPreview: *void;
-    SetAllowLegacyUpload: *void;
-    RemoveAllItemKeyValueTags: *void;
-    RemoveItemKeyValueTags: *void;
-    AddItemKeyValueTag: *void;
-    AddItemPreviewFile: *void;
-    AddItemPreviewVideo: *void;
-    UpdateItemPreviewFile: *void;
-    UpdateItemPreviewVideo: *void;
-    RemoveItemPreview: *void;
-    AddContentDescriptor: *void;
-    RemoveContentDescriptor: *void;
-    SetRequiredGameVersions: *void;
-
-    SubmitItemUpdate: *void;
-    GetItemUpdateProgress: *void;
-
-    SetUserItemVote: *void;
-
-    GetUserItemVote: *void;
-
-    AddItemToFavorites: *void;
-
-    RemoveItemFromFavorites: *void;
-
-    SubscribeItem: *void;
-
-    UnsubscribeItem: *void;
-    GetNumSubscribedItems: *void;
-    GetSubscribedItems: *void;
-
-    GetItemState: *void;
-
-    GetItemInstallInfo: *void;
-
-    GetItemDownloadInfo: *void;
-
-    DownloadItem: *void;
-
-    BInitWorkshopForGameServer: *void;
-
-    SuspendDownloads: *void;
-
-    StartPlaytimeTracking: *void;
-
-    StopPlaytimeTracking: *void;
-
-    StopPlaytimeTrackingForAllItems: *void;
-
-    AddDependency: *void;
-
-    RemoveDependency: *void;
-
-    AddAppDependency: *void;
-
-    RemoveAppDependency: *void;
-
-    GetAppDependencies: *void;
-
-    DeleteItem: *void;
-
-    ShowWorkshopEULA: *void;
-
-    GetWorkshopEULAStatus: *void;
-
-    GetUserContentDescriptorPreferences: *void;
+    k_EFriendRelationshipMax                  :: EFriendRelationshipMax;
 }
 
-vtable :: (obj: *ISteamUGC) -> *ISteamUGC_VTable { return obj.vtable; }
+// friends group identifier type
+FriendsGroupID_t :: int16;
+
+//-----------------------------------------------------------------------------
+// Purpose: list of states a friend can be in
+//-----------------------------------------------------------------------------
+EPersonaState :: enum u32 {
+    EPersonaStateOffline        :: 0;
+    EPersonaStateOnline         :: 1;
+    EPersonaStateBusy           :: 2;
+    EPersonaStateAway           :: 3;
+    EPersonaStateSnooze         :: 4;
+    EPersonaStateLookingToTrade :: 5;
+    EPersonaStateLookingToPlay  :: 6;
+    EPersonaStateInvisible      :: 7;
+    EPersonaStateMax            :: 8;
+
+    k_EPersonaStateOffline        :: EPersonaStateOffline;
+    k_EPersonaStateOnline         :: EPersonaStateOnline;
+    k_EPersonaStateBusy           :: EPersonaStateBusy;
+    k_EPersonaStateAway           :: EPersonaStateAway;
+    k_EPersonaStateSnooze         :: EPersonaStateSnooze;
+    k_EPersonaStateLookingToTrade :: EPersonaStateLookingToTrade;
+    k_EPersonaStateLookingToPlay  :: EPersonaStateLookingToPlay;
+    k_EPersonaStateInvisible      :: EPersonaStateInvisible;
+    k_EPersonaStateMax            :: EPersonaStateMax;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: flags for enumerating friends list, or quickly checking a the relationship between users
+//-----------------------------------------------------------------------------
+EFriendFlags :: enum u32 {
+    EFriendFlagNone                 :: 0;
+    EFriendFlagBlocked              :: 1;
+    EFriendFlagFriendshipRequested  :: 2;
+    EFriendFlagImmediate            :: 4;
+    EFriendFlagClanMember           :: 8;
+    EFriendFlagOnGameServer         :: 16;
+
+    EFriendFlagRequestingFriendship :: 128;
+    EFriendFlagRequestingInfo       :: 256;
+    EFriendFlagIgnored              :: 512;
+    EFriendFlagIgnoredFriend        :: 1024;
+
+    EFriendFlagChatMember           :: 4096;
+    EFriendFlagAll                  :: 65535;
+
+    k_EFriendFlagNone                 :: EFriendFlagNone;
+    k_EFriendFlagBlocked              :: EFriendFlagBlocked;
+    k_EFriendFlagFriendshipRequested  :: EFriendFlagFriendshipRequested;
+    k_EFriendFlagImmediate            :: EFriendFlagImmediate;
+    k_EFriendFlagClanMember           :: EFriendFlagClanMember;
+    k_EFriendFlagOnGameServer         :: EFriendFlagOnGameServer;
+
+    k_EFriendFlagRequestingFriendship :: EFriendFlagRequestingFriendship;
+    k_EFriendFlagRequestingInfo       :: EFriendFlagRequestingInfo;
+    k_EFriendFlagIgnored              :: EFriendFlagIgnored;
+    k_EFriendFlagIgnoredFriend        :: EFriendFlagIgnoredFriend;
+
+    k_EFriendFlagChatMember           :: EFriendFlagChatMember;
+    k_EFriendFlagAll                  :: EFriendFlagAll;
+}
+
+FriendGameInfo_t :: struct {
+    m_gameID:       CGameID;
+    m_unGameIP:     uint32;
+    m_usGamePort:   uint16;
+    m_usQueryPort:  uint16;
+    m_steamIDLobby: CSteamID;
+}
+
+// maximum number of characters in a user's name. Two flavors; one for UTF-8 and one for UTF-16.
+// The UTF-8 version has to be very generous to accomodate characters that get large when encoded
+// in UTF-8.
+k_1 :: enum u32 {
+    cchPersonaNameMax  :: 128;
+    cwchPersonaNameMax :: 32;
+
+    k_cchPersonaNameMax  :: cchPersonaNameMax;
+    k_cwchPersonaNameMax :: cwchPersonaNameMax;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: user restriction flags
+//-----------------------------------------------------------------------------
+EUserRestriction :: enum u32 {
+    nUserRestrictionNone        :: 0;
+    nUserRestrictionUnknown     :: 1;
+    nUserRestrictionAnyChat     :: 2;
+    nUserRestrictionVoiceChat   :: 4;
+    nUserRestrictionGroupChat   :: 8;
+    nUserRestrictionRating      :: 16;
+    nUserRestrictionGameInvites :: 32;
+    nUserRestrictionTrading     :: 64;
+
+    k_nUserRestrictionNone        :: nUserRestrictionNone;
+    k_nUserRestrictionUnknown     :: nUserRestrictionUnknown;
+    k_nUserRestrictionAnyChat     :: nUserRestrictionAnyChat;
+    k_nUserRestrictionVoiceChat   :: nUserRestrictionVoiceChat;
+    k_nUserRestrictionGroupChat   :: nUserRestrictionGroupChat;
+    k_nUserRestrictionRating      :: nUserRestrictionRating;
+    k_nUserRestrictionGameInvites :: nUserRestrictionGameInvites;
+    k_nUserRestrictionTrading     :: nUserRestrictionTrading;
+}
+
+// size limits on Rich Presence data
+anon_enum_47 :: enum u32 {
+    k_cchMaxRichPresenceKeys :: 30;
+}
+anon_enum_48 :: enum u32 {
+    k_cchMaxRichPresenceKeyLength :: 64;
+}
+anon_enum_49 :: enum u32 {
+    k_cchMaxRichPresenceValueLength :: 256;
+}
+
+// These values are passed as parameters to the store
+EOverlayToStoreFlag :: enum u32 {
+    None             :: 0;
+    AddToCart        :: 1;
+    AddToCartAndShow :: 2;
+
+    k_EOverlayToStoreFlag_None             :: None;
+    k_EOverlayToStoreFlag_AddToCart        :: AddToCart;
+    k_EOverlayToStoreFlag_AddToCartAndShow :: AddToCartAndShow;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Tells Steam where to place the browser window inside the overlay
+//-----------------------------------------------------------------------------
+EActivateGameOverlayToWebPageMode :: enum u32 {
+    Default :: 0;
+
+    Modal   :: 1;
+
+    k_EActivateGameOverlayToWebPageMode_Default :: Default;
+
+    k_EActivateGameOverlayToWebPageMode_Modal   :: Modal;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: See GetProfileItemPropertyString and GetProfileItemPropertyUint
+//-----------------------------------------------------------------------------
+ECommunityProfileItemType :: enum u32 {
+    AnimatedAvatar        :: 0;
+    AvatarFrame           :: 1;
+    ProfileModifier       :: 2;
+    ProfileBackground     :: 3;
+    MiniProfileBackground :: 4;
+
+    k_ECommunityProfileItemType_AnimatedAvatar        :: AnimatedAvatar;
+    k_ECommunityProfileItemType_AvatarFrame           :: AvatarFrame;
+    k_ECommunityProfileItemType_ProfileModifier       :: ProfileModifier;
+    k_ECommunityProfileItemType_ProfileBackground     :: ProfileBackground;
+    k_ECommunityProfileItemType_MiniProfileBackground :: MiniProfileBackground;
+}
+
+ECommunityProfileItemProperty :: enum u32 {
+    ImageSmall     :: 0;
+    ImageLarge     :: 1;
+    InternalName   :: 2;
+    Title          :: 3;
+    Description    :: 4;
+    AppID          :: 5;
+    TypeID         :: 6;
+    Class          :: 7;
+    MovieWebM      :: 8;
+    MovieMP4       :: 9;
+    MovieWebMSmall :: 10;
+    MovieMP4Small  :: 11;
+
+    k_ECommunityProfileItemProperty_ImageSmall     :: ImageSmall;
+    k_ECommunityProfileItemProperty_ImageLarge     :: ImageLarge;
+    k_ECommunityProfileItemProperty_InternalName   :: InternalName;
+    k_ECommunityProfileItemProperty_Title          :: Title;
+    k_ECommunityProfileItemProperty_Description    :: Description;
+    k_ECommunityProfileItemProperty_AppID          :: AppID;
+    k_ECommunityProfileItemProperty_TypeID         :: TypeID;
+    k_ECommunityProfileItemProperty_Class          :: Class;
+    k_ECommunityProfileItemProperty_MovieWebM      :: MovieWebM;
+    k_ECommunityProfileItemProperty_MovieMP4       :: MovieMP4;
+    k_ECommunityProfileItemProperty_MovieWebMSmall :: MovieWebMSmall;
+    k_ECommunityProfileItemProperty_MovieMP4Small  :: MovieMP4Small;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: interface to accessing information about individual users,
+//			that can be a friend, in a group, on a game server or in a lobby with the local user
+//-----------------------------------------------------------------------------
+ISteamFriends :: struct {
+    vtable: *ISteamFriends_VTable;
+}
+ISteamFriends_VTable :: struct #type_info_none {
+    GetPersonaName: *void;
+
+    SetPersonaName: *void;
+
+    GetPersonaState: *void;
+
+    GetFriendCount: *void;
+
+    GetFriendByIndex: *void;
+
+    GetFriendRelationship: *void;
+
+    GetFriendPersonaState: *void;
+
+    GetFriendPersonaName: *void;
+
+    GetFriendGamePlayed: *void;
+
+    GetFriendPersonaNameHistory: *void;
+
+    GetFriendSteamLevel: *void;
+
+    GetPlayerNickname: *void;
+
+    GetFriendsGroupCount: *void;
+
+    GetFriendsGroupIDByIndex: *void;
+
+    GetFriendsGroupName: *void;
+
+    GetFriendsGroupMembersCount: *void;
+
+    GetFriendsGroupMembersList: *void;
+
+    HasFriend: *void;
+
+    GetClanCount: *void;
+    GetClanByIndex: *void;
+    GetClanName: *void;
+    GetClanTag: *void;
+
+    GetClanActivityCounts: *void;
+
+    DownloadClanActivityCounts: *void;
+
+    GetFriendCountFromSource: *void;
+    GetFriendFromSourceByIndex: *void;
+
+    IsUserInSource: *void;
+
+    SetInGameVoiceSpeaking: *void;
+
+    ActivateGameOverlay: *void;
+
+    ActivateGameOverlayToUser: *void;
+
+    ActivateGameOverlayToWebPage: *void;
+
+    ActivateGameOverlayToStore: *void;
+
+    SetPlayedWith: *void;
+
+    ActivateGameOverlayInviteDialog: *void;
+
+    GetSmallFriendAvatar: *void;
+
+    GetMediumFriendAvatar: *void;
+
+    GetLargeFriendAvatar: *void;
+
+    RequestUserInformation: *void;
+
+    RequestClanOfficerList: *void;
+
+    GetClanOwner: *void;
+
+    GetClanOfficerCount: *void;
+
+    GetClanOfficerByIndex: *void;
+
+    GetUserRestrictions: *void;
+
+    SetRichPresence: *void;
+    ClearRichPresence: *void;
+    GetFriendRichPresence: *void;
+    GetFriendRichPresenceKeyCount: *void;
+    GetFriendRichPresenceKeyByIndex: *void;
+
+    RequestFriendRichPresence: *void;
+
+    InviteUserToGame: *void;
+
+    GetCoplayFriendCount: *void;
+    GetCoplayFriend: *void;
+    GetFriendCoplayTime: *void;
+    GetFriendCoplayGame: *void;
+
+    JoinClanChatRoom: *void;
+    LeaveClanChatRoom: *void;
+    GetClanChatMemberCount: *void;
+    GetChatMemberByIndex: *void;
+    SendClanChatMessage: *void;
+    GetClanChatMessage: *void;
+    IsClanChatAdmin: *void;
+
+    IsClanChatWindowOpenInSteam: *void;
+    OpenClanChatWindowInSteam: *void;
+    CloseClanChatWindowInSteam: *void;
+
+    SetListenForFriendsMessages: *void;
+    ReplyToFriendMessage: *void;
+    GetFriendMessage: *void;
+
+    GetFollowerCount: *void;
+
+    IsFollowing: *void;
+
+    EnumerateFollowingList: *void;
+
+    IsClanPublic: *void;
+    IsClanOfficialGameGroup: *void;
+
+    GetNumChatsWithUnreadPriorityMessages: *void;
+
+    ActivateGameOverlayRemotePlayTogetherInviteDialog: *void;
+
+    RegisterProtocolInOverlayBrowser: *void;
+
+    ActivateGameOverlayInviteDialogConnectString: *void;
+
+    RequestEquippedProfileItems: *void;
+    BHasEquippedProfileItem: *void;
+    GetProfileItemPropertyString: *void;
+    GetProfileItemPropertyUint: *void;
+}
+
+
+// used in PersonaStateChange_t::m_nChangeFlags to describe what's changed about a user
+// these flags describe what the client has learned has changed recently, so on startup you'll see a name, avatar & relationship change for every friend
+EPersonaChange :: enum u32 {
+    EPersonaChangeName                :: 1;
+    EPersonaChangeStatus              :: 2;
+    EPersonaChangeComeOnline          :: 4;
+    EPersonaChangeGoneOffline         :: 8;
+    EPersonaChangeGamePlayed          :: 16;
+    EPersonaChangeGameServer          :: 32;
+    EPersonaChangeAvatar              :: 64;
+    EPersonaChangeJoinedSource        :: 128;
+    EPersonaChangeLeftSource          :: 256;
+    EPersonaChangeRelationshipChanged :: 512;
+    EPersonaChangeNameFirstSet        :: 1024;
+    EPersonaChangeBroadcast           :: 2048;
+    EPersonaChangeNickname            :: 4096;
+    EPersonaChangeSteamLevel          :: 8192;
+    EPersonaChangeRichPresence        :: 16384;
+
+    k_EPersonaChangeName                :: EPersonaChangeName;
+    k_EPersonaChangeStatus              :: EPersonaChangeStatus;
+    k_EPersonaChangeComeOnline          :: EPersonaChangeComeOnline;
+    k_EPersonaChangeGoneOffline         :: EPersonaChangeGoneOffline;
+    k_EPersonaChangeGamePlayed          :: EPersonaChangeGamePlayed;
+    k_EPersonaChangeGameServer          :: EPersonaChangeGameServer;
+    k_EPersonaChangeAvatar              :: EPersonaChangeAvatar;
+    k_EPersonaChangeJoinedSource        :: EPersonaChangeJoinedSource;
+    k_EPersonaChangeLeftSource          :: EPersonaChangeLeftSource;
+    k_EPersonaChangeRelationshipChanged :: EPersonaChangeRelationshipChanged;
+    k_EPersonaChangeNameFirstSet        :: EPersonaChangeNameFirstSet;
+    k_EPersonaChangeBroadcast           :: EPersonaChangeBroadcast;
+    k_EPersonaChangeNickname            :: EPersonaChangeNickname;
+    k_EPersonaChangeSteamLevel          :: EPersonaChangeSteamLevel;
+    k_EPersonaChangeRichPresence        :: EPersonaChangeRichPresence;
+}
+
+// list of possible return values from the ISteamGameCoordinator API
+EGCResults :: enum u32 {
+    EGCResultOK             :: 0;
+    EGCResultNoMessage      :: 1;
+    EGCResultBufferTooSmall :: 2;
+    EGCResultNotLoggedOn    :: 3;
+    EGCResultInvalidMessage :: 4;
+
+    k_EGCResultOK             :: EGCResultOK;
+    k_EGCResultNoMessage      :: EGCResultNoMessage;
+    k_EGCResultBufferTooSmall :: EGCResultBufferTooSmall;
+    k_EGCResultNotLoggedOn    :: EGCResultNotLoggedOn;
+    k_EGCResultInvalidMessage :: EGCResultInvalidMessage;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Functions for authenticating users via Steam to play on a game server
+//-----------------------------------------------------------------------------
+ISteamGameServer :: struct {
+    vtable: *ISteamGameServer_VTable;
+}
+ISteamGameServer_VTable :: struct #type_info_none {
+    InitGameServer: *void;
+
+    SetProduct: *void;
+
+    SetGameDescription: *void;
+
+    SetModDir: *void;
+
+    SetDedicatedServer: *void;
+
+    LogOn: *void;
+
+    LogOnAnonymous: *void;
+
+    LogOff: *void;
+
+    BLoggedOn: *void;
+    BSecure: *void;
+    GetSteamID: *void;
+
+    WasRestartRequested: *void;
+
+    SetMaxPlayerCount: *void;
+
+    SetBotPlayerCount: *void;
+
+    SetServerName: *void;
+
+    SetMapName: *void;
+
+    SetPasswordProtected: *void;
+
+    SetSpectatorPort: *void;
+
+    SetSpectatorServerName: *void;
+
+    ClearAllKeyValues: *void;
+
+    SetKeyValue: *void;
+
+    SetGameTags: *void;
+
+    SetGameData: *void;
+
+    SetRegion: *void;
+
+    SetAdvertiseServerActive: *void;
+
+    GetAuthSessionTicket: *void;
+
+    BeginAuthSession: *void;
+
+    EndAuthSession: *void;
+
+    CancelAuthTicket: *void;
+
+    UserHasLicenseForApp: *void;
+
+    RequestUserGroupStatus: *void;
+
+    GetGameplayStats: *void;
+
+    GetServerReputation: *void;
+
+    GetPublicIP: *void;
+
+    HandleIncomingPacket: *void;
+
+    GetNextOutgoingPacket: *void;
+
+    AssociateWithClan: *void;
+
+    ComputeNewPlayerCompatibility: *void;
+
+    SendUserConnectAndAuthenticate_DEPRECATED: *void;
+
+    CreateUnauthenticatedUserConnection: *void;
+
+    SendUserDisconnect_DEPRECATED: *void;
+
+    BUpdateUserData: *void;
+
+    SetMasterServerHeartbeatInterval_DEPRECATED: *void;
+    ForceMasterServerHeartbeat_DEPRECATED: *void;
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Functions for authenticating users via Steam to play on a game server
+//-----------------------------------------------------------------------------
+ISteamGameServerStats :: struct {
+    vtable: *ISteamGameServerStats_VTable;
+}
+ISteamGameServerStats_VTable :: struct #type_info_none {
+    RequestUserStats: *void;
+
+    GetUserStat: *void;
+
+    GetUserStat_1: *void;
+
+    GetUserAchievement: *void;
+
+    SetUserStat: *void;
+
+    SetUserStat_1: *void;
+
+    UpdateUserAvgRateStat: *void;
+
+    SetUserAchievement: *void;
+    ClearUserAchievement: *void;
+
+    StoreUserStats: *void;
+}
 
 
 HHTMLBrowser :: uint32;
@@ -4557,6 +3810,8 @@ HHTMLBrowser :: uint32;
 //-----------------------------------------------------------------------------
 ISteamHTMLSurface :: struct {
     vtable: *ISteamHTMLSurface_VTable;
+    Destructor_Base :: (this: *ISteamHTMLSurface) -> void #cpp_method #foreign __UnknownLib "_ZN17ISteamHTMLSurfaceD2Ev";
+
     EHTMLMouseButton :: enum u32 {
         Left   :: 0;
         Right  :: 1;
@@ -4565,6 +3820,96 @@ ISteamHTMLSurface :: struct {
         eHTMLMouseButton_Left   :: Left;
         eHTMLMouseButton_Right  :: Right;
         eHTMLMouseButton_Middle :: Middle;
+    }
+
+    EMouseCursor :: enum u32 {
+        user           :: 0;
+        none           :: 1;
+        arrow          :: 2;
+        ibeam          :: 3;
+        hourglass      :: 4;
+        waitarrow      :: 5;
+        crosshair      :: 6;
+        up             :: 7;
+        sizenw         :: 8;
+        sizese         :: 9;
+        sizene         :: 10;
+        sizesw         :: 11;
+        sizew          :: 12;
+        sizee          :: 13;
+        sizen          :: 14;
+        sizes          :: 15;
+        sizewe         :: 16;
+        sizens         :: 17;
+        sizeall        :: 18;
+        no             :: 19;
+        hand           :: 20;
+        blank          :: 21;
+        middle_pan     :: 22;
+        north_pan      :: 23;
+        north_east_pan :: 24;
+        east_pan       :: 25;
+        south_east_pan :: 26;
+        south_pan      :: 27;
+        south_west_pan :: 28;
+        west_pan       :: 29;
+        north_west_pan :: 30;
+        alias          :: 31;
+        cell           :: 32;
+        colresize      :: 33;
+        copycur        :: 34;
+        verticaltext   :: 35;
+        rowresize      :: 36;
+        zoomin         :: 37;
+        zoomout        :: 38;
+        help           :: 39;
+        custom         :: 40;
+
+        last           :: 41;
+
+        dc_user           :: user;
+        dc_none           :: none;
+        dc_arrow          :: arrow;
+        dc_ibeam          :: ibeam;
+        dc_hourglass      :: hourglass;
+        dc_waitarrow      :: waitarrow;
+        dc_crosshair      :: crosshair;
+        dc_up             :: up;
+        dc_sizenw         :: sizenw;
+        dc_sizese         :: sizese;
+        dc_sizene         :: sizene;
+        dc_sizesw         :: sizesw;
+        dc_sizew          :: sizew;
+        dc_sizee          :: sizee;
+        dc_sizen          :: sizen;
+        dc_sizes          :: sizes;
+        dc_sizewe         :: sizewe;
+        dc_sizens         :: sizens;
+        dc_sizeall        :: sizeall;
+        dc_no             :: no;
+        dc_hand           :: hand;
+        dc_blank          :: blank;
+        dc_middle_pan     :: middle_pan;
+        dc_north_pan      :: north_pan;
+        dc_north_east_pan :: north_east_pan;
+        dc_east_pan       :: east_pan;
+        dc_south_east_pan :: south_east_pan;
+        dc_south_pan      :: south_pan;
+        dc_south_west_pan :: south_west_pan;
+        dc_west_pan       :: west_pan;
+        dc_north_west_pan :: north_west_pan;
+        dc_alias          :: alias;
+        dc_cell           :: cell;
+        dc_colresize      :: colresize;
+        dc_copycur        :: copycur;
+        dc_verticaltext   :: verticaltext;
+        dc_rowresize      :: rowresize;
+        dc_zoomin         :: zoomin;
+        dc_zoomout        :: zoomout;
+        dc_help           :: help;
+        dc_custom         :: custom;
+
+        dc_last           :: last;
     }
 
     EHTMLKeyModifiers :: enum u32 {
@@ -4653,7 +3998,200 @@ ISteamHTMLSurface_VTable :: struct #type_info_none {
     FileLoadDialogResponse: *void;
 }
 
-vtable :: (obj: *ISteamHTMLSurface) -> *ISteamHTMLSurface_VTable { return obj.vtable; }
+
+// This enum is used in client API methods, do not re-number existing values.
+EHTTPMethod :: enum u32 {
+    EHTTPMethodInvalid :: 0;
+    EHTTPMethodGET     :: 1;
+    EHTTPMethodHEAD    :: 2;
+    EHTTPMethodPOST    :: 3;
+    EHTTPMethodPUT     :: 4;
+    EHTTPMethodDELETE  :: 5;
+    EHTTPMethodOPTIONS :: 6;
+    EHTTPMethodPATCH   :: 7;
+
+    k_EHTTPMethodInvalid :: EHTTPMethodInvalid;
+    k_EHTTPMethodGET     :: EHTTPMethodGET;
+    k_EHTTPMethodHEAD    :: EHTTPMethodHEAD;
+    k_EHTTPMethodPOST    :: EHTTPMethodPOST;
+    k_EHTTPMethodPUT     :: EHTTPMethodPUT;
+    k_EHTTPMethodDELETE  :: EHTTPMethodDELETE;
+    k_EHTTPMethodOPTIONS :: EHTTPMethodOPTIONS;
+    k_EHTTPMethodPATCH   :: EHTTPMethodPATCH;
+}
+
+// HTTP Status codes that the server can send in response to a request, see rfc2616 section 10.3 for descriptions
+// of each of these.
+EHTTPStatusCode :: enum u32 {
+    EHTTPStatusCodeInvalid                         :: 0;
+
+    EHTTPStatusCode100Continue                     :: 100;
+    EHTTPStatusCode101SwitchingProtocols           :: 101;
+
+    EHTTPStatusCode200OK                           :: 200;
+    EHTTPStatusCode201Created                      :: 201;
+    EHTTPStatusCode202Accepted                     :: 202;
+    EHTTPStatusCode203NonAuthoritative             :: 203;
+    EHTTPStatusCode204NoContent                    :: 204;
+    EHTTPStatusCode205ResetContent                 :: 205;
+    EHTTPStatusCode206PartialContent               :: 206;
+
+    EHTTPStatusCode300MultipleChoices              :: 300;
+    EHTTPStatusCode301MovedPermanently             :: 301;
+    EHTTPStatusCode302Found                        :: 302;
+    EHTTPStatusCode303SeeOther                     :: 303;
+    EHTTPStatusCode304NotModified                  :: 304;
+    EHTTPStatusCode305UseProxy                     :: 305;
+
+    EHTTPStatusCode307TemporaryRedirect            :: 307;
+    EHTTPStatusCode308PermanentRedirect            :: 308;
+
+    EHTTPStatusCode400BadRequest                   :: 400;
+    EHTTPStatusCode401Unauthorized                 :: 401;
+    EHTTPStatusCode402PaymentRequired              :: 402;
+    EHTTPStatusCode403Forbidden                    :: 403;
+    EHTTPStatusCode404NotFound                     :: 404;
+    EHTTPStatusCode405MethodNotAllowed             :: 405;
+    EHTTPStatusCode406NotAcceptable                :: 406;
+    EHTTPStatusCode407ProxyAuthRequired            :: 407;
+    EHTTPStatusCode408RequestTimeout               :: 408;
+    EHTTPStatusCode409Conflict                     :: 409;
+    EHTTPStatusCode410Gone                         :: 410;
+    EHTTPStatusCode411LengthRequired               :: 411;
+    EHTTPStatusCode412PreconditionFailed           :: 412;
+    EHTTPStatusCode413RequestEntityTooLarge        :: 413;
+    EHTTPStatusCode414RequestURITooLong            :: 414;
+    EHTTPStatusCode415UnsupportedMediaType         :: 415;
+    EHTTPStatusCode416RequestedRangeNotSatisfiable :: 416;
+    EHTTPStatusCode417ExpectationFailed            :: 417;
+    EHTTPStatusCode4xxUnknown                      :: 418;
+    EHTTPStatusCode429TooManyRequests              :: 429;
+    EHTTPStatusCode444ConnectionClosed             :: 444;
+
+    EHTTPStatusCode500InternalServerError          :: 500;
+    EHTTPStatusCode501NotImplemented               :: 501;
+    EHTTPStatusCode502BadGateway                   :: 502;
+    EHTTPStatusCode503ServiceUnavailable           :: 503;
+    EHTTPStatusCode504GatewayTimeout               :: 504;
+    EHTTPStatusCode505HTTPVersionNotSupported      :: 505;
+    EHTTPStatusCode5xxUnknown                      :: 599;
+
+    k_EHTTPStatusCodeInvalid                         :: EHTTPStatusCodeInvalid;
+
+    k_EHTTPStatusCode100Continue                     :: EHTTPStatusCode100Continue;
+    k_EHTTPStatusCode101SwitchingProtocols           :: EHTTPStatusCode101SwitchingProtocols;
+
+    k_EHTTPStatusCode200OK                           :: EHTTPStatusCode200OK;
+    k_EHTTPStatusCode201Created                      :: EHTTPStatusCode201Created;
+    k_EHTTPStatusCode202Accepted                     :: EHTTPStatusCode202Accepted;
+    k_EHTTPStatusCode203NonAuthoritative             :: EHTTPStatusCode203NonAuthoritative;
+    k_EHTTPStatusCode204NoContent                    :: EHTTPStatusCode204NoContent;
+    k_EHTTPStatusCode205ResetContent                 :: EHTTPStatusCode205ResetContent;
+    k_EHTTPStatusCode206PartialContent               :: EHTTPStatusCode206PartialContent;
+
+    k_EHTTPStatusCode300MultipleChoices              :: EHTTPStatusCode300MultipleChoices;
+    k_EHTTPStatusCode301MovedPermanently             :: EHTTPStatusCode301MovedPermanently;
+    k_EHTTPStatusCode302Found                        :: EHTTPStatusCode302Found;
+    k_EHTTPStatusCode303SeeOther                     :: EHTTPStatusCode303SeeOther;
+    k_EHTTPStatusCode304NotModified                  :: EHTTPStatusCode304NotModified;
+    k_EHTTPStatusCode305UseProxy                     :: EHTTPStatusCode305UseProxy;
+
+    k_EHTTPStatusCode307TemporaryRedirect            :: EHTTPStatusCode307TemporaryRedirect;
+    k_EHTTPStatusCode308PermanentRedirect            :: EHTTPStatusCode308PermanentRedirect;
+
+    k_EHTTPStatusCode400BadRequest                   :: EHTTPStatusCode400BadRequest;
+    k_EHTTPStatusCode401Unauthorized                 :: EHTTPStatusCode401Unauthorized;
+    k_EHTTPStatusCode402PaymentRequired              :: EHTTPStatusCode402PaymentRequired;
+    k_EHTTPStatusCode403Forbidden                    :: EHTTPStatusCode403Forbidden;
+    k_EHTTPStatusCode404NotFound                     :: EHTTPStatusCode404NotFound;
+    k_EHTTPStatusCode405MethodNotAllowed             :: EHTTPStatusCode405MethodNotAllowed;
+    k_EHTTPStatusCode406NotAcceptable                :: EHTTPStatusCode406NotAcceptable;
+    k_EHTTPStatusCode407ProxyAuthRequired            :: EHTTPStatusCode407ProxyAuthRequired;
+    k_EHTTPStatusCode408RequestTimeout               :: EHTTPStatusCode408RequestTimeout;
+    k_EHTTPStatusCode409Conflict                     :: EHTTPStatusCode409Conflict;
+    k_EHTTPStatusCode410Gone                         :: EHTTPStatusCode410Gone;
+    k_EHTTPStatusCode411LengthRequired               :: EHTTPStatusCode411LengthRequired;
+    k_EHTTPStatusCode412PreconditionFailed           :: EHTTPStatusCode412PreconditionFailed;
+    k_EHTTPStatusCode413RequestEntityTooLarge        :: EHTTPStatusCode413RequestEntityTooLarge;
+    k_EHTTPStatusCode414RequestURITooLong            :: EHTTPStatusCode414RequestURITooLong;
+    k_EHTTPStatusCode415UnsupportedMediaType         :: EHTTPStatusCode415UnsupportedMediaType;
+    k_EHTTPStatusCode416RequestedRangeNotSatisfiable :: EHTTPStatusCode416RequestedRangeNotSatisfiable;
+    k_EHTTPStatusCode417ExpectationFailed            :: EHTTPStatusCode417ExpectationFailed;
+    k_EHTTPStatusCode4xxUnknown                      :: EHTTPStatusCode4xxUnknown;
+    k_EHTTPStatusCode429TooManyRequests              :: EHTTPStatusCode429TooManyRequests;
+    k_EHTTPStatusCode444ConnectionClosed             :: EHTTPStatusCode444ConnectionClosed;
+
+    k_EHTTPStatusCode500InternalServerError          :: EHTTPStatusCode500InternalServerError;
+    k_EHTTPStatusCode501NotImplemented               :: EHTTPStatusCode501NotImplemented;
+    k_EHTTPStatusCode502BadGateway                   :: EHTTPStatusCode502BadGateway;
+    k_EHTTPStatusCode503ServiceUnavailable           :: EHTTPStatusCode503ServiceUnavailable;
+    k_EHTTPStatusCode504GatewayTimeout               :: EHTTPStatusCode504GatewayTimeout;
+    k_EHTTPStatusCode505HTTPVersionNotSupported      :: EHTTPStatusCode505HTTPVersionNotSupported;
+    k_EHTTPStatusCode5xxUnknown                      :: EHTTPStatusCode5xxUnknown;
+}
+
+// Handle to a HTTP Request handle
+HTTPRequestHandle :: uint32;
+
+HTTPCookieContainerHandle :: uint32;
+
+//-----------------------------------------------------------------------------
+// Purpose: interface to http client
+//-----------------------------------------------------------------------------
+ISteamHTTP :: struct {
+    vtable: *ISteamHTTP_VTable;
+}
+ISteamHTTP_VTable :: struct #type_info_none {
+    CreateHTTPRequest: *void;
+
+    SetHTTPRequestContextValue: *void;
+
+    SetHTTPRequestNetworkActivityTimeout: *void;
+
+    SetHTTPRequestHeaderValue: *void;
+
+    SetHTTPRequestGetOrPostParameter: *void;
+
+    SendHTTPRequest: *void;
+
+    SendHTTPRequestAndStreamResponse: *void;
+
+    DeferHTTPRequest: *void;
+
+    PrioritizeHTTPRequest: *void;
+
+    GetHTTPResponseHeaderSize: *void;
+
+    GetHTTPResponseHeaderValue: *void;
+
+    GetHTTPResponseBodySize: *void;
+
+    GetHTTPResponseBodyData: *void;
+
+    GetHTTPStreamingResponseBodyData: *void;
+
+    ReleaseHTTPRequest: *void;
+
+    GetHTTPDownloadProgressPct: *void;
+
+    SetHTTPRequestRawPostBody: *void;
+
+    CreateCookieContainer: *void;
+
+    ReleaseCookieContainer: *void;
+
+    SetCookie: *void;
+
+    SetHTTPRequestCookieContainer: *void;
+
+    SetHTTPRequestUserAgentInfo: *void;
+
+    SetHTTPRequestRequiresVerifiedCertificate: *void;
+
+    SetHTTPRequestAbsoluteTimeoutMS: *void;
+
+    GetHTTPRequestWasTimedOut: *void;
+}
 
 
 // Every individual instance of an item has a globally-unique ItemInstanceID.
@@ -4667,7 +4205,24 @@ SteamItemInstanceID_t :: uint64;
 // reserved for internal Steam use.
 SteamItemDef_t :: int32;
 
-SteamItemDetails_t :: struct {}
+ESteamItemFlags :: enum u32 {
+    ESteamItemNoTrade  :: 1;
+
+    ESteamItemRemoved  :: 256;
+    ESteamItemConsumed :: 512;
+
+    k_ESteamItemNoTrade  :: ESteamItemNoTrade;
+
+    k_ESteamItemRemoved  :: ESteamItemRemoved;
+    k_ESteamItemConsumed :: ESteamItemConsumed;
+}
+
+SteamItemDetails_t :: struct {
+    m_itemId:      SteamItemInstanceID_t;
+    m_iDefinition: SteamItemDef_t;
+    m_unQuantity:  uint16;
+    m_unFlags:     uint16; // see ESteamItemFlags
+}
 
 SteamInventoryResult_t :: int32;
 
@@ -4756,192 +4311,697 @@ ISteamInventory_VTable :: struct #type_info_none {
     InspectItem: *void;
 }
 
-vtable :: (obj: *ISteamInventory) -> *ISteamInventory_VTable { return obj.vtable; }
 
-
-// Controls the color of the timeline bar segments. The value names listed here map to a multiplayer game, where
-// the user starts a game (in menus), then joins a multiplayer session that first has a character selection lobby
-// then finally the multiplayer session starts. However, you can also map these values to any type of game. In a single
-// player game where you visit towns & dungeons, you could set k_ETimelineGameMode_Menus when the player is in a town
-// buying items, k_ETimelineGameMode_Staging for when a dungeon is loading and k_ETimelineGameMode_Playing for when
-// inside the dungeon fighting monsters.
-ETimelineGameMode :: enum u32 {
-    Invalid       :: 0;
-    Playing       :: 1;
-    Staging       :: 2;
-    Menus         :: 3;
-    LoadingScreen :: 4;
-
-    Max           :: 5;
-
-    k_ETimelineGameMode_Invalid       :: Invalid;
-    k_ETimelineGameMode_Playing       :: Playing;
-    k_ETimelineGameMode_Staging       :: Staging;
-    k_ETimelineGameMode_Menus         :: Menus;
-    k_ETimelineGameMode_LoadingScreen :: LoadingScreen;
-
-    k_ETimelineGameMode_Max           :: Max;
+/// Store key/value pair used in matchmaking queries.
+///
+/// Actually, the name Key/Value is a bit misleading.  The "key" is better
+/// understood as "filter operation code" and the "value" is the operand to this
+/// filter operation.  The meaning of the operand depends upon the filter.
+MatchMakingKeyValuePair_t :: struct {
+    m_szKey:   [256] u8;
+    m_szValue: [256] u8;
 }
 
-// Used in AddTimelineEvent, where Featured events will be offered before Standard events
-ETimelineEventClipPriority :: enum u32 {
-    Invalid  :: 0;
-    None     :: 1;
-    Standard :: 2;
-    Featured :: 3;
+EMatchMakingServerResponse :: enum u32 {
+    ServerResponded               :: 0;
+    ServerFailedToRespond         :: 1;
+    NoServersListedOnMasterServer :: 2;
 
-    k_ETimelineEventClipPriority_Invalid  :: Invalid;
-    k_ETimelineEventClipPriority_None     :: None;
-    k_ETimelineEventClipPriority_Standard :: Standard;
-    k_ETimelineEventClipPriority_Featured :: Featured;
+    eServerResponded               :: ServerResponded;
+    eServerFailedToRespond         :: ServerFailedToRespond;
+    eNoServersListedOnMasterServer :: NoServersListedOnMasterServer;
+}
+
+// servernetadr_t is all the addressing info the serverbrowser needs to know about a game server,
+// namely: its IP, its connection port, and its query port.
+servernetadr_t :: struct {
+    m_usConnectionPort: uint16; // (in HOST byte order)
+    m_usQueryPort:      uint16;
+    m_unIP:             uint32;
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Steam Timeline API
+// Purpose: Data describing a single server
 //-----------------------------------------------------------------------------
-ISteamTimeline :: struct {
-    vtable: *ISteamTimeline_VTable;
-}
-ISteamTimeline_VTable :: struct #type_info_none {
-    SetTimelineStateDescription: *void;
-    ClearTimelineStateDescription: *void;
+gameserveritem_t :: struct {
+    m_NetAdr:                 servernetadr_t; ///< IP/Query Port/Connection Port for this server
+    m_nPing:                  s32; ///< current ping time in milliseconds
+    m_bHadSuccessfulResponse: bool; ///< server has responded successfully in the past
+    m_bDoNotRefresh:          bool; ///< server is marked as not responding and should no longer be refreshed
+    m_szGameDir:              [32] u8; ///< current game directory
+    m_szMap:                  [32] u8; ///< current map
+    m_szGameDescription:      [64] u8; ///< game description
+    m_nAppID:                 uint32; ///< Steam App ID of this server
+    m_nPlayers:               s32; ///< total number of players currently on the server.  INCLUDES BOTS!!
+    m_nMaxPlayers:            s32; ///< Maximum players that can join this server
+    m_nBotPlayers:            s32; ///< Number of bots (i.e simulated players) on this server
+    m_bPassword:              bool; ///< true if this server needs a password to join
+    m_bSecure:                bool; ///< Is this server protected by VAC
+    m_ulTimeLastPlayed:       uint32; ///< time (in unix time) when this server was last played on (for favorite/history servers)
+    m_nServerVersion:         s32; ///< server version as reported to Steam
 
-    AddTimelineEvent: *void;
+    /// Game server name
+    m_szServerName:           [64] u8;
 
-    SetTimelineGameMode: *void;
-}
+    /// the tags this server exposes
+    m_szGameTags:             [128] u8;
 
-vtable :: (obj: *ISteamTimeline) -> *ISteamTimeline_VTable { return obj.vtable; }
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Steam Video API
-//-----------------------------------------------------------------------------
-ISteamVideo :: struct {
-    vtable: *ISteamVideo_VTable;
-}
-ISteamVideo_VTable :: struct #type_info_none {
-    GetVideoURL: *void;
-
-    IsBroadcasting: *void;
-
-    GetOPFSettings: *void;
-    GetOPFStringForApp: *void;
+    /// steamID of the game server - invalid if it's doesn't have one (old server, or not connected to Steam)
+    m_steamID:                CSteamID #align 4;
 }
 
-vtable :: (obj: *ISteamVideo) -> *ISteamVideo_VTable { return obj.vtable; }
+// lobby type description
+ELobbyType :: enum u32 {
+    ELobbyTypePrivate       :: 0;
+    ELobbyTypeFriendsOnly   :: 1;
+    ELobbyTypePublic        :: 2;
+    ELobbyTypeInvisible     :: 3;
 
+    ELobbyTypePrivateUnique :: 4;
 
-// Feature types for parental settings
-EParentalFeature :: enum u32 {
-    EFeatureInvalid              :: 0;
-    EFeatureStore                :: 1;
-    EFeatureCommunity            :: 2;
-    EFeatureProfile              :: 3;
-    EFeatureFriends              :: 4;
-    EFeatureNews                 :: 5;
-    EFeatureTrading              :: 6;
-    EFeatureSettings             :: 7;
-    EFeatureConsole              :: 8;
-    EFeatureBrowser              :: 9;
-    EFeatureParentalSetup        :: 10;
-    EFeatureLibrary              :: 11;
-    EFeatureTest                 :: 12;
-    EFeatureSiteLicense          :: 13;
-    EFeatureKioskMode_Deprecated :: 14;
-    EFeatureBlockAlways          :: 15;
-    EFeatureMax                  :: 16;
+    k_ELobbyTypePrivate       :: ELobbyTypePrivate;
+    k_ELobbyTypeFriendsOnly   :: ELobbyTypeFriendsOnly;
+    k_ELobbyTypePublic        :: ELobbyTypePublic;
+    k_ELobbyTypeInvisible     :: ELobbyTypeInvisible;
 
-    k_EFeatureInvalid              :: EFeatureInvalid;
-    k_EFeatureStore                :: EFeatureStore;
-    k_EFeatureCommunity            :: EFeatureCommunity;
-    k_EFeatureProfile              :: EFeatureProfile;
-    k_EFeatureFriends              :: EFeatureFriends;
-    k_EFeatureNews                 :: EFeatureNews;
-    k_EFeatureTrading              :: EFeatureTrading;
-    k_EFeatureSettings             :: EFeatureSettings;
-    k_EFeatureConsole              :: EFeatureConsole;
-    k_EFeatureBrowser              :: EFeatureBrowser;
-    k_EFeatureParentalSetup        :: EFeatureParentalSetup;
-    k_EFeatureLibrary              :: EFeatureLibrary;
-    k_EFeatureTest                 :: EFeatureTest;
-    k_EFeatureSiteLicense          :: EFeatureSiteLicense;
-    k_EFeatureKioskMode_Deprecated :: EFeatureKioskMode_Deprecated;
-    k_EFeatureBlockAlways          :: EFeatureBlockAlways;
-    k_EFeatureMax                  :: EFeatureMax;
+    k_ELobbyTypePrivateUnique :: ELobbyTypePrivateUnique;
 }
 
-ISteamParentalSettings :: struct {
-    vtable: *ISteamParentalSettings_VTable;
+// lobby search filter tools
+ELobbyComparison :: enum s32 {
+    ELobbyComparisonEqualToOrLessThan    :: -2;
+    ELobbyComparisonLessThan             :: -1;
+    ELobbyComparisonEqual                :: 0;
+    ELobbyComparisonGreaterThan          :: 1;
+    ELobbyComparisonEqualToOrGreaterThan :: 2;
+    ELobbyComparisonNotEqual             :: 3;
+
+    k_ELobbyComparisonEqualToOrLessThan    :: ELobbyComparisonEqualToOrLessThan;
+    k_ELobbyComparisonLessThan             :: ELobbyComparisonLessThan;
+    k_ELobbyComparisonEqual                :: ELobbyComparisonEqual;
+    k_ELobbyComparisonGreaterThan          :: ELobbyComparisonGreaterThan;
+    k_ELobbyComparisonEqualToOrGreaterThan :: ELobbyComparisonEqualToOrGreaterThan;
+    k_ELobbyComparisonNotEqual             :: ELobbyComparisonNotEqual;
 }
-ISteamParentalSettings_VTable :: struct #type_info_none {
-    BIsParentalLockEnabled: *void;
-    BIsParentalLockLocked: *void;
 
-    BIsAppBlocked: *void;
-    BIsAppInBlockList: *void;
+// lobby search distance. Lobby results are sorted from closest to farthest.
+ELobbyDistanceFilter :: enum u32 {
+    ELobbyDistanceFilterClose     :: 0;
+    ELobbyDistanceFilterDefault   :: 1;
+    ELobbyDistanceFilterFar       :: 2;
+    ELobbyDistanceFilterWorldwide :: 3;
 
-    BIsFeatureBlocked: *void;
-    BIsFeatureInBlockList: *void;
+    k_ELobbyDistanceFilterClose     :: ELobbyDistanceFilterClose;
+    k_ELobbyDistanceFilterDefault   :: ELobbyDistanceFilterDefault;
+    k_ELobbyDistanceFilterFar       :: ELobbyDistanceFilterFar;
+    k_ELobbyDistanceFilterWorldwide :: ELobbyDistanceFilterWorldwide;
 }
-
-vtable :: (obj: *ISteamParentalSettings) -> *ISteamParentalSettings_VTable { return obj.vtable; }
-
 
 //-----------------------------------------------------------------------------
-// Purpose: The form factor of a device
+// Purpose: Functions for match making services for clients to get to favorites
+//			and to operate on game lobbies.
 //-----------------------------------------------------------------------------
-ESteamDeviceFormFactor :: enum u32 {
-    ESteamDeviceFormFactorUnknown   :: 0;
-    ESteamDeviceFormFactorPhone     :: 1;
-    ESteamDeviceFormFactorTablet    :: 2;
-    ESteamDeviceFormFactorComputer  :: 3;
-    ESteamDeviceFormFactorTV        :: 4;
-    ESteamDeviceFormFactorVRHeadset :: 5;
+ISteamMatchmaking :: struct {
+    vtable: *ISteamMatchmaking_VTable;
+}
+ISteamMatchmaking_VTable :: struct #type_info_none {
+    GetFavoriteGameCount: *void;
 
-    k_ESteamDeviceFormFactorUnknown   :: ESteamDeviceFormFactorUnknown;
-    k_ESteamDeviceFormFactorPhone     :: ESteamDeviceFormFactorPhone;
-    k_ESteamDeviceFormFactorTablet    :: ESteamDeviceFormFactorTablet;
-    k_ESteamDeviceFormFactorComputer  :: ESteamDeviceFormFactorComputer;
-    k_ESteamDeviceFormFactorTV        :: ESteamDeviceFormFactorTV;
-    k_ESteamDeviceFormFactorVRHeadset :: ESteamDeviceFormFactorVRHeadset;
+    GetFavoriteGame: *void;
+
+    AddFavoriteGame: *void;
+
+    RemoveFavoriteGame: *void;
+
+    RequestLobbyList: *void;
+
+    AddRequestLobbyListStringFilter: *void;
+
+    AddRequestLobbyListNumericalFilter: *void;
+
+    AddRequestLobbyListNearValueFilter: *void;
+
+    AddRequestLobbyListFilterSlotsAvailable: *void;
+
+    AddRequestLobbyListDistanceFilter: *void;
+
+    AddRequestLobbyListResultCountFilter: *void;
+
+    AddRequestLobbyListCompatibleMembersFilter: *void;
+
+    GetLobbyByIndex: *void;
+
+    CreateLobby: *void;
+
+    JoinLobby: *void;
+
+    LeaveLobby: *void;
+
+    InviteUserToLobby: *void;
+
+    GetNumLobbyMembers: *void;
+
+    GetLobbyMemberByIndex: *void;
+
+    GetLobbyData: *void;
+
+    SetLobbyData: *void;
+
+    GetLobbyDataCount: *void;
+
+    GetLobbyDataByIndex: *void;
+
+    DeleteLobbyData: *void;
+
+    GetLobbyMemberData: *void;
+
+    SetLobbyMemberData: *void;
+
+    SendLobbyChatMsg: *void;
+
+    GetLobbyChatEntry: *void;
+
+    RequestLobbyData: *void;
+
+    SetLobbyGameServer: *void;
+
+    GetLobbyGameServer: *void;
+
+    SetLobbyMemberLimit: *void;
+
+    GetLobbyMemberLimit: *void;
+
+    SetLobbyType: *void;
+
+    SetLobbyJoinable: *void;
+
+    GetLobbyOwner: *void;
+
+    SetLobbyOwner: *void;
+
+    SetLinkedLobby: *void;
 }
 
-// Steam Remote Play session ID
-RemotePlaySessionID_t :: uint32;
 
 //-----------------------------------------------------------------------------
-// Purpose: Functions to provide information about Steam Remote Play sessions
+// Typedef for handle type you will receive when requesting server list.
 //-----------------------------------------------------------------------------
-ISteamRemotePlay :: struct {
-    vtable: *ISteamRemotePlay_VTable;
+HServerListRequest :: *void;
+
+//-----------------------------------------------------------------------------
+// Purpose: Callback interface for receiving responses after a server list refresh
+// or an individual server update.
+//
+// Since you get these callbacks after requesting full list refreshes you will
+// usually implement this interface inside an object like CServerBrowser.  If that
+// object is getting destructed you should use ISteamMatchMakingServers()->CancelQuery()
+// to cancel any in-progress queries so you don't get a callback into the destructed
+// object and crash.
+//-----------------------------------------------------------------------------
+ISteamMatchmakingServerListResponse :: struct {
+    vtable: *ISteamMatchmakingServerListResponse_VTable;
 }
-ISteamRemotePlay_VTable :: struct #type_info_none {
-    GetSessionCount: *void;
+ISteamMatchmakingServerListResponse_VTable :: struct #type_info_none {
+    ServerResponded: *void;
 
-    GetSessionID: *void;
+    ServerFailedToRespond: *void;
 
-    GetSessionSteamID: *void;
-
-    GetSessionClientName: *void;
-
-    GetSessionClientFormFactor: *void;
-
-    BGetSessionClientResolution: *void;
-
-    BStartRemotePlayTogether: *void;
-
-    BSendRemotePlayTogetherInvite: *void;
+    RefreshComplete: *void;
 }
 
-vtable :: (obj: *ISteamRemotePlay) -> *ISteamRemotePlay_VTable { return obj.vtable; }
+
+//-----------------------------------------------------------------------------
+// Purpose: Callback interface for receiving responses after pinging an individual server
+//
+// These callbacks all occur in response to querying an individual server
+// via the ISteamMatchmakingServers()->PingServer() call below.  If you are
+// destructing an object that implements this interface then you should call
+// ISteamMatchmakingServers()->CancelServerQuery() passing in the handle to the query
+// which is in progress.  Failure to cancel in progress queries when destructing
+// a callback handler may result in a crash when a callback later occurs.
+//-----------------------------------------------------------------------------
+ISteamMatchmakingPingResponse :: struct {
+    vtable: *ISteamMatchmakingPingResponse_VTable;
+}
+ISteamMatchmakingPingResponse_VTable :: struct #type_info_none {
+    ServerResponded: *void;
+
+    ServerFailedToRespond: *void;
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Callback interface for receiving responses after requesting details on
+// who is playing on a particular server.
+//
+// These callbacks all occur in response to querying an individual server
+// via the ISteamMatchmakingServers()->PlayerDetails() call below.  If you are
+// destructing an object that implements this interface then you should call
+// ISteamMatchmakingServers()->CancelServerQuery() passing in the handle to the query
+// which is in progress.  Failure to cancel in progress queries when destructing
+// a callback handler may result in a crash when a callback later occurs.
+//-----------------------------------------------------------------------------
+ISteamMatchmakingPlayersResponse :: struct {
+    vtable: *ISteamMatchmakingPlayersResponse_VTable;
+}
+ISteamMatchmakingPlayersResponse_VTable :: struct #type_info_none {
+    AddPlayerToList: *void;
+
+    PlayersFailedToRespond: *void;
+
+    PlayersRefreshComplete: *void;
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Callback interface for receiving responses after requesting rules
+// details on a particular server.
+//
+// These callbacks all occur in response to querying an individual server
+// via the ISteamMatchmakingServers()->ServerRules() call below.  If you are
+// destructing an object that implements this interface then you should call
+// ISteamMatchmakingServers()->CancelServerQuery() passing in the handle to the query
+// which is in progress.  Failure to cancel in progress queries when destructing
+// a callback handler may result in a crash when a callback later occurs.
+//-----------------------------------------------------------------------------
+ISteamMatchmakingRulesResponse :: struct {
+    vtable: *ISteamMatchmakingRulesResponse_VTable;
+}
+ISteamMatchmakingRulesResponse_VTable :: struct #type_info_none {
+    RulesResponded: *void;
+
+    RulesFailedToRespond: *void;
+
+    RulesRefreshComplete: *void;
+}
+
+
+//-----------------------------------------------------------------------------
+// Typedef for handle type you will receive when querying details on an individual server.
+//-----------------------------------------------------------------------------
+HServerQuery :: s32;
+
+//-----------------------------------------------------------------------------
+// Purpose: Functions for match making services for clients to get to game lists and details
+//-----------------------------------------------------------------------------
+ISteamMatchmakingServers :: struct {
+    vtable: *ISteamMatchmakingServers_VTable;
+}
+ISteamMatchmakingServers_VTable :: struct #type_info_none {
+    RequestInternetServerList: *void;
+    RequestLANServerList: *void;
+    RequestFriendsServerList: *void;
+    RequestFavoritesServerList: *void;
+    RequestHistoryServerList: *void;
+    RequestSpectatorServerList: *void;
+
+    ReleaseRequest: *void;
+
+    GetServerDetails: *void;
+
+    CancelQuery: *void;
+
+    RefreshQuery: *void;
+
+    IsRefreshing: *void;
+
+    GetServerCount: *void;
+
+    RefreshServer: *void;
+
+    PingServer: *void;
+
+    PlayerDetails: *void;
+
+    ServerRules: *void;
+
+    CancelServerQuery: *void;
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Used in ChatInfo messages - fields specific to a chat member - must fit in a uint32
+//-----------------------------------------------------------------------------
+EChatMemberStateChange :: enum u32 {
+    EChatMemberStateChangeEntered      :: 1;
+    EChatMemberStateChangeLeft         :: 2;
+    EChatMemberStateChangeDisconnected :: 4;
+    EChatMemberStateChangeKicked       :: 8;
+    EChatMemberStateChangeBanned       :: 16;
+
+    k_EChatMemberStateChangeEntered      :: EChatMemberStateChangeEntered;
+    k_EChatMemberStateChangeLeft         :: EChatMemberStateChangeLeft;
+    k_EChatMemberStateChangeDisconnected :: EChatMemberStateChangeDisconnected;
+    k_EChatMemberStateChangeKicked       :: EChatMemberStateChangeKicked;
+    k_EChatMemberStateChangeBanned       :: EChatMemberStateChangeBanned;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Functions for match making services for clients to get to favorites
+//			and to operate on game lobbies.
+//-----------------------------------------------------------------------------
+ISteamGameSearch :: struct {
+    vtable: *ISteamGameSearch_VTable;
+}
+ISteamGameSearch_VTable :: struct #type_info_none {
+    AddGameSearchParams: *void;
+
+    SearchForGameWithLobby: *void;
+
+    SearchForGameSolo: *void;
+
+    AcceptGame: *void;
+    DeclineGame: *void;
+
+    RetrieveConnectionDetails: *void;
+
+    EndGameSearch: *void;
+
+    SetGameHostParams: *void;
+
+    SetConnectionDetails: *void;
+
+    RequestPlayersForGame: *void;
+
+    HostConfirmGameStart: *void;
+
+    CancelRequestPlayersForGame: *void;
+
+    SubmitPlayerResult: *void;
+
+    EndGame: *void;
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Functions for quickly creating a Party with friends or acquaintances,
+//			EG from chat rooms.
+//-----------------------------------------------------------------------------
+ESteamPartyBeaconLocationType :: enum u32 {
+    Invalid   :: 0;
+    ChatGroup :: 1;
+
+    Max       :: 2;
+
+    k_ESteamPartyBeaconLocationType_Invalid   :: Invalid;
+    k_ESteamPartyBeaconLocationType_ChatGroup :: ChatGroup;
+
+    k_ESteamPartyBeaconLocationType_Max       :: Max;
+}
+
+SteamPartyBeaconLocation_t :: struct {
+    m_eType:        ESteamPartyBeaconLocationType;
+    m_ulLocationID: uint64 #align 4;
+}
+
+ESteamPartyBeaconLocationData :: enum u32 {
+    ESteamPartyBeaconLocationDataInvalid       :: 0;
+    ESteamPartyBeaconLocationDataName          :: 1;
+    ESteamPartyBeaconLocationDataIconURLSmall  :: 2;
+    ESteamPartyBeaconLocationDataIconURLMedium :: 3;
+    ESteamPartyBeaconLocationDataIconURLLarge  :: 4;
+
+    k_ESteamPartyBeaconLocationDataInvalid       :: ESteamPartyBeaconLocationDataInvalid;
+    k_ESteamPartyBeaconLocationDataName          :: ESteamPartyBeaconLocationDataName;
+    k_ESteamPartyBeaconLocationDataIconURLSmall  :: ESteamPartyBeaconLocationDataIconURLSmall;
+    k_ESteamPartyBeaconLocationDataIconURLMedium :: ESteamPartyBeaconLocationDataIconURLMedium;
+    k_ESteamPartyBeaconLocationDataIconURLLarge  :: ESteamPartyBeaconLocationDataIconURLLarge;
+}
+
+ISteamParties :: struct {
+    vtable: *ISteamParties_VTable;
+}
+ISteamParties_VTable :: struct #type_info_none {
+    GetNumActiveBeacons: *void;
+    GetBeaconByIndex: *void;
+    GetBeaconDetails: *void;
+
+    JoinParty: *void;
+
+    GetNumAvailableBeaconLocations: *void;
+    GetAvailableBeaconLocations: *void;
+
+    CreateBeacon: *void;
+
+    OnReservationCompleted: *void;
+
+    CancelReservation: *void;
+
+    ChangeNumOpenSlots: *void;
+
+    DestroyBeacon: *void;
+
+    GetBeaconLocationData: *void;
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+AudioPlayback_Status :: enum u32 {
+    Undefined :: 0;
+    Playing   :: 1;
+    Paused    :: 2;
+    Idle      :: 3;
+
+    AudioPlayback_Undefined :: Undefined;
+    AudioPlayback_Playing   :: Playing;
+    AudioPlayback_Paused    :: Paused;
+    AudioPlayback_Idle      :: Idle;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Functions to control music playback in the steam client
+//-----------------------------------------------------------------------------
+ISteamMusic :: struct {
+    vtable: *ISteamMusic_VTable;
+}
+ISteamMusic_VTable :: struct #type_info_none {
+    BIsEnabled: *void;
+    BIsPlaying: *void;
+
+    GetPlaybackStatus: *void;
+
+    Play: *void;
+    Pause: *void;
+    PlayPrevious: *void;
+    PlayNext: *void;
+
+    SetVolume: *void;
+    GetVolume: *void;
+}
+
+
+ISteamMusicRemote :: struct {
+    vtable: *ISteamMusicRemote_VTable;
+}
+ISteamMusicRemote_VTable :: struct #type_info_none {
+    RegisterSteamMusicRemote: *void;
+    DeregisterSteamMusicRemote: *void;
+    BIsCurrentMusicRemote: *void;
+    BActivationSuccess: *void;
+
+    SetDisplayName: *void;
+    SetPNGIcon_64x64: *void;
+
+    EnablePlayPrevious: *void;
+    EnablePlayNext: *void;
+    EnableShuffled: *void;
+    EnableLooped: *void;
+    EnableQueue: *void;
+    EnablePlaylists: *void;
+
+    UpdatePlaybackStatus: *void;
+    UpdateShuffled: *void;
+    UpdateLooped: *void;
+    UpdateVolume: *void;
+
+    CurrentEntryWillChange: *void;
+    CurrentEntryIsAvailable: *void;
+    UpdateCurrentEntryText: *void;
+    UpdateCurrentEntryElapsedSeconds: *void;
+    UpdateCurrentEntryCoverArt: *void;
+    CurrentEntryDidChange: *void;
+
+    QueueWillChange: *void;
+    ResetQueueEntries: *void;
+    SetQueueEntry: *void;
+    SetCurrentQueueEntry: *void;
+    QueueDidChange: *void;
+
+    PlaylistWillChange: *void;
+    ResetPlaylistEntries: *void;
+    SetPlaylistEntry: *void;
+    SetCurrentPlaylistEntry: *void;
+    PlaylistDidChange: *void;
+}
+
+
+// list of possible errors returned by SendP2PPacket() API
+// these will be posted in the P2PSessionConnectFail_t callback
+EP2PSessionError :: enum u32 {
+    EP2PSessionErrorNone                           :: 0;
+    EP2PSessionErrorNoRightsToApp                  :: 2;
+    EP2PSessionErrorTimeout                        :: 4;
+
+    EP2PSessionErrorNotRunningApp_DELETED          :: 1;
+    EP2PSessionErrorDestinationNotLoggedIn_DELETED :: 3;
+
+    EP2PSessionErrorMax                            :: 5;
+
+    k_EP2PSessionErrorNone                           :: EP2PSessionErrorNone;
+    k_EP2PSessionErrorNoRightsToApp                  :: EP2PSessionErrorNoRightsToApp;
+    k_EP2PSessionErrorTimeout                        :: EP2PSessionErrorTimeout;
+
+    k_EP2PSessionErrorNotRunningApp_DELETED          :: EP2PSessionErrorNotRunningApp_DELETED;
+    k_EP2PSessionErrorDestinationNotLoggedIn_DELETED :: EP2PSessionErrorDestinationNotLoggedIn_DELETED;
+
+    k_EP2PSessionErrorMax                            :: EP2PSessionErrorMax;
+}
+
+// SendP2PPacket() send types
+// Typically k_EP2PSendUnreliable is what you want for UDP-like packets, k_EP2PSendReliable for TCP-like packets
+EP2PSend :: enum u32 {
+    EP2PSendUnreliable            :: 0;
+
+    EP2PSendUnreliableNoDelay     :: 1;
+
+    EP2PSendReliable              :: 2;
+
+    EP2PSendReliableWithBuffering :: 3;
+
+    k_EP2PSendUnreliable            :: EP2PSendUnreliable;
+
+    k_EP2PSendUnreliableNoDelay     :: EP2PSendUnreliableNoDelay;
+
+    k_EP2PSendReliable              :: EP2PSendReliable;
+
+    k_EP2PSendReliableWithBuffering :: EP2PSendReliableWithBuffering;
+}
+
+P2PSessionState_t :: struct {
+    m_bConnectionActive:     uint8; // true if we've got an active open connection
+    m_bConnecting:           uint8; // true if we're currently trying to establish a connection
+    m_eP2PSessionError:      uint8; // last error recorded (see enum above)
+    m_bUsingRelay:           uint8; // true if it's going through a relay server (TURN)
+    m_nBytesQueuedForSend:   int32;
+    m_nPacketsQueuedForSend: int32;
+    m_nRemoteIP:             uint32; // potential IP:Port of remote host. Could be TURN server. 
+    m_nRemotePort:           uint16; // Only exists for compatibility with older authentication api's
+}
+
+// handle to a socket
+SNetSocket_t :: uint32;
+SNetListenSocket_t :: uint32;
+
+// connection progress indicators, used by CreateP2PConnectionSocket()
+ESNetSocketState :: enum u32 {
+    ESNetSocketStateInvalid                  :: 0;
+
+    ESNetSocketStateConnected                :: 1;
+
+    ESNetSocketStateInitiated                :: 10;
+
+    ESNetSocketStateLocalCandidatesFound     :: 11;
+    ESNetSocketStateReceivedRemoteCandidates :: 12;
+
+    ESNetSocketStateChallengeHandshake       :: 15;
+
+    ESNetSocketStateDisconnecting            :: 21;
+    ESNetSocketStateLocalDisconnect          :: 22;
+    ESNetSocketStateTimeoutDuringConnect     :: 23;
+    ESNetSocketStateRemoteEndDisconnected    :: 24;
+    ESNetSocketStateConnectionBroken         :: 25;
+
+    k_ESNetSocketStateInvalid                  :: ESNetSocketStateInvalid;
+
+    k_ESNetSocketStateConnected                :: ESNetSocketStateConnected;
+
+    k_ESNetSocketStateInitiated                :: ESNetSocketStateInitiated;
+
+    k_ESNetSocketStateLocalCandidatesFound     :: ESNetSocketStateLocalCandidatesFound;
+    k_ESNetSocketStateReceivedRemoteCandidates :: ESNetSocketStateReceivedRemoteCandidates;
+
+    k_ESNetSocketStateChallengeHandshake       :: ESNetSocketStateChallengeHandshake;
+
+    k_ESNetSocketStateDisconnecting            :: ESNetSocketStateDisconnecting;
+    k_ESNetSocketStateLocalDisconnect          :: ESNetSocketStateLocalDisconnect;
+    k_ESNetSocketStateTimeoutDuringConnect     :: ESNetSocketStateTimeoutDuringConnect;
+    k_ESNetSocketStateRemoteEndDisconnected    :: ESNetSocketStateRemoteEndDisconnected;
+    k_ESNetSocketStateConnectionBroken         :: ESNetSocketStateConnectionBroken;
+}
+
+// describes how the socket is currently connected
+ESNetSocketConnectionType :: enum u32 {
+    ESNetSocketConnectionTypeNotConnected :: 0;
+    ESNetSocketConnectionTypeUDP          :: 1;
+    ESNetSocketConnectionTypeUDPRelay     :: 2;
+
+    k_ESNetSocketConnectionTypeNotConnected :: ESNetSocketConnectionTypeNotConnected;
+    k_ESNetSocketConnectionTypeUDP          :: ESNetSocketConnectionTypeUDP;
+    k_ESNetSocketConnectionTypeUDPRelay     :: ESNetSocketConnectionTypeUDPRelay;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Functions for making connections and sending data between clients,
+//			traversing NAT's where possible
+//
+// NOTE: This interface is deprecated and may be removed in a future release of
+///      the Steamworks SDK.  Please see ISteamNetworkingSockets and
+///      ISteamNetworkingMessages
+//-----------------------------------------------------------------------------
+ISteamNetworking :: struct {
+    vtable: *ISteamNetworking_VTable;
+}
+ISteamNetworking_VTable :: struct #type_info_none {
+    SendP2PPacket: *void;
+
+    IsP2PPacketAvailable: *void;
+
+    ReadP2PPacket: *void;
+
+    AcceptP2PSessionWithUser: *void;
+
+    CloseP2PSessionWithUser: *void;
+
+    CloseP2PChannelWithUser: *void;
+
+    GetP2PSessionState: *void;
+
+    AllowP2PPacketRelay: *void;
+
+    CreateListenSocket: *void;
+
+    CreateP2PConnectionSocket: *void;
+    CreateConnectionSocket: *void;
+
+    DestroySocket: *void;
+
+    DestroyListenSocket: *void;
+
+    SendDataOnSocket: *void;
+
+    IsDataAvailableOnSocket: *void;
+
+    RetrieveDataFromSocket: *void;
+
+    IsDataAvailable: *void;
+
+    RetrieveData: *void;
+
+    GetSocketInfo: *void;
+
+    GetListenSocketInfo: *void;
+
+    GetSocketConnectionType: *void;
+
+    GetMaxPacketSize: *void;
+}
 
 
 SteamDatagramRelayAuthTicket :: struct {}
 SteamDatagramHostedAddress :: struct {}
 SteamDatagramGameCoordinatorServerLogin :: struct {}
-
-SteamNetworkingFakeIPResult_t :: struct {}
 
 FnSteamNetConnectionStatusChanged :: #type (unknown0: *SteamNetConnectionStatusChangedCallback_t) -> void #c_call;
 FnSteamNetAuthenticationStatusChanged :: #type (unknown0: *SteamNetAuthenticationStatus_t) -> void #c_call;
@@ -5010,6 +5070,41 @@ ESteamNetworkingAvailability :: enum s32 {
     k_ESteamNetworkingAvailability__Force32bit :: Force32bit;
 }
 
+/// Different methods of describing the identity of a network host
+ESteamNetworkingIdentityType :: enum u32 {
+    Invalid        :: 0;
+
+    SteamID        :: 16;
+    XboxPairwiseID :: 17;
+    SonyPSN        :: 18;
+    GoogleStadia   :: 19;
+
+    IPAddress      :: 1;
+
+    GenericString  :: 2;
+    GenericBytes   :: 3;
+
+    UnknownType    :: 4;
+
+    Force32bit     :: 2147483647;
+
+    k_ESteamNetworkingIdentityType_Invalid        :: Invalid;
+
+    k_ESteamNetworkingIdentityType_SteamID        :: SteamID;
+    k_ESteamNetworkingIdentityType_XboxPairwiseID :: XboxPairwiseID;
+    k_ESteamNetworkingIdentityType_SonyPSN        :: SonyPSN;
+    k_ESteamNetworkingIdentityType_GoogleStadia   :: GoogleStadia;
+
+    k_ESteamNetworkingIdentityType_IPAddress      :: IPAddress;
+
+    k_ESteamNetworkingIdentityType_GenericString  :: GenericString;
+    k_ESteamNetworkingIdentityType_GenericBytes   :: GenericBytes;
+
+    k_ESteamNetworkingIdentityType_UnknownType    :: UnknownType;
+
+    k_ESteamNetworkingIdentityType__Force32bit    :: Force32bit;
+}
+
 /// "Fake IPs" are assigned to hosts, to make it easier to interface with
 /// older code that assumed all hosts will have an IPv4 address
 ESteamNetworkingFakeIPType :: enum u32 {
@@ -5031,10 +5126,66 @@ ESteamNetworkingFakeIPType :: enum u32 {
 /// Store an IP and port.  IPv6 is always used; IPv4 is represented using
 /// "IPv4-mapped" addresses: IPv4 aa.bb.cc.dd => IPv6 ::ffff:aabb:ccdd
 /// (RFC 4291 section 2.5.5.2.)
-SteamNetworkingIPAddr :: struct {}
+SteamNetworkingIPAddr :: struct {
+    // Max length of the buffer needed to hold IP formatted using ToString, including '\0'
+    // ([0123:4567:89ab:cdef:0123:4567:89ab:cdef]:12345)
+    anon_enum_163 :: enum u32 {
+        k_cchMaxString :: 48;
+    }
+
+    /// RFC4038, section 4.2
+    IPv4MappedAddress :: struct {
+        m_8zeros: uint64;
+        m_0000:   uint16;
+        m_ffff:   uint16;
+        m_ip:     [4] uint8; // NOTE: As bytes, i.e. network byte order
+    }
+
+    union {
+        m_ipv6: [16] uint8;
+        m_ipv4: IPv4MappedAddress;
+    }
+
+    m_port: uint16; // Host byte order
+}
 
 // Forward declare types
-SteamNetworkingIdentity :: struct {}
+SteamNetworkingIdentity :: struct {
+    /// Type of identity.
+    m_eType:  ESteamNetworkingIdentityType;
+
+    // Max sizes
+    k_2 :: enum u32 {
+        cchMaxString         :: 128;
+        cchMaxGenericString  :: 32;
+        cchMaxXboxPairwiseID :: 33;
+        cbMaxGenericBytes    :: 32;
+
+        k_cchMaxString         :: cchMaxString;
+        k_cchMaxGenericString  :: cchMaxGenericString;
+        k_cchMaxXboxPairwiseID :: cchMaxXboxPairwiseID;
+        k_cbMaxGenericBytes    :: cbMaxGenericBytes;
+    }
+
+    //
+    // Internal representation.  Don't access this directly, use the accessors!
+    //
+    // Number of bytes that are relevant below.  This MUST ALWAYS be
+    // set.  (Use the accessors!)  This is important to enable old code to work
+    // with new identity types.
+    m_cbSize: s32;
+    union {
+        m_steamID64:          uint64;
+        m_PSNID:              uint64;
+        m_stadiaID:           uint64;
+        m_szGenericString:    [32] u8;
+        m_szXboxPairwiseID:   [33] u8;
+        m_genericBytes:       [32] uint8;
+        m_szUnknownRawString: [128] u8;
+        m_ip:                 SteamNetworkingIPAddr;
+        m_reserved:           [32] uint32; // Pad structure to leave easy room for future expansion
+    }
+}
 
 /// High level connection status
 ESteamNetworkingConnectionState :: enum s32 {
@@ -5079,18 +5230,365 @@ ESteamNetworkingConnectionState :: enum s32 {
     k_ESteamNetworkingConnectionState__Force32Bit            :: Force32Bit;
 }
 
+/// Enumerate various causes of connection termination.  These are designed to work similar
+/// to HTTP error codes: the numeric range gives you a rough classification as to the source
+/// of the problem.
+ESteamNetConnectionEnd :: enum u32 {
+    Invalid                          :: 0;
+
+    App_Min                          :: 1000;
+    App_Generic                      :: 1000;
+
+    App_Max                          :: 1999;
+
+    AppException_Min                 :: 2000;
+    AppException_Generic             :: 2000;
+
+    AppException_Max                 :: 2999;
+
+    Local_Min                        :: 3000;
+
+    Local_OfflineMode                :: 3001;
+
+    Local_ManyRelayConnectivity      :: 3002;
+
+    Local_HostedServerPrimaryRelay   :: 3003;
+
+    Local_NetworkConfig              :: 3004;
+
+    Local_Rights                     :: 3005;
+
+    Local_P2P_ICE_NoPublicAddresses  :: 3006;
+
+    Local_Max                        :: 3999;
+
+    Remote_Min                       :: 4000;
+
+    Remote_Timeout                   :: 4001;
+
+    Remote_BadCrypt                  :: 4002;
+
+    Remote_BadCert                   :: 4003;
+
+    Remote_BadProtocolVersion        :: 4006;
+
+    Remote_P2P_ICE_NoPublicAddresses :: 4007;
+
+    Remote_Max                       :: 4999;
+
+    Misc_Min                         :: 5000;
+
+    Misc_Generic                     :: 5001;
+
+    Misc_InternalError               :: 5002;
+
+    Misc_Timeout                     :: 5003;
+
+    Misc_SteamConnectivity           :: 5005;
+
+    Misc_NoRelaySessionsToClient     :: 5006;
+
+    Misc_P2P_Rendezvous              :: 5008;
+
+    Misc_P2P_NAT_Firewall            :: 5009;
+
+    Misc_PeerSentNoConnection        :: 5010;
+
+    Misc_Max                         :: 5999;
+
+    Force32Bit                       :: 2147483647;
+
+    k_ESteamNetConnectionEnd_Invalid                          :: Invalid;
+
+    k_ESteamNetConnectionEnd_App_Min                          :: App_Min;
+    k_ESteamNetConnectionEnd_App_Generic                      :: App_Generic;
+
+    k_ESteamNetConnectionEnd_App_Max                          :: App_Max;
+
+    k_ESteamNetConnectionEnd_AppException_Min                 :: AppException_Min;
+    k_ESteamNetConnectionEnd_AppException_Generic             :: AppException_Generic;
+
+    k_ESteamNetConnectionEnd_AppException_Max                 :: AppException_Max;
+
+    k_ESteamNetConnectionEnd_Local_Min                        :: Local_Min;
+
+    k_ESteamNetConnectionEnd_Local_OfflineMode                :: Local_OfflineMode;
+
+    k_ESteamNetConnectionEnd_Local_ManyRelayConnectivity      :: Local_ManyRelayConnectivity;
+
+    k_ESteamNetConnectionEnd_Local_HostedServerPrimaryRelay   :: Local_HostedServerPrimaryRelay;
+
+    k_ESteamNetConnectionEnd_Local_NetworkConfig              :: Local_NetworkConfig;
+
+    k_ESteamNetConnectionEnd_Local_Rights                     :: Local_Rights;
+
+    k_ESteamNetConnectionEnd_Local_P2P_ICE_NoPublicAddresses  :: Local_P2P_ICE_NoPublicAddresses;
+
+    k_ESteamNetConnectionEnd_Local_Max                        :: Local_Max;
+
+    k_ESteamNetConnectionEnd_Remote_Min                       :: Remote_Min;
+
+    k_ESteamNetConnectionEnd_Remote_Timeout                   :: Remote_Timeout;
+
+    k_ESteamNetConnectionEnd_Remote_BadCrypt                  :: Remote_BadCrypt;
+
+    k_ESteamNetConnectionEnd_Remote_BadCert                   :: Remote_BadCert;
+
+    k_ESteamNetConnectionEnd_Remote_BadProtocolVersion        :: Remote_BadProtocolVersion;
+
+    k_ESteamNetConnectionEnd_Remote_P2P_ICE_NoPublicAddresses :: Remote_P2P_ICE_NoPublicAddresses;
+
+    k_ESteamNetConnectionEnd_Remote_Max                       :: Remote_Max;
+
+    k_ESteamNetConnectionEnd_Misc_Min                         :: Misc_Min;
+
+    k_ESteamNetConnectionEnd_Misc_Generic                     :: Misc_Generic;
+
+    k_ESteamNetConnectionEnd_Misc_InternalError               :: Misc_InternalError;
+
+    k_ESteamNetConnectionEnd_Misc_Timeout                     :: Misc_Timeout;
+
+    k_ESteamNetConnectionEnd_Misc_SteamConnectivity           :: Misc_SteamConnectivity;
+
+    k_ESteamNetConnectionEnd_Misc_NoRelaySessionsToClient     :: Misc_NoRelaySessionsToClient;
+
+    k_ESteamNetConnectionEnd_Misc_P2P_Rendezvous              :: Misc_P2P_Rendezvous;
+
+    k_ESteamNetConnectionEnd_Misc_P2P_NAT_Firewall            :: Misc_P2P_NAT_Firewall;
+
+    k_ESteamNetConnectionEnd_Misc_PeerSentNoConnection        :: Misc_PeerSentNoConnection;
+
+    k_ESteamNetConnectionEnd_Misc_Max                         :: Misc_Max;
+
+    k_ESteamNetConnectionEnd__Force32Bit                      :: Force32Bit;
+}
+
 /// Describe the state of a connection.
-SteamNetConnectionInfo_t :: struct {}
+SteamNetConnectionInfo_t :: struct {
+    /// Who is on the other end?  Depending on the connection type and phase of the connection, we might not know
+    m_identityRemote:          SteamNetworkingIdentity;
+
+    /// Arbitrary user data set by the local application code
+    m_nUserData:               int64;
+
+    /// Handle to listen socket this was connected on, or k_HSteamListenSocket_Invalid if we initiated the connection
+    m_hListenSocket:           HSteamListenSocket;
+
+    /// Remote address.  Might be all 0's if we don't know it, or if this is N/A.
+    /// (E.g. Basically everything except direct UDP connection.)
+    m_addrRemote:              SteamNetworkingIPAddr;
+    m__pad1:                   uint16;
+
+    /// What data center is the remote host in?  (0 if we don't know.)
+    m_idPOPRemote:             SteamNetworkingPOPID;
+
+    /// What relay are we using to communicate with the remote host?
+    /// (0 if not applicable.)
+    m_idPOPRelay:              SteamNetworkingPOPID;
+
+    /// High level state of the connection
+    m_eState:                  ESteamNetworkingConnectionState;
+
+    /// Basic cause of the connection termination or problem.
+    /// See ESteamNetConnectionEnd for the values used
+    m_eEndReason:              s32;
+
+    /// Human-readable, but non-localized explanation for connection
+    /// termination or problem.  This is intended for debugging /
+    /// diagnostic purposes only, not to display to users.  It might
+    /// have some details specific to the issue.
+    m_szEndDebug:              [128] u8;
+
+    /// Debug description.  This includes the internal connection ID,
+    /// connection type (and peer information), and any name
+    /// given to the connection by the app.  This string is used in various
+    /// internal logging messages.
+    ///
+    /// Note that the connection ID *usually* matches the HSteamNetConnection
+    /// handle, but in certain cases with symmetric connections it might not.
+    m_szConnectionDescription: [128] u8;
+
+    /// Misc flags.  Bitmask of k_nSteamNetworkConnectionInfoFlags_Xxxx
+    m_nFlags:                  s32;
+
+    /// Internal stuff, room to change API easily
+    reserved:                  [63] uint32;
+}
 
 /// Quick connection state, pared down to something you could call
 /// more frequently without it being too big of a perf hit.
-SteamNetConnectionRealTimeStatus_t :: struct {}
+SteamNetConnectionRealTimeStatus_t :: struct {
+    /// High level state of the connection
+    m_eState:                    ESteamNetworkingConnectionState;
+
+    /// Current ping (ms)
+    m_nPing:                     s32;
+
+    /// Connection quality measured locally, 0...1.  (Percentage of packets delivered
+    /// end-to-end in order).
+    m_flConnectionQualityLocal:  float;
+
+    /// Packet delivery success rate as observed from remote host
+    m_flConnectionQualityRemote: float;
+
+    /// Current data rates from recent history.
+    m_flOutPacketsPerSec:        float;
+    m_flOutBytesPerSec:          float;
+    m_flInPacketsPerSec:         float;
+    m_flInBytesPerSec:           float;
+
+    /// Estimate rate that we believe that we can send data to our peer.
+    /// Note that this could be significantly higher than m_flOutBytesPerSec,
+    /// meaning the capacity of the channel is higher than you are sending data.
+    /// (That's OK!)
+    m_nSendRateBytesPerSecond:   s32;
+
+    /// Number of bytes pending to be sent.  This is data that you have recently
+    /// requested to be sent but has not yet actually been put on the wire.  The
+    /// reliable number ALSO includes data that was previously placed on the wire,
+    /// but has now been scheduled for re-transmission.  Thus, it's possible to
+    /// observe m_cbPendingReliable increasing between two checks, even if no
+    /// calls were made to send reliable data between the checks.  Data that is
+    /// awaiting the Nagle delay will appear in these numbers.
+    m_cbPendingUnreliable:       s32;
+    m_cbPendingReliable:         s32;
+
+    /// Number of bytes of reliable data that has been placed the wire, but
+    /// for which we have not yet received an acknowledgment, and thus we may
+    /// have to re-transmit.
+    m_cbSentUnackedReliable:     s32;
+
+    /// If you queued a message right now, approximately how long would that message
+    /// wait in the queue before we actually started putting its data on the wire in
+    /// a packet?
+    ///
+    /// In general, data that is sent by the application is limited by the bandwidth
+    /// of the channel.  If you send data faster than this, it must be queued and
+    /// put on the wire at a metered rate.  Even sending a small amount of data (e.g.
+    /// a few MTU, say ~3k) will require some of the data to be delayed a bit.
+    ///
+    /// Ignoring multiple lanes, the estimated delay will be approximately equal to
+    ///
+    ///		( m_cbPendingUnreliable+m_cbPendingReliable ) / m_nSendRateBytesPerSecond
+    ///
+    /// plus or minus one MTU.  It depends on how much time has elapsed since the last
+    /// packet was put on the wire.  For example, the queue might have *just* been emptied,
+    /// and the last packet placed on the wire, and we are exactly up against the send
+    /// rate limit.  In that case we might need to wait for one packet's worth of time to
+    /// elapse before we can send again.  On the other extreme, the queue might have data
+    /// in it waiting for Nagle.  (This will always be less than one packet, because as
+    /// soon as we have a complete packet we would send it.)  In that case, we might be
+    /// ready to send data now, and this value will be 0.
+    ///
+    /// This value is only valid if multiple lanes are not used.  If multiple lanes are
+    /// in use, then the queue time will be different for each lane, and you must use
+    /// the value in SteamNetConnectionRealTimeLaneStatus_t.
+    ///
+    /// Nagle delay is ignored for the purposes of this calculation.
+    m_usecQueueTime:             SteamNetworkingMicroseconds;
+
+    // Internal stuff, room to change API easily
+    reserved:                    [16] uint32;
+}
 
 /// Quick status of a particular lane
-SteamNetConnectionRealTimeLaneStatus_t :: struct {}
+SteamNetConnectionRealTimeLaneStatus_t :: struct {
+    // Counters for this particular lane.  See the corresponding variables
+    // in SteamNetConnectionRealTimeStatus_t
+    m_cbPendingUnreliable:   s32;
+    m_cbPendingReliable:     s32;
+    m_cbSentUnackedReliable: s32;
+    _reservePad1:            s32; // Reserved for future use
+
+    /// Lane-specific queue time.  This value takes into consideration lane priorities
+    /// and weights, and how much data is queued in each lane, and attempts to predict
+    /// how any data currently queued will be sent out.
+    m_usecQueueTime:         SteamNetworkingMicroseconds;
+
+    // Internal stuff, room to change API easily
+    reserved:                [10] uint32;
+}
 
 /// A message that has been received.
-SteamNetworkingMessage_t :: struct {}
+SteamNetworkingMessage_t :: struct {
+    /// Message payload
+    m_pData:            *void;
+
+    /// Size of the payload.
+    m_cbSize:           s32;
+
+    /// For messages received on connections: what connection did this come from?
+    /// For outgoing messages: what connection to send it to?
+    /// Not used when using the ISteamNetworkingMessages interface
+    m_conn:             HSteamNetConnection;
+
+    /// For inbound messages: Who sent this to us?
+    /// For outbound messages on connections: not used.
+    /// For outbound messages on the ad-hoc ISteamNetworkingMessages interface: who should we send this to?
+    m_identityPeer:     SteamNetworkingIdentity;
+
+    /// For messages received on connections, this is the user data
+    /// associated with the connection.
+    ///
+    /// This is *usually* the same as calling GetConnection() and then
+    /// fetching the user data associated with that connection, but for
+    /// the following subtle differences:
+    ///
+    /// - This user data will match the connection's user data at the time
+    ///   is captured at the time the message is returned by the API.
+    ///   If you subsequently change the userdata on the connection,
+    ///   this won't be updated.
+    /// - This is an inline call, so it's *much* faster.
+    /// - You might have closed the connection, so fetching the user data
+    ///   would not be possible.
+    ///
+    /// Not used when sending messages.
+    m_nConnUserData:    int64;
+
+    /// Local timestamp when the message was received
+    /// Not used for outbound messages.
+    m_usecTimeReceived: SteamNetworkingMicroseconds;
+
+    /// Message number assigned by the sender.  This is not used for outbound
+    /// messages.  Note that if multiple lanes are used, each lane has its own
+    /// message numbers, which are assigned sequentially, so messages from
+    /// different lanes will share the same numbers.
+    m_nMessageNumber:   int64;
+
+    /// Function used to free up m_pData.  This mechanism exists so that
+    /// apps can create messages with buffers allocated from their own
+    /// heap, and pass them into the library.  This function will
+    /// usually be something like:
+    ///
+    /// free( pMsg->m_pData );
+    m_pfnFreeData:      #type (pMsg: *SteamNetworkingMessage_t) -> void #c_call;
+
+    /// Function to used to decrement the internal reference count and, if
+    /// it's zero, release the message.  You should not set this function pointer,
+    /// or need to access this directly!  Use the Release() function instead!
+    m_pfnRelease:       #type (pMsg: *SteamNetworkingMessage_t) -> void #c_call;
+
+    /// When using ISteamNetworkingMessages, the channel number the message was received on
+    /// (Not used for messages sent or received on "connections")
+    m_nChannel:         s32;
+
+    /// Bitmask of k_nSteamNetworkingSend_xxx flags.
+    /// For received messages, only the k_nSteamNetworkingSend_Reliable bit is valid.
+    /// For outbound messages, all bits are relevant
+    m_nFlags:           s32;
+
+    /// Arbitrary user data that you can use when sending messages using
+    /// ISteamNetworkingUtils::AllocateMessage and ISteamNetworkingSockets::SendMessage.
+    /// (The callback you set in m_pfnFreeData might use this field.)
+    ///
+    /// Not used for received messages.
+    m_nUserData:        int64;
+
+    /// For outbound messages, which lane to use?  See ISteamNetworkingSockets::ConfigureConnectionLanes.
+    /// For inbound messages, what lane was the message received on?
+    m_idxLane:          uint16;
+    _pad1__:            uint16;
+}
 
 /// Object that describes a "location" on the Internet with sufficient
 /// detail that we can reasonably estimate an upper bound on the ping between
@@ -5105,7 +5603,9 @@ SteamNetworkingMessage_t :: struct {}
 /// send it over the wire, or persist it in a file or database!  If you need
 /// to do that, convert it to a string representation using the methods in
 /// ISteamNetworkingUtils().
-SteamNetworkPingLocation_t :: struct {}
+SteamNetworkPingLocation_t :: struct {
+    m_data: [512] uint8;
+}
 
 /// Configuration values can be applied to different types of objects.
 ESteamNetworkingConfigScope :: enum u32 {
@@ -5409,7 +5909,21 @@ ESteamNetworkingConfigValue :: enum u32 {
 /// when the object is created, we just iterate over the list of options and call
 /// ISteamNetworkingUtils::SetConfigValueStruct, where the scope arguments are supplied by the
 /// object being created.
-SteamNetworkingConfigValue_t :: struct {}
+SteamNetworkingConfigValue_t :: struct {
+    /// Which option is being set
+    m_eValue:    ESteamNetworkingConfigValue;
+
+    /// Which field below did you fill in?
+    m_eDataType: ESteamNetworkingConfigDataType;
+
+    m_val:       union {
+        m_int32:  s32;
+        m_int64:  s64;
+        m_float:  float;
+        m_string: *u8; // Points to your '\0'-terminated buffer
+        m_ptr:    *void;
+    };
+}
 
 /// Return value of ISteamNetworkintgUtils::GetConfigValue
 ESteamNetworkingGetConfigValueResult :: enum s32 {
@@ -5504,11 +6018,14 @@ ISteamNetworkingMessages_VTable :: struct #type_info_none {
     GetSessionConnectionInfo: *void;
 }
 
-vtable :: (obj: *ISteamNetworkingMessages) -> *ISteamNetworkingMessages_VTable { return obj.vtable; }
-
 
 /// Posted when a remote host is sending us a message, and we do not already have a session with them
-SteamNetworkingMessagesSessionRequest_t :: struct {}
+SteamNetworkingMessagesSessionRequest_t :: struct {
+    anon_enum_164 :: enum u32 {
+        k_iCallback :: 1251;
+    }
+    m_identityRemote: SteamNetworkingIdentity; // user who wants to talk to us
+}
 
 /// Posted when we fail to establish a connection, or we detect that communications
 /// have been disrupted it an unusual way.  There is no notification when a peer proactively
@@ -5521,11 +6038,19 @@ SteamNetworkingMessagesSessionRequest_t :: struct {}
 /// Also, if a session times out due to inactivity, no callbacks will be posted.  The only
 /// way to detect that this is happening is that querying the session state may return
 /// none, connecting, and findingroute again.
-SteamNetworkingMessagesSessionFailed_t :: struct {}
+SteamNetworkingMessagesSessionFailed_t :: struct {
+    anon_enum_165 :: enum u32 {
+        k_iCallback :: 1252;
+    }
+
+    /// Detailed info about the session that failed.
+    /// SteamNetConnectionInfo_t::m_identityRemote indicates who this session
+    /// was with.
+    m_info: SteamNetConnectionInfo_t;
+}
 
 ISteamNetworkingConnectionSignaling :: struct {}
 ISteamNetworkingSignalingRecvContext :: struct {}
-ISteamNetworkingFakeUDPPort :: struct {}
 
 //-----------------------------------------------------------------------------
 /// Lower level networking API.
@@ -5652,8 +6177,6 @@ ISteamNetworkingSockets_VTable :: struct #type_info_none {
     CreateFakeUDPPort: *void;
 }
 
-vtable :: (obj: *ISteamNetworkingSockets) -> *ISteamNetworkingSockets_VTable { return obj.vtable; }
-
 
 /// This callback is posted whenever a connection is created, destroyed, or changes state.
 /// The m_info field will contain a complete description of the connection at the time the
@@ -5690,7 +6213,20 @@ vtable :: (obj: *ISteamNetworkingSockets) -> *ISteamNetworkingSockets_VTable { r
 /// state by the time you process this callback.
 ///
 /// Also note that callbacks will be posted when connections are created and destroyed by your own API calls.
-SteamNetConnectionStatusChangedCallback_t :: struct {}
+SteamNetConnectionStatusChangedCallback_t :: struct {
+    anon_enum_166 :: enum u32 {
+        k_iCallback :: 1221;
+    }
+
+    /// Connection handle
+    m_hConn:     HSteamNetConnection;
+
+    /// Full connection info
+    m_info:      SteamNetConnectionInfo_t #align 4;
+
+    /// Previous state.  (Current state is in m_info.m_eState)
+    m_eOldState: ESteamNetworkingConnectionState;
+}
 
 /// A struct used to describe our readiness to participate in authenticated,
 /// encrypted communication.  In order to do this we need:
@@ -5700,7 +6236,18 @@ SteamNetConnectionStatusChangedCallback_t :: struct {}
 /// - A valid certificate issued by a CA.
 ///
 /// This callback is posted whenever the state of our readiness changes.
-SteamNetAuthenticationStatus_t :: struct {}
+SteamNetAuthenticationStatus_t :: struct {
+    anon_enum_167 :: enum u32 {
+        k_iCallback :: 1222;
+    }
+
+    /// Status
+    m_eAvail:   ESteamNetworkingAvailability;
+
+    /// Non-localized English language status.  For diagnostic/debugging
+    /// purposes only.
+    m_debugMsg: [256] u8;
+}
 
 //-----------------------------------------------------------------------------
 /// Misc networking utilities for checking the local networking environment
@@ -5756,70 +6303,970 @@ ISteamNetworkingUtils_VTable :: struct #type_info_none {
     SteamNetworkingIdentity_ParseString: *void;
 }
 
-vtable :: (obj: *ISteamNetworkingUtils) -> *ISteamNetworkingUtils_VTable { return obj.vtable; }
-
 
 /// A struct used to describe our readiness to use the relay network.
 /// To do this we first need to fetch the network configuration,
 /// which describes what POPs are available.
-SteamRelayNetworkStatus_t :: struct {}
+SteamRelayNetworkStatus_t :: struct {
+    anon_enum_168 :: enum u32 {
+        k_iCallback :: 1281;
+    }
 
-//-----------------------------------------------------------------------------
-// Purpose: Functions for authenticating users via Steam to play on a game server
-//-----------------------------------------------------------------------------
-ISteamGameServer :: struct {
-    vtable: *ISteamGameServer_VTable;
+    /// Summary status.  When this is "current", initialization has
+    /// completed.  Anything else means you are not ready yet, or
+    /// there is a significant problem.
+    m_eAvail:                     ESteamNetworkingAvailability;
+
+    /// Nonzero if latency measurement is in progress (or pending,
+    /// awaiting a prerequisite).
+    m_bPingMeasurementInProgress: s32;
+
+    /// Status obtaining the network config.  This is a prerequisite
+    /// for relay network access.
+    ///
+    /// Failure to obtain the network config almost always indicates
+    /// a problem with the local internet connection.
+    m_eAvailNetworkConfig:        ESteamNetworkingAvailability;
+
+    /// Current ability to communicate with ANY relay.  Note that
+    /// the complete failure to communicate with any relays almost
+    /// always indicates a problem with the local Internet connection.
+    /// (However, just because you can reach a single relay doesn't
+    /// mean that the local connection is in perfect health.)
+    m_eAvailAnyRelay:             ESteamNetworkingAvailability;
+
+    /// Non-localized English language status.  For diagnostic/debugging
+    /// purposes only.
+    m_debugMsg:                   [256] u8;
 }
-ISteamGameServer_VTable :: struct #type_info_none {
-    InitGameServer: *void;
 
-    SetProduct: *void;
+// Feature types for parental settings
+EParentalFeature :: enum u32 {
+    EFeatureInvalid              :: 0;
+    EFeatureStore                :: 1;
+    EFeatureCommunity            :: 2;
+    EFeatureProfile              :: 3;
+    EFeatureFriends              :: 4;
+    EFeatureNews                 :: 5;
+    EFeatureTrading              :: 6;
+    EFeatureSettings             :: 7;
+    EFeatureConsole              :: 8;
+    EFeatureBrowser              :: 9;
+    EFeatureParentalSetup        :: 10;
+    EFeatureLibrary              :: 11;
+    EFeatureTest                 :: 12;
+    EFeatureSiteLicense          :: 13;
+    EFeatureKioskMode_Deprecated :: 14;
+    EFeatureBlockAlways          :: 15;
+    EFeatureMax                  :: 16;
 
-    SetGameDescription: *void;
+    k_EFeatureInvalid              :: EFeatureInvalid;
+    k_EFeatureStore                :: EFeatureStore;
+    k_EFeatureCommunity            :: EFeatureCommunity;
+    k_EFeatureProfile              :: EFeatureProfile;
+    k_EFeatureFriends              :: EFeatureFriends;
+    k_EFeatureNews                 :: EFeatureNews;
+    k_EFeatureTrading              :: EFeatureTrading;
+    k_EFeatureSettings             :: EFeatureSettings;
+    k_EFeatureConsole              :: EFeatureConsole;
+    k_EFeatureBrowser              :: EFeatureBrowser;
+    k_EFeatureParentalSetup        :: EFeatureParentalSetup;
+    k_EFeatureLibrary              :: EFeatureLibrary;
+    k_EFeatureTest                 :: EFeatureTest;
+    k_EFeatureSiteLicense          :: EFeatureSiteLicense;
+    k_EFeatureKioskMode_Deprecated :: EFeatureKioskMode_Deprecated;
+    k_EFeatureBlockAlways          :: EFeatureBlockAlways;
+    k_EFeatureMax                  :: EFeatureMax;
+}
 
-    SetModDir: *void;
+ISteamParentalSettings :: struct {
+    vtable: *ISteamParentalSettings_VTable;
+}
+ISteamParentalSettings_VTable :: struct #type_info_none {
+    BIsParentalLockEnabled: *void;
+    BIsParentalLockLocked: *void;
 
-    SetDedicatedServer: *void;
+    BIsAppBlocked: *void;
+    BIsAppInBlockList: *void;
 
-    LogOn: *void;
+    BIsFeatureBlocked: *void;
+    BIsFeatureInBlockList: *void;
+}
 
-    LogOnAnonymous: *void;
 
-    LogOff: *void;
+//-----------------------------------------------------------------------------
+// Purpose: The form factor of a device
+//-----------------------------------------------------------------------------
+ESteamDeviceFormFactor :: enum u32 {
+    ESteamDeviceFormFactorUnknown   :: 0;
+    ESteamDeviceFormFactorPhone     :: 1;
+    ESteamDeviceFormFactorTablet    :: 2;
+    ESteamDeviceFormFactorComputer  :: 3;
+    ESteamDeviceFormFactorTV        :: 4;
+    ESteamDeviceFormFactorVRHeadset :: 5;
+
+    k_ESteamDeviceFormFactorUnknown   :: ESteamDeviceFormFactorUnknown;
+    k_ESteamDeviceFormFactorPhone     :: ESteamDeviceFormFactorPhone;
+    k_ESteamDeviceFormFactorTablet    :: ESteamDeviceFormFactorTablet;
+    k_ESteamDeviceFormFactorComputer  :: ESteamDeviceFormFactorComputer;
+    k_ESteamDeviceFormFactorTV        :: ESteamDeviceFormFactorTV;
+    k_ESteamDeviceFormFactorVRHeadset :: ESteamDeviceFormFactorVRHeadset;
+}
+
+// Steam Remote Play session ID
+RemotePlaySessionID_t :: uint32;
+
+//-----------------------------------------------------------------------------
+// Purpose: Functions to provide information about Steam Remote Play sessions
+//-----------------------------------------------------------------------------
+ISteamRemotePlay :: struct {
+    vtable: *ISteamRemotePlay_VTable;
+}
+ISteamRemotePlay_VTable :: struct #type_info_none {
+    GetSessionCount: *void;
+
+    GetSessionID: *void;
+
+    GetSessionSteamID: *void;
+
+    GetSessionClientName: *void;
+
+    GetSessionClientFormFactor: *void;
+
+    BGetSessionClientResolution: *void;
+
+    BStartRemotePlayTogether: *void;
+
+    BSendRemotePlayTogetherInvite: *void;
+}
+
+
+SteamParamStringArray_t :: struct {
+    m_ppStrings:   **u8;
+    m_nNumStrings: int32;
+}
+
+// A handle to a piece of user generated content
+UGCHandle_t :: uint64;
+PublishedFileUpdateHandle_t :: uint64;
+PublishedFileId_t :: uint64;
+
+// Handle for writing to Steam Cloud
+UGCFileWriteStreamHandle_t :: uint64;
+
+ERemoteStoragePlatform :: enum u32 {
+    ERemoteStoragePlatformNone    :: 0;
+    ERemoteStoragePlatformWindows :: 1;
+    ERemoteStoragePlatformOSX     :: 2;
+    ERemoteStoragePlatformPS3     :: 4;
+    ERemoteStoragePlatformLinux   :: 8;
+    ERemoteStoragePlatformSwitch  :: 16;
+    ERemoteStoragePlatformAndroid :: 32;
+    ERemoteStoragePlatformIOS     :: 64;
+
+    ERemoteStoragePlatformAll     :: 4294967295;
+
+    k_ERemoteStoragePlatformNone    :: ERemoteStoragePlatformNone;
+    k_ERemoteStoragePlatformWindows :: ERemoteStoragePlatformWindows;
+    k_ERemoteStoragePlatformOSX     :: ERemoteStoragePlatformOSX;
+    k_ERemoteStoragePlatformPS3     :: ERemoteStoragePlatformPS3;
+    k_ERemoteStoragePlatformLinux   :: ERemoteStoragePlatformLinux;
+    k_ERemoteStoragePlatformSwitch  :: ERemoteStoragePlatformSwitch;
+    k_ERemoteStoragePlatformAndroid :: ERemoteStoragePlatformAndroid;
+    k_ERemoteStoragePlatformIOS     :: ERemoteStoragePlatformIOS;
+
+    k_ERemoteStoragePlatformAll     :: ERemoteStoragePlatformAll;
+}
+
+ERemoteStoragePublishedFileVisibility :: enum u32 {
+    ERemoteStoragePublishedFileVisibilityPublic      :: 0;
+    ERemoteStoragePublishedFileVisibilityFriendsOnly :: 1;
+    ERemoteStoragePublishedFileVisibilityPrivate     :: 2;
+    ERemoteStoragePublishedFileVisibilityUnlisted    :: 3;
+
+    k_ERemoteStoragePublishedFileVisibilityPublic      :: ERemoteStoragePublishedFileVisibilityPublic;
+    k_ERemoteStoragePublishedFileVisibilityFriendsOnly :: ERemoteStoragePublishedFileVisibilityFriendsOnly;
+    k_ERemoteStoragePublishedFileVisibilityPrivate     :: ERemoteStoragePublishedFileVisibilityPrivate;
+    k_ERemoteStoragePublishedFileVisibilityUnlisted    :: ERemoteStoragePublishedFileVisibilityUnlisted;
+}
+
+EWorkshopFileType :: enum u32 {
+    EWorkshopFileTypeFirst                  :: 0;
+
+    EWorkshopFileTypeCommunity              :: 0;
+    EWorkshopFileTypeMicrotransaction       :: 1;
+    EWorkshopFileTypeCollection             :: 2;
+    EWorkshopFileTypeArt                    :: 3;
+    EWorkshopFileTypeVideo                  :: 4;
+    EWorkshopFileTypeScreenshot             :: 5;
+    EWorkshopFileTypeGame                   :: 6;
+    EWorkshopFileTypeSoftware               :: 7;
+    EWorkshopFileTypeConcept                :: 8;
+    EWorkshopFileTypeWebGuide               :: 9;
+    EWorkshopFileTypeIntegratedGuide        :: 10;
+    EWorkshopFileTypeMerch                  :: 11;
+    EWorkshopFileTypeControllerBinding      :: 12;
+    EWorkshopFileTypeSteamworksAccessInvite :: 13;
+    EWorkshopFileTypeSteamVideo             :: 14;
+    EWorkshopFileTypeGameManagedItem        :: 15;
+    EWorkshopFileTypeClip                   :: 16;
+
+    EWorkshopFileTypeMax                    :: 17;
+
+    k_EWorkshopFileTypeFirst                  :: EWorkshopFileTypeFirst;
+
+    k_EWorkshopFileTypeCommunity              :: EWorkshopFileTypeCommunity;
+    k_EWorkshopFileTypeMicrotransaction       :: EWorkshopFileTypeMicrotransaction;
+    k_EWorkshopFileTypeCollection             :: EWorkshopFileTypeCollection;
+    k_EWorkshopFileTypeArt                    :: EWorkshopFileTypeArt;
+    k_EWorkshopFileTypeVideo                  :: EWorkshopFileTypeVideo;
+    k_EWorkshopFileTypeScreenshot             :: EWorkshopFileTypeScreenshot;
+    k_EWorkshopFileTypeGame                   :: EWorkshopFileTypeGame;
+    k_EWorkshopFileTypeSoftware               :: EWorkshopFileTypeSoftware;
+    k_EWorkshopFileTypeConcept                :: EWorkshopFileTypeConcept;
+    k_EWorkshopFileTypeWebGuide               :: EWorkshopFileTypeWebGuide;
+    k_EWorkshopFileTypeIntegratedGuide        :: EWorkshopFileTypeIntegratedGuide;
+    k_EWorkshopFileTypeMerch                  :: EWorkshopFileTypeMerch;
+    k_EWorkshopFileTypeControllerBinding      :: EWorkshopFileTypeControllerBinding;
+    k_EWorkshopFileTypeSteamworksAccessInvite :: EWorkshopFileTypeSteamworksAccessInvite;
+    k_EWorkshopFileTypeSteamVideo             :: EWorkshopFileTypeSteamVideo;
+    k_EWorkshopFileTypeGameManagedItem        :: EWorkshopFileTypeGameManagedItem;
+    k_EWorkshopFileTypeClip                   :: EWorkshopFileTypeClip;
+
+    k_EWorkshopFileTypeMax                    :: EWorkshopFileTypeMax;
+}
+
+EWorkshopVote :: enum u32 {
+    EWorkshopVoteUnvoted :: 0;
+    EWorkshopVoteFor     :: 1;
+    EWorkshopVoteAgainst :: 2;
+    EWorkshopVoteLater   :: 3;
+
+    k_EWorkshopVoteUnvoted :: EWorkshopVoteUnvoted;
+    k_EWorkshopVoteFor     :: EWorkshopVoteFor;
+    k_EWorkshopVoteAgainst :: EWorkshopVoteAgainst;
+    k_EWorkshopVoteLater   :: EWorkshopVoteLater;
+}
+
+EWorkshopFileAction :: enum u32 {
+    EWorkshopFileActionPlayed    :: 0;
+    EWorkshopFileActionCompleted :: 1;
+
+    k_EWorkshopFileActionPlayed    :: EWorkshopFileActionPlayed;
+    k_EWorkshopFileActionCompleted :: EWorkshopFileActionCompleted;
+}
+
+EWorkshopEnumerationType :: enum u32 {
+    EWorkshopEnumerationTypeRankedByVote            :: 0;
+    EWorkshopEnumerationTypeRecent                  :: 1;
+    EWorkshopEnumerationTypeTrending                :: 2;
+    EWorkshopEnumerationTypeFavoritesOfFriends      :: 3;
+    EWorkshopEnumerationTypeVotedByFriends          :: 4;
+    EWorkshopEnumerationTypeContentByFriends        :: 5;
+    EWorkshopEnumerationTypeRecentFromFollowedUsers :: 6;
+
+    k_EWorkshopEnumerationTypeRankedByVote            :: EWorkshopEnumerationTypeRankedByVote;
+    k_EWorkshopEnumerationTypeRecent                  :: EWorkshopEnumerationTypeRecent;
+    k_EWorkshopEnumerationTypeTrending                :: EWorkshopEnumerationTypeTrending;
+    k_EWorkshopEnumerationTypeFavoritesOfFriends      :: EWorkshopEnumerationTypeFavoritesOfFriends;
+    k_EWorkshopEnumerationTypeVotedByFriends          :: EWorkshopEnumerationTypeVotedByFriends;
+    k_EWorkshopEnumerationTypeContentByFriends        :: EWorkshopEnumerationTypeContentByFriends;
+    k_EWorkshopEnumerationTypeRecentFromFollowedUsers :: EWorkshopEnumerationTypeRecentFromFollowedUsers;
+}
+
+EWorkshopVideoProvider :: enum u32 {
+    EWorkshopVideoProviderNone    :: 0;
+    EWorkshopVideoProviderYoutube :: 1;
+
+    k_EWorkshopVideoProviderNone    :: EWorkshopVideoProviderNone;
+    k_EWorkshopVideoProviderYoutube :: EWorkshopVideoProviderYoutube;
+}
+
+EUGCReadAction :: enum u32 {
+    ContinueReadingUntilFinished :: 0;
+
+    ContinueReading              :: 1;
+
+    Close                        :: 2;
+
+    k_EUGCRead_ContinueReadingUntilFinished :: ContinueReadingUntilFinished;
+
+    k_EUGCRead_ContinueReading              :: ContinueReading;
+
+    k_EUGCRead_Close                        :: Close;
+}
+
+ERemoteStorageLocalFileChange :: enum u32 {
+    Invalid     :: 0;
+
+    FileUpdated :: 1;
+
+    FileDeleted :: 2;
+
+    k_ERemoteStorageLocalFileChange_Invalid     :: Invalid;
+
+    k_ERemoteStorageLocalFileChange_FileUpdated :: FileUpdated;
+
+    k_ERemoteStorageLocalFileChange_FileDeleted :: FileDeleted;
+}
+
+ERemoteStorageFilePathType :: enum u32 {
+    Invalid     :: 0;
+
+    Absolute    :: 1;
+
+    APIFilename :: 2;
+
+    k_ERemoteStorageFilePathType_Invalid     :: Invalid;
+
+    k_ERemoteStorageFilePathType_Absolute    :: Absolute;
+
+    k_ERemoteStorageFilePathType_APIFilename :: APIFilename;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Functions for accessing, reading and writing files stored remotely
+//			and cached locally
+//-----------------------------------------------------------------------------
+ISteamRemoteStorage :: struct {
+    vtable: *ISteamRemoteStorage_VTable;
+}
+ISteamRemoteStorage_VTable :: struct #type_info_none {
+    FileWrite: *void;
+    FileRead: *void;
+
+    FileWriteAsync: *void;
+
+    FileReadAsync: *void;
+    FileReadAsyncComplete: *void;
+
+    FileForget: *void;
+    FileDelete: *void;
+
+    FileShare: *void;
+    SetSyncPlatforms: *void;
+
+    FileWriteStreamOpen: *void;
+    FileWriteStreamWriteChunk: *void;
+    FileWriteStreamClose: *void;
+    FileWriteStreamCancel: *void;
+
+    FileExists: *void;
+    FilePersisted: *void;
+    GetFileSize: *void;
+    GetFileTimestamp: *void;
+    GetSyncPlatforms: *void;
+
+    GetFileCount: *void;
+    GetFileNameAndSize: *void;
+
+    GetQuota: *void;
+    IsCloudEnabledForAccount: *void;
+    IsCloudEnabledForApp: *void;
+    SetCloudEnabledForApp: *void;
+
+    UGCDownload: *void;
+
+    GetUGCDownloadProgress: *void;
+
+    GetUGCDetails: *void;
+
+    UGCRead: *void;
+
+    GetCachedUGCCount: *void;
+    GetCachedUGCHandle: *void;
+
+    PublishWorkshopFile: *void;
+    CreatePublishedFileUpdateRequest: *void;
+    UpdatePublishedFileFile: *void;
+    UpdatePublishedFilePreviewFile: *void;
+    UpdatePublishedFileTitle: *void;
+    UpdatePublishedFileDescription: *void;
+    UpdatePublishedFileVisibility: *void;
+    UpdatePublishedFileTags: *void;
+
+    CommitPublishedFileUpdate: *void;
+
+    GetPublishedFileDetails: *void;
+
+    DeletePublishedFile: *void;
+
+    EnumerateUserPublishedFiles: *void;
+
+    SubscribePublishedFile: *void;
+
+    EnumerateUserSubscribedFiles: *void;
+
+    UnsubscribePublishedFile: *void;
+    UpdatePublishedFileSetChangeDescription: *void;
+
+    GetPublishedItemVoteDetails: *void;
+
+    UpdateUserPublishedItemVote: *void;
+
+    GetUserPublishedItemVoteDetails: *void;
+
+    EnumerateUserSharedWorkshopFiles: *void;
+
+    PublishVideo: *void;
+
+    SetUserPublishedFileAction: *void;
+
+    EnumeratePublishedFilesByUserAction: *void;
+
+    EnumeratePublishedWorkshopFiles: *void;
+
+    UGCDownloadToLocation: *void;
+
+    GetLocalFileChangeCount: *void;
+    GetLocalFileChange: *void;
+
+    BeginFileWriteBatch: *void;
+    EndFileWriteBatch: *void;
+}
+
+
+// Handle is valid for the lifetime of your process and no longer
+ScreenshotHandle :: uint32;
+
+EVRScreenshotType :: enum u32 {
+    None           :: 0;
+    Mono           :: 1;
+    Stereo         :: 2;
+    MonoCubemap    :: 3;
+    MonoPanorama   :: 4;
+    StereoPanorama :: 5;
+
+    k_EVRScreenshotType_None           :: None;
+    k_EVRScreenshotType_Mono           :: Mono;
+    k_EVRScreenshotType_Stereo         :: Stereo;
+    k_EVRScreenshotType_MonoCubemap    :: MonoCubemap;
+    k_EVRScreenshotType_MonoPanorama   :: MonoPanorama;
+    k_EVRScreenshotType_StereoPanorama :: StereoPanorama;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Functions for adding screenshots to the user's screenshot library
+//-----------------------------------------------------------------------------
+ISteamScreenshots :: struct {
+    vtable: *ISteamScreenshots_VTable;
+}
+ISteamScreenshots_VTable :: struct #type_info_none {
+    WriteScreenshot: *void;
+
+    AddScreenshotToLibrary: *void;
+
+    TriggerScreenshot: *void;
+
+    HookScreenshots: *void;
+
+    SetLocation: *void;
+
+    TagUser: *void;
+
+    TagPublishedFile: *void;
+
+    IsScreenshotsHooked: *void;
+
+    AddVRScreenshotToLibrary: *void;
+}
+
+
+// Controls the color of the timeline bar segments. The value names listed here map to a multiplayer game, where
+// the user starts a game (in menus), then joins a multiplayer session that first has a character selection lobby
+// then finally the multiplayer session starts. However, you can also map these values to any type of game. In a single
+// player game where you visit towns & dungeons, you could set k_ETimelineGameMode_Menus when the player is in a town
+// buying items, k_ETimelineGameMode_Staging for when a dungeon is loading and k_ETimelineGameMode_Playing for when
+// inside the dungeon fighting monsters.
+ETimelineGameMode :: enum u32 {
+    Invalid       :: 0;
+    Playing       :: 1;
+    Staging       :: 2;
+    Menus         :: 3;
+    LoadingScreen :: 4;
+
+    Max           :: 5;
+
+    k_ETimelineGameMode_Invalid       :: Invalid;
+    k_ETimelineGameMode_Playing       :: Playing;
+    k_ETimelineGameMode_Staging       :: Staging;
+    k_ETimelineGameMode_Menus         :: Menus;
+    k_ETimelineGameMode_LoadingScreen :: LoadingScreen;
+
+    k_ETimelineGameMode_Max           :: Max;
+}
+
+// Used in AddTimelineEvent, where Featured events will be offered before Standard events
+ETimelineEventClipPriority :: enum u32 {
+    Invalid  :: 0;
+    None     :: 1;
+    Standard :: 2;
+    Featured :: 3;
+
+    k_ETimelineEventClipPriority_Invalid  :: Invalid;
+    k_ETimelineEventClipPriority_None     :: None;
+    k_ETimelineEventClipPriority_Standard :: Standard;
+    k_ETimelineEventClipPriority_Featured :: Featured;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Steam Timeline API
+//-----------------------------------------------------------------------------
+ISteamTimeline :: struct {
+    vtable: *ISteamTimeline_VTable;
+}
+ISteamTimeline_VTable :: struct #type_info_none {
+    SetTimelineStateDescription: *void;
+    ClearTimelineStateDescription: *void;
+
+    AddTimelineEvent: *void;
+
+    SetTimelineGameMode: *void;
+}
+
+
+UGCQueryHandle_t :: uint64;
+UGCUpdateHandle_t :: uint64;
+
+// Matching UGC types for queries
+EUGCMatchingUGCType :: enum s32 {
+    Items              :: 0;
+    Items_Mtx          :: 1;
+    Items_ReadyToUse   :: 2;
+    Collections        :: 3;
+    Artwork            :: 4;
+    Videos             :: 5;
+    Screenshots        :: 6;
+    AllGuides          :: 7;
+    WebGuides          :: 8;
+    IntegratedGuides   :: 9;
+    UsableInGame       :: 10;
+    ControllerBindings :: 11;
+    GameManagedItems   :: 12;
+    All                :: -1;
+
+    k_EUGCMatchingUGCType_Items              :: Items;
+    k_EUGCMatchingUGCType_Items_Mtx          :: Items_Mtx;
+    k_EUGCMatchingUGCType_Items_ReadyToUse   :: Items_ReadyToUse;
+    k_EUGCMatchingUGCType_Collections        :: Collections;
+    k_EUGCMatchingUGCType_Artwork            :: Artwork;
+    k_EUGCMatchingUGCType_Videos             :: Videos;
+    k_EUGCMatchingUGCType_Screenshots        :: Screenshots;
+    k_EUGCMatchingUGCType_AllGuides          :: AllGuides;
+    k_EUGCMatchingUGCType_WebGuides          :: WebGuides;
+    k_EUGCMatchingUGCType_IntegratedGuides   :: IntegratedGuides;
+    k_EUGCMatchingUGCType_UsableInGame       :: UsableInGame;
+    k_EUGCMatchingUGCType_ControllerBindings :: ControllerBindings;
+    k_EUGCMatchingUGCType_GameManagedItems   :: GameManagedItems;
+    k_EUGCMatchingUGCType_All                :: All;
+}
+
+// Different lists of published UGC for a user.
+// If the current logged in user is different than the specified user, then some options may not be allowed.
+EUserUGCList :: enum u32 {
+    Published     :: 0;
+    VotedOn       :: 1;
+    VotedUp       :: 2;
+    VotedDown     :: 3;
+    WillVoteLater :: 4;
+    Favorited     :: 5;
+    Subscribed    :: 6;
+    UsedOrPlayed  :: 7;
+    Followed      :: 8;
+
+    k_EUserUGCList_Published     :: Published;
+    k_EUserUGCList_VotedOn       :: VotedOn;
+    k_EUserUGCList_VotedUp       :: VotedUp;
+    k_EUserUGCList_VotedDown     :: VotedDown;
+    k_EUserUGCList_WillVoteLater :: WillVoteLater;
+    k_EUserUGCList_Favorited     :: Favorited;
+    k_EUserUGCList_Subscribed    :: Subscribed;
+    k_EUserUGCList_UsedOrPlayed  :: UsedOrPlayed;
+    k_EUserUGCList_Followed      :: Followed;
+}
+
+// Sort order for user published UGC lists (defaults to creation order descending)
+EUserUGCListSortOrder :: enum u32 {
+    CreationOrderDesc    :: 0;
+    CreationOrderAsc     :: 1;
+    TitleAsc             :: 2;
+    LastUpdatedDesc      :: 3;
+    SubscriptionDateDesc :: 4;
+    VoteScoreDesc        :: 5;
+    ForModeration        :: 6;
+
+    k_EUserUGCListSortOrder_CreationOrderDesc    :: CreationOrderDesc;
+    k_EUserUGCListSortOrder_CreationOrderAsc     :: CreationOrderAsc;
+    k_EUserUGCListSortOrder_TitleAsc             :: TitleAsc;
+    k_EUserUGCListSortOrder_LastUpdatedDesc      :: LastUpdatedDesc;
+    k_EUserUGCListSortOrder_SubscriptionDateDesc :: SubscriptionDateDesc;
+    k_EUserUGCListSortOrder_VoteScoreDesc        :: VoteScoreDesc;
+    k_EUserUGCListSortOrder_ForModeration        :: ForModeration;
+}
+
+// Combination of sorting and filtering for queries across all UGC
+EUGCQuery :: enum u32 {
+    RankedByVote                                  :: 0;
+    RankedByPublicationDate                       :: 1;
+    AcceptedForGameRankedByAcceptanceDate         :: 2;
+    RankedByTrend                                 :: 3;
+    FavoritedByFriendsRankedByPublicationDate     :: 4;
+    CreatedByFriendsRankedByPublicationDate       :: 5;
+    RankedByNumTimesReported                      :: 6;
+    CreatedByFollowedUsersRankedByPublicationDate :: 7;
+    NotYetRated                                   :: 8;
+    RankedByTotalVotesAsc                         :: 9;
+    RankedByVotesUp                               :: 10;
+    RankedByTextSearch                            :: 11;
+    RankedByTotalUniqueSubscriptions              :: 12;
+    RankedByPlaytimeTrend                         :: 13;
+    RankedByTotalPlaytime                         :: 14;
+    RankedByAveragePlaytimeTrend                  :: 15;
+    RankedByLifetimeAveragePlaytime               :: 16;
+    RankedByPlaytimeSessionsTrend                 :: 17;
+    RankedByLifetimePlaytimeSessions              :: 18;
+    RankedByLastUpdatedDate                       :: 19;
+
+    k_EUGCQuery_RankedByVote                                  :: RankedByVote;
+    k_EUGCQuery_RankedByPublicationDate                       :: RankedByPublicationDate;
+    k_EUGCQuery_AcceptedForGameRankedByAcceptanceDate         :: AcceptedForGameRankedByAcceptanceDate;
+    k_EUGCQuery_RankedByTrend                                 :: RankedByTrend;
+    k_EUGCQuery_FavoritedByFriendsRankedByPublicationDate     :: FavoritedByFriendsRankedByPublicationDate;
+    k_EUGCQuery_CreatedByFriendsRankedByPublicationDate       :: CreatedByFriendsRankedByPublicationDate;
+    k_EUGCQuery_RankedByNumTimesReported                      :: RankedByNumTimesReported;
+    k_EUGCQuery_CreatedByFollowedUsersRankedByPublicationDate :: CreatedByFollowedUsersRankedByPublicationDate;
+    k_EUGCQuery_NotYetRated                                   :: NotYetRated;
+    k_EUGCQuery_RankedByTotalVotesAsc                         :: RankedByTotalVotesAsc;
+    k_EUGCQuery_RankedByVotesUp                               :: RankedByVotesUp;
+    k_EUGCQuery_RankedByTextSearch                            :: RankedByTextSearch;
+    k_EUGCQuery_RankedByTotalUniqueSubscriptions              :: RankedByTotalUniqueSubscriptions;
+    k_EUGCQuery_RankedByPlaytimeTrend                         :: RankedByPlaytimeTrend;
+    k_EUGCQuery_RankedByTotalPlaytime                         :: RankedByTotalPlaytime;
+    k_EUGCQuery_RankedByAveragePlaytimeTrend                  :: RankedByAveragePlaytimeTrend;
+    k_EUGCQuery_RankedByLifetimeAveragePlaytime               :: RankedByLifetimeAveragePlaytime;
+    k_EUGCQuery_RankedByPlaytimeSessionsTrend                 :: RankedByPlaytimeSessionsTrend;
+    k_EUGCQuery_RankedByLifetimePlaytimeSessions              :: RankedByLifetimePlaytimeSessions;
+    k_EUGCQuery_RankedByLastUpdatedDate                       :: RankedByLastUpdatedDate;
+}
+
+EItemUpdateStatus :: enum u32 {
+    EItemUpdateStatusInvalid              :: 0;
+    EItemUpdateStatusPreparingConfig      :: 1;
+    EItemUpdateStatusPreparingContent     :: 2;
+    EItemUpdateStatusUploadingContent     :: 3;
+    EItemUpdateStatusUploadingPreviewFile :: 4;
+    EItemUpdateStatusCommittingChanges    :: 5;
+
+    k_EItemUpdateStatusInvalid              :: EItemUpdateStatusInvalid;
+    k_EItemUpdateStatusPreparingConfig      :: EItemUpdateStatusPreparingConfig;
+    k_EItemUpdateStatusPreparingContent     :: EItemUpdateStatusPreparingContent;
+    k_EItemUpdateStatusUploadingContent     :: EItemUpdateStatusUploadingContent;
+    k_EItemUpdateStatusUploadingPreviewFile :: EItemUpdateStatusUploadingPreviewFile;
+    k_EItemUpdateStatusCommittingChanges    :: EItemUpdateStatusCommittingChanges;
+}
+
+EItemState :: enum u32 {
+    EItemStateNone            :: 0;
+    EItemStateSubscribed      :: 1;
+    EItemStateLegacyItem      :: 2;
+    EItemStateInstalled       :: 4;
+    EItemStateNeedsUpdate     :: 8;
+    EItemStateDownloading     :: 16;
+    EItemStateDownloadPending :: 32;
+    EItemStateDisabledLocally :: 64;
+
+    k_EItemStateNone            :: EItemStateNone;
+    k_EItemStateSubscribed      :: EItemStateSubscribed;
+    k_EItemStateLegacyItem      :: EItemStateLegacyItem;
+    k_EItemStateInstalled       :: EItemStateInstalled;
+    k_EItemStateNeedsUpdate     :: EItemStateNeedsUpdate;
+    k_EItemStateDownloading     :: EItemStateDownloading;
+    k_EItemStateDownloadPending :: EItemStateDownloadPending;
+    k_EItemStateDisabledLocally :: EItemStateDisabledLocally;
+}
+
+EItemStatistic :: enum u32 {
+    NumSubscriptions                    :: 0;
+    NumFavorites                        :: 1;
+    NumFollowers                        :: 2;
+    NumUniqueSubscriptions              :: 3;
+    NumUniqueFavorites                  :: 4;
+    NumUniqueFollowers                  :: 5;
+    NumUniqueWebsiteViews               :: 6;
+    ReportScore                         :: 7;
+    NumSecondsPlayed                    :: 8;
+    NumPlaytimeSessions                 :: 9;
+    NumComments                         :: 10;
+    NumSecondsPlayedDuringTimePeriod    :: 11;
+    NumPlaytimeSessionsDuringTimePeriod :: 12;
+
+    k_EItemStatistic_NumSubscriptions                    :: NumSubscriptions;
+    k_EItemStatistic_NumFavorites                        :: NumFavorites;
+    k_EItemStatistic_NumFollowers                        :: NumFollowers;
+    k_EItemStatistic_NumUniqueSubscriptions              :: NumUniqueSubscriptions;
+    k_EItemStatistic_NumUniqueFavorites                  :: NumUniqueFavorites;
+    k_EItemStatistic_NumUniqueFollowers                  :: NumUniqueFollowers;
+    k_EItemStatistic_NumUniqueWebsiteViews               :: NumUniqueWebsiteViews;
+    k_EItemStatistic_ReportScore                         :: ReportScore;
+    k_EItemStatistic_NumSecondsPlayed                    :: NumSecondsPlayed;
+    k_EItemStatistic_NumPlaytimeSessions                 :: NumPlaytimeSessions;
+    k_EItemStatistic_NumComments                         :: NumComments;
+    k_EItemStatistic_NumSecondsPlayedDuringTimePeriod    :: NumSecondsPlayedDuringTimePeriod;
+    k_EItemStatistic_NumPlaytimeSessionsDuringTimePeriod :: NumPlaytimeSessionsDuringTimePeriod;
+}
+
+EItemPreviewType :: enum u32 {
+    Image                          :: 0;
+    YouTubeVideo                   :: 1;
+    Sketchfab                      :: 2;
+    EnvironmentMap_HorizontalCross :: 3;
+
+    EnvironmentMap_LatLong         :: 4;
+    Clip                           :: 5;
+    ReservedMax                    :: 255;
+
+    k_EItemPreviewType_Image                          :: Image;
+    k_EItemPreviewType_YouTubeVideo                   :: YouTubeVideo;
+    k_EItemPreviewType_Sketchfab                      :: Sketchfab;
+    k_EItemPreviewType_EnvironmentMap_HorizontalCross :: EnvironmentMap_HorizontalCross;
+
+    k_EItemPreviewType_EnvironmentMap_LatLong         :: EnvironmentMap_LatLong;
+    k_EItemPreviewType_Clip                           :: Clip;
+    k_EItemPreviewType_ReservedMax                    :: ReservedMax;
+}
+
+EUGCContentDescriptorID :: enum u32 {
+    NudityOrSexualContent   :: 1;
+    FrequentViolenceOrGore  :: 2;
+    AdultOnlySexualContent  :: 3;
+    GratuitousSexualContent :: 4;
+    AnyMatureContent        :: 5;
+
+    k_EUGCContentDescriptor_NudityOrSexualContent   :: NudityOrSexualContent;
+    k_EUGCContentDescriptor_FrequentViolenceOrGore  :: FrequentViolenceOrGore;
+    k_EUGCContentDescriptor_AdultOnlySexualContent  :: AdultOnlySexualContent;
+    k_EUGCContentDescriptor_GratuitousSexualContent :: GratuitousSexualContent;
+    k_EUGCContentDescriptor_AnyMatureContent        :: AnyMatureContent;
+}
+
+// Details for a single published file/UGC
+SteamUGCDetails_t :: struct {
+    m_nPublishedFileId:     PublishedFileId_t;
+    m_eResult:              EResult; // The result of the operation.	
+    m_eFileType:            EWorkshopFileType; // Type of the file
+    m_nCreatorAppID:        AppId_t; // ID of the app that created this file.
+    m_nConsumerAppID:       AppId_t; // ID of the app that will consume this file.
+    m_rgchTitle:            [129] u8; // title of document
+    m_rgchDescription:      [8000] u8; // description of document
+    m_ulSteamIDOwner:       uint64 #align 4; // Steam ID of the user who created this content.
+    m_rtimeCreated:         uint32; // time when the published file was created
+    m_rtimeUpdated:         uint32; // time when the published file was last updated
+    m_rtimeAddedToUserList: uint32; // time when the user added the published file to their list (not always applicable)
+    m_eVisibility:          ERemoteStoragePublishedFileVisibility; // visibility
+    m_bBanned:              bool; // whether the file was banned
+    m_bAcceptedForUse:      bool; // developer has specifically flagged this item as accepted in the Workshop
+    m_bTagsTruncated:       bool; // whether the list of tags was too long to be returned in the provided buffer
+    m_rgchTags:             [1025] u8; // comma separated list of all tags associated with this file	
+
+    m_hFile:                UGCHandle_t; // The handle of the primary file
+    m_hPreviewFile:         UGCHandle_t; // The handle of the preview file
+    m_pchFileName:          [260] u8; // The cloud filename of the primary file
+    m_nFileSize:            int32; // Size of the primary file (for legacy items which only support one file). This may not be accurate for non-legacy items which can be greater than 4gb in size.
+    m_nPreviewFileSize:     int32; // Size of the preview file
+    m_rgchURL:              [256] u8; // URL (for a video or a website)
+
+    m_unVotesUp:            uint32; // number of votes up
+    m_unVotesDown:          uint32; // number of votes down
+    m_flScore:              float; // calculated score
+
+    // collection details
+    m_unNumChildren:        uint32;
+    m_ulTotalFilesSize:     uint64 #align 4; // Total size of all files (non-legacy), excluding the preview file
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Steam UGC support API
+//-----------------------------------------------------------------------------
+ISteamUGC :: struct {
+    vtable: *ISteamUGC_VTable;
+}
+ISteamUGC_VTable :: struct #type_info_none {
+    CreateQueryUserUGCRequest: *void;
+
+    CreateQueryAllUGCRequest: *void;
+
+    CreateQueryAllUGCRequest_1: *void;
+
+    CreateQueryUGCDetailsRequest: *void;
+
+    SendQueryUGCRequest: *void;
+
+    GetQueryUGCResult: *void;
+    GetQueryUGCNumTags: *void;
+    GetQueryUGCTag: *void;
+    GetQueryUGCTagDisplayName: *void;
+    GetQueryUGCPreviewURL: *void;
+    GetQueryUGCMetadata: *void;
+    GetQueryUGCChildren: *void;
+    GetQueryUGCStatistic: *void;
+    GetQueryUGCNumAdditionalPreviews: *void;
+    GetQueryUGCAdditionalPreview: *void;
+    GetQueryUGCNumKeyValueTags: *void;
+
+    GetQueryUGCKeyValueTag: *void;
+
+    GetQueryUGCKeyValueTag_1: *void;
+
+    GetNumSupportedGameVersions: *void;
+    GetSupportedGameVersionData: *void;
+
+    GetQueryUGCContentDescriptors: *void;
+
+    ReleaseQueryUGCRequest: *void;
+
+    AddRequiredTag: *void;
+    AddRequiredTagGroup: *void;
+    AddExcludedTag: *void;
+    SetReturnOnlyIDs: *void;
+    SetReturnKeyValueTags: *void;
+    SetReturnLongDescription: *void;
+    SetReturnMetadata: *void;
+    SetReturnChildren: *void;
+    SetReturnAdditionalPreviews: *void;
+    SetReturnTotalOnly: *void;
+    SetReturnPlaytimeStats: *void;
+    SetLanguage: *void;
+    SetAllowCachedResponse: *void;
+    SetAdminQuery: *void;
+
+    SetCloudFileNameFilter: *void;
+
+    SetMatchAnyTag: *void;
+    SetSearchText: *void;
+    SetRankedByTrendDays: *void;
+    SetTimeCreatedDateRange: *void;
+    SetTimeUpdatedDateRange: *void;
+    AddRequiredKeyValueTag: *void;
+
+    RequestUGCDetails: *void;
+
+    CreateItem: *void;
+
+    StartItemUpdate: *void;
+
+    SetItemTitle: *void;
+    SetItemDescription: *void;
+    SetItemUpdateLanguage: *void;
+    SetItemMetadata: *void;
+    SetItemVisibility: *void;
+    SetItemTags: *void;
+    SetItemContent: *void;
+    SetItemPreview: *void;
+    SetAllowLegacyUpload: *void;
+    RemoveAllItemKeyValueTags: *void;
+    RemoveItemKeyValueTags: *void;
+    AddItemKeyValueTag: *void;
+    AddItemPreviewFile: *void;
+    AddItemPreviewVideo: *void;
+    UpdateItemPreviewFile: *void;
+    UpdateItemPreviewVideo: *void;
+    RemoveItemPreview: *void;
+    AddContentDescriptor: *void;
+    RemoveContentDescriptor: *void;
+    SetRequiredGameVersions: *void;
+
+    SubmitItemUpdate: *void;
+    GetItemUpdateProgress: *void;
+
+    SetUserItemVote: *void;
+
+    GetUserItemVote: *void;
+
+    AddItemToFavorites: *void;
+
+    RemoveItemFromFavorites: *void;
+
+    SubscribeItem: *void;
+
+    UnsubscribeItem: *void;
+    GetNumSubscribedItems: *void;
+    GetSubscribedItems: *void;
+
+    GetItemState: *void;
+
+    GetItemInstallInfo: *void;
+
+    GetItemDownloadInfo: *void;
+
+    DownloadItem: *void;
+
+    BInitWorkshopForGameServer: *void;
+
+    SuspendDownloads: *void;
+
+    StartPlaytimeTracking: *void;
+
+    StopPlaytimeTracking: *void;
+
+    StopPlaytimeTrackingForAllItems: *void;
+
+    AddDependency: *void;
+
+    RemoveDependency: *void;
+
+    AddAppDependency: *void;
+
+    RemoveAppDependency: *void;
+
+    GetAppDependencies: *void;
+
+    DeleteItem: *void;
+
+    ShowWorkshopEULA: *void;
+
+    GetWorkshopEULAStatus: *void;
+
+    GetUserContentDescriptorPreferences: *void;
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Functions for accessing and manipulating a steam account
+//			associated with one client instance
+//-----------------------------------------------------------------------------
+ISteamUser :: struct {
+    vtable: *ISteamUser_VTable;
+}
+ISteamUser_VTable :: struct #type_info_none {
+    GetHSteamUser: *void;
 
     BLoggedOn: *void;
-    BSecure: *void;
+
     GetSteamID: *void;
 
-    WasRestartRequested: *void;
+    InitiateGameConnection_DEPRECATED: *void;
 
-    SetMaxPlayerCount: *void;
+    TerminateGameConnection_DEPRECATED: *void;
 
-    SetBotPlayerCount: *void;
+    TrackAppUsageEvent: *void;
 
-    SetServerName: *void;
+    GetUserDataFolder: *void;
 
-    SetMapName: *void;
+    StartVoiceRecording: *void;
 
-    SetPasswordProtected: *void;
+    StopVoiceRecording: *void;
 
-    SetSpectatorPort: *void;
+    GetAvailableVoice: *void;
 
-    SetSpectatorServerName: *void;
+    GetVoice: *void;
 
-    ClearAllKeyValues: *void;
+    DecompressVoice: *void;
 
-    SetKeyValue: *void;
-
-    SetGameTags: *void;
-
-    SetGameData: *void;
-
-    SetRegion: *void;
-
-    SetAdvertiseServerActive: *void;
+    GetVoiceOptimalSampleRate: *void;
 
     GetAuthSessionTicket: *void;
+
+    GetAuthTicketForWebApi: *void;
 
     BeginAuthSession: *void;
 
@@ -5829,44 +7276,149 @@ ISteamGameServer_VTable :: struct #type_info_none {
 
     UserHasLicenseForApp: *void;
 
-    RequestUserGroupStatus: *void;
+    BIsBehindNAT: *void;
 
-    GetGameplayStats: *void;
+    AdvertiseGame: *void;
 
-    GetServerReputation: *void;
+    RequestEncryptedAppTicket: *void;
 
-    GetPublicIP: *void;
+    GetEncryptedAppTicket: *void;
 
-    HandleIncomingPacket: *void;
+    GetGameBadgeLevel: *void;
 
-    GetNextOutgoingPacket: *void;
+    GetPlayerSteamLevel: *void;
 
-    AssociateWithClan: *void;
+    RequestStoreAuthURL: *void;
 
-    ComputeNewPlayerCompatibility: *void;
+    BIsPhoneVerified: *void;
 
-    SendUserConnectAndAuthenticate_DEPRECATED: *void;
+    BIsTwoFactorEnabled: *void;
 
-    CreateUnauthenticatedUserConnection: *void;
+    BIsPhoneIdentifying: *void;
 
-    SendUserDisconnect_DEPRECATED: *void;
+    BIsPhoneRequiringVerification: *void;
 
-    BUpdateUserData: *void;
+    GetMarketEligibility: *void;
 
-    SetMasterServerHeartbeatInterval_DEPRECATED: *void;
-    ForceMasterServerHeartbeat_DEPRECATED: *void;
+    GetDurationControl: *void;
+
+    BSetDurationControlOnlineState: *void;
 }
 
-vtable :: (obj: *ISteamGameServer) -> *ISteamGameServer_VTable { return obj.vtable; }
 
-
-//-----------------------------------------------------------------------------
-// Purpose: Functions for authenticating users via Steam to play on a game server
-//-----------------------------------------------------------------------------
-ISteamGameServerStats :: struct {
-    vtable: *ISteamGameServerStats_VTable;
+// size limit on stat or achievement name (UTF-8 encoded)
+anon_enum_234 :: enum u32 {
+    k_cchStatNameMax :: 128;
 }
-ISteamGameServerStats_VTable :: struct #type_info_none {
+
+// maximum number of bytes for a leaderboard name (UTF-8 encoded)
+anon_enum_235 :: enum u32 {
+    k_cchLeaderboardNameMax :: 128;
+}
+
+// maximum number of details int32's storable for a single leaderboard entry
+anon_enum_236 :: enum u32 {
+    k_cLeaderboardDetailsMax :: 64;
+}
+
+// handle to a single leaderboard
+SteamLeaderboard_t :: uint64;
+
+// handle to a set of downloaded entries in a leaderboard
+SteamLeaderboardEntries_t :: uint64;
+
+// type of data request, when downloading leaderboard entries
+ELeaderboardDataRequest :: enum u32 {
+    ELeaderboardDataRequestGlobal           :: 0;
+    ELeaderboardDataRequestGlobalAroundUser :: 1;
+    ELeaderboardDataRequestFriends          :: 2;
+    ELeaderboardDataRequestUsers            :: 3;
+
+    k_ELeaderboardDataRequestGlobal           :: ELeaderboardDataRequestGlobal;
+    k_ELeaderboardDataRequestGlobalAroundUser :: ELeaderboardDataRequestGlobalAroundUser;
+    k_ELeaderboardDataRequestFriends          :: ELeaderboardDataRequestFriends;
+    k_ELeaderboardDataRequestUsers            :: ELeaderboardDataRequestUsers;
+}
+
+// the sort order of a leaderboard
+ELeaderboardSortMethod :: enum u32 {
+    ELeaderboardSortMethodNone       :: 0;
+    ELeaderboardSortMethodAscending  :: 1;
+    ELeaderboardSortMethodDescending :: 2;
+
+    k_ELeaderboardSortMethodNone       :: ELeaderboardSortMethodNone;
+    k_ELeaderboardSortMethodAscending  :: ELeaderboardSortMethodAscending;
+    k_ELeaderboardSortMethodDescending :: ELeaderboardSortMethodDescending;
+}
+
+// the display type (used by the Steam Community web site) for a leaderboard
+ELeaderboardDisplayType :: enum u32 {
+    ELeaderboardDisplayTypeNone             :: 0;
+    ELeaderboardDisplayTypeNumeric          :: 1;
+    ELeaderboardDisplayTypeTimeSeconds      :: 2;
+    ELeaderboardDisplayTypeTimeMilliSeconds :: 3;
+
+    k_ELeaderboardDisplayTypeNone             :: ELeaderboardDisplayTypeNone;
+    k_ELeaderboardDisplayTypeNumeric          :: ELeaderboardDisplayTypeNumeric;
+    k_ELeaderboardDisplayTypeTimeSeconds      :: ELeaderboardDisplayTypeTimeSeconds;
+    k_ELeaderboardDisplayTypeTimeMilliSeconds :: ELeaderboardDisplayTypeTimeMilliSeconds;
+}
+
+ELeaderboardUploadScoreMethod :: enum u32 {
+    ELeaderboardUploadScoreMethodNone        :: 0;
+    ELeaderboardUploadScoreMethodKeepBest    :: 1;
+    ELeaderboardUploadScoreMethodForceUpdate :: 2;
+
+    k_ELeaderboardUploadScoreMethodNone        :: ELeaderboardUploadScoreMethodNone;
+    k_ELeaderboardUploadScoreMethodKeepBest    :: ELeaderboardUploadScoreMethodKeepBest;
+    k_ELeaderboardUploadScoreMethodForceUpdate :: ELeaderboardUploadScoreMethodForceUpdate;
+}
+
+LeaderboardEntry_t :: struct {
+    m_steamIDUser: CSteamID; // user with the entry - use SteamFriends()->GetFriendPersonaName() & SteamFriends()->GetFriendAvatar() to get more info
+    m_nGlobalRank: int32; // [1..N], where N is the number of users with an entry in the leaderboard
+    m_nScore:      int32; // score as set in the leaderboard
+    m_cDetails:    int32; // number of int32 details available for this entry
+    m_hUGC:        UGCHandle_t #align 4; // handle for UGC attached to the entry
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Functions for accessing stats, achievements, and leaderboard information
+//-----------------------------------------------------------------------------
+ISteamUserStats :: struct {
+    vtable: *ISteamUserStats_VTable;
+}
+ISteamUserStats_VTable :: struct #type_info_none {
+    RequestCurrentStats: *void;
+
+    GetStat: *void;
+
+    GetStat_1: *void;
+
+    SetStat: *void;
+
+    SetStat_1: *void;
+
+    UpdateAvgRateStat: *void;
+
+    GetAchievement: *void;
+    SetAchievement: *void;
+    ClearAchievement: *void;
+
+    GetAchievementAndUnlockTime: *void;
+
+    StoreStats: *void;
+
+    GetAchievementIcon: *void;
+
+    GetAchievementDisplayAttribute: *void;
+
+    IndicateAchievementProgress: *void;
+
+    GetNumAchievements: *void;
+
+    GetAchievementName: *void;
+
     RequestUserStats: *void;
 
     GetUserStat: *void;
@@ -5875,20 +7427,315 @@ ISteamGameServerStats_VTable :: struct #type_info_none {
 
     GetUserAchievement: *void;
 
-    SetUserStat: *void;
+    GetUserAchievementAndUnlockTime: *void;
 
-    SetUserStat_1: *void;
+    ResetAllStats: *void;
 
-    UpdateUserAvgRateStat: *void;
+    FindOrCreateLeaderboard: *void;
 
-    SetUserAchievement: *void;
-    ClearUserAchievement: *void;
+    FindLeaderboard: *void;
 
-    StoreUserStats: *void;
+    GetLeaderboardName: *void;
+
+    GetLeaderboardEntryCount: *void;
+
+    GetLeaderboardSortMethod: *void;
+
+    GetLeaderboardDisplayType: *void;
+
+    DownloadLeaderboardEntries: *void;
+
+    DownloadLeaderboardEntriesForUsers: *void;
+
+    GetDownloadedLeaderboardEntry: *void;
+
+    UploadLeaderboardScore: *void;
+
+    AttachLeaderboardUGC: *void;
+
+    GetNumberOfCurrentPlayers: *void;
+
+    RequestGlobalAchievementPercentages: *void;
+
+    GetMostAchievedAchievementInfo: *void;
+
+    GetNextMostAchievedAchievementInfo: *void;
+
+    GetAchievementAchievedPercent: *void;
+
+    RequestGlobalStats: *void;
+
+    GetGlobalStat: *void;
+
+    GetGlobalStat_1: *void;
+
+    GetGlobalStatHistory: *void;
+
+    GetGlobalStatHistory_1: *void;
+
+    GetAchievementProgressLimits: *void;
+
+    GetAchievementProgressLimits_1: *void;
 }
 
-vtable :: (obj: *ISteamGameServerStats) -> *ISteamGameServerStats_VTable { return obj.vtable; }
 
+// Steam API call failure results
+ESteamAPICallFailure :: enum s32 {
+    ESteamAPICallFailureNone               :: -1;
+    ESteamAPICallFailureSteamGone          :: 0;
+    ESteamAPICallFailureNetworkFailure     :: 1;
+
+    ESteamAPICallFailureInvalidHandle      :: 2;
+    ESteamAPICallFailureMismatchedCallback :: 3;
+
+    k_ESteamAPICallFailureNone               :: ESteamAPICallFailureNone;
+    k_ESteamAPICallFailureSteamGone          :: ESteamAPICallFailureSteamGone;
+    k_ESteamAPICallFailureNetworkFailure     :: ESteamAPICallFailureNetworkFailure;
+
+    k_ESteamAPICallFailureInvalidHandle      :: ESteamAPICallFailureInvalidHandle;
+    k_ESteamAPICallFailureMismatchedCallback :: ESteamAPICallFailureMismatchedCallback;
+}
+
+// Input modes for the Big Picture gamepad text entry
+EGamepadTextInputMode :: enum u32 {
+    EGamepadTextInputModeNormal   :: 0;
+    EGamepadTextInputModePassword :: 1;
+
+    k_EGamepadTextInputModeNormal   :: EGamepadTextInputModeNormal;
+    k_EGamepadTextInputModePassword :: EGamepadTextInputModePassword;
+}
+
+// Controls number of allowed lines for the Big Picture gamepad text entry
+EGamepadTextInputLineMode :: enum u32 {
+    EGamepadTextInputLineModeSingleLine    :: 0;
+    EGamepadTextInputLineModeMultipleLines :: 1;
+
+    k_EGamepadTextInputLineModeSingleLine    :: EGamepadTextInputLineModeSingleLine;
+    k_EGamepadTextInputLineModeMultipleLines :: EGamepadTextInputLineModeMultipleLines;
+}
+
+EFloatingGamepadTextInputMode :: enum u32 {
+    EFloatingGamepadTextInputModeModeSingleLine    :: 0;
+    EFloatingGamepadTextInputModeModeMultipleLines :: 1;
+    EFloatingGamepadTextInputModeModeEmail         :: 2;
+    EFloatingGamepadTextInputModeModeNumeric       :: 3;
+
+    k_EFloatingGamepadTextInputModeModeSingleLine    :: EFloatingGamepadTextInputModeModeSingleLine;
+    k_EFloatingGamepadTextInputModeModeMultipleLines :: EFloatingGamepadTextInputModeModeMultipleLines;
+    k_EFloatingGamepadTextInputModeModeEmail         :: EFloatingGamepadTextInputModeModeEmail;
+    k_EFloatingGamepadTextInputModeModeNumeric       :: EFloatingGamepadTextInputModeModeNumeric;
+}
+
+// The context where text filtering is being done
+ETextFilteringContext :: enum u32 {
+    ETextFilteringContextUnknown     :: 0;
+    ETextFilteringContextGameContent :: 1;
+    ETextFilteringContextChat        :: 2;
+    ETextFilteringContextName        :: 3;
+
+    k_ETextFilteringContextUnknown     :: ETextFilteringContextUnknown;
+    k_ETextFilteringContextGameContent :: ETextFilteringContextGameContent;
+    k_ETextFilteringContextChat        :: ETextFilteringContextChat;
+    k_ETextFilteringContextName        :: ETextFilteringContextName;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: interface to user independent utility functions
+//-----------------------------------------------------------------------------
+ISteamUtils :: struct {
+    vtable: *ISteamUtils_VTable;
+}
+ISteamUtils_VTable :: struct #type_info_none {
+    GetSecondsSinceAppActive: *void;
+    GetSecondsSinceComputerActive: *void;
+
+    GetConnectedUniverse: *void;
+
+    GetServerRealTime: *void;
+
+    GetIPCountry: *void;
+
+    GetImageSize: *void;
+
+    GetImageRGBA: *void;
+
+    GetCSERIPPort: *void;
+
+    GetCurrentBatteryPower: *void;
+
+    GetAppID: *void;
+
+    SetOverlayNotificationPosition: *void;
+
+    IsAPICallCompleted: *void;
+    GetAPICallFailureReason: *void;
+    GetAPICallResult: *void;
+
+    RunFrame: *void;
+
+    GetIPCCallCount: *void;
+
+    SetWarningMessageHook: *void;
+
+    IsOverlayEnabled: *void;
+
+    BOverlayNeedsPresent: *void;
+
+    CheckFileSignature: *void;
+
+    ShowGamepadTextInput: *void;
+
+    GetEnteredGamepadTextLength: *void;
+    GetEnteredGamepadTextInput: *void;
+
+    GetSteamUILanguage: *void;
+
+    IsSteamRunningInVR: *void;
+
+    SetOverlayNotificationInset: *void;
+
+    IsSteamInBigPictureMode: *void;
+
+    StartVRDashboard: *void;
+
+    IsVRHeadsetStreamingEnabled: *void;
+
+    SetVRHeadsetStreamingEnabled: *void;
+
+    IsSteamChinaLauncher: *void;
+
+    InitFilterText: *void;
+
+    FilterText: *void;
+
+    GetIPv6ConnectivityState: *void;
+
+    IsSteamRunningOnSteamDeck: *void;
+
+    ShowFloatingGamepadTextInput: *void;
+
+    SetGameLauncherMode: *void;
+
+    DismissFloatingGamepadTextInput: *void;
+
+    DismissGamepadTextInput: *void;
+}
+
+
+//-----------------------------------------------------------------------------
+// results for CheckFileSignature
+//-----------------------------------------------------------------------------
+ECheckFileSignature :: enum u32 {
+    ECheckFileSignatureInvalidSignature             :: 0;
+    ECheckFileSignatureValidSignature               :: 1;
+    ECheckFileSignatureFileNotFound                 :: 2;
+    ECheckFileSignatureNoSignaturesFoundForThisApp  :: 3;
+    ECheckFileSignatureNoSignaturesFoundForThisFile :: 4;
+
+    k_ECheckFileSignatureInvalidSignature             :: ECheckFileSignatureInvalidSignature;
+    k_ECheckFileSignatureValidSignature               :: ECheckFileSignatureValidSignature;
+    k_ECheckFileSignatureFileNotFound                 :: ECheckFileSignatureFileNotFound;
+    k_ECheckFileSignatureNoSignaturesFoundForThisApp  :: ECheckFileSignatureNoSignaturesFoundForThisApp;
+    k_ECheckFileSignatureNoSignaturesFoundForThisFile :: ECheckFileSignatureNoSignaturesFoundForThisFile;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Steam Video API
+//-----------------------------------------------------------------------------
+ISteamVideo :: struct {
+    vtable: *ISteamVideo_VTable;
+}
+ISteamVideo_VTable :: struct #type_info_none {
+    GetVideoURL: *void;
+
+    IsBroadcasting: *void;
+
+    GetOPFSettings: *void;
+    GetOPFStringForApp: *void;
+}
+
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------//
+//	Steam API setup & shutdown
+//
+//	These functions manage loading, initializing and shutdown of the steamclient.dll
+//
+//----------------------------------------------------------------------------------------------------------------------------------------------------------//
+ESteamAPIInitResult :: enum u32 {
+    OK              :: 0;
+    FailedGeneric   :: 1;
+    NoSteamClient   :: 2;
+    VersionMismatch :: 3;
+
+    k_ESteamAPIInitResult_OK              :: OK;
+    k_ESteamAPIInitResult_FailedGeneric   :: FailedGeneric;
+    k_ESteamAPIInitResult_NoSteamClient   :: NoSteamClient;
+    k_ESteamAPIInitResult_VersionMismatch :: VersionMismatch;
+}
+
+// See "Initializing the Steamworks SDK" above for how to choose an init method.
+// Same usage as SteamAPI_InitEx(), however does not verify ISteam* interfaces are
+// supported by the user's client and is exported from the dll
+SteamAPI_InitFlat :: (pOutErrMsg: *SteamErrMsg) -> ESteamAPIInitResult #foreign libsteam_api;
+
+// SteamAPI_Shutdown should be called during process shutdown if possible.
+SteamAPI_Shutdown :: () -> void #foreign libsteam_api;
+
+// SteamAPI_RestartAppIfNecessary ensures that your executable was launched through Steam.
+//
+// Returns true if the current process should terminate. Steam is now re-launching your application.
+//
+// Returns false if no action needs to be taken. This means that your executable was started through
+// the Steam client, or a steam_appid.txt file is present in your game's directory (for development).
+// Your current process should continue if false is returned.
+//
+// NOTE: If you use the Steam DRM wrapper on your primary executable file, this check is unnecessary
+// since the DRM wrapper will ensure that your application was launched properly through Steam.
+SteamAPI_RestartAppIfNecessary :: (unOwnAppID: uint32) -> bool #foreign libsteam_api;
+
+// Many Steam API functions allocate a small amount of thread-local memory for parameter storage.
+// SteamAPI_ReleaseCurrentThreadMemory() will free API memory associated with the calling thread.
+// This function is also called automatically by SteamAPI_RunCallbacks(), so a single-threaded
+// program never needs to explicitly call this function.
+SteamAPI_ReleaseCurrentThreadMemory :: () -> void #foreign libsteam_api;
+
+// crash dump recording functions
+SteamAPI_WriteMiniDump :: (uStructuredExceptionCode: uint32, pvExceptionInfo: *void, uBuildID: uint32) -> void #foreign libsteam_api;
+SteamAPI_SetMiniDumpComment :: (pchMsg: *u8) -> void #foreign libsteam_api;
+
+// SteamAPI_IsSteamRunning() returns true if Steam is currently running
+SteamAPI_IsSteamRunning :: () -> bool #foreign libsteam_api;
+
+// returns the filename path of the current running Steam process, used if you need to load an explicit steam dll by name.
+// DEPRECATED - implementation is Windows only, and the path returned is a UTF-8 string which must be converted to UTF-16 for use with Win32 APIs
+SteamAPI_GetSteamInstallPath :: () -> *u8 #foreign libsteam_api;
+
+// sets whether or not Steam_RunCallbacks() should do a try {} catch (...) {} around calls to issuing callbacks
+// This is ignored if you are using the manual callback dispatch method
+SteamAPI_SetTryCatchCallbacks :: (bTryCatchCallbacks: bool) -> void #foreign libsteam_api;
+
+/// Inform the API that you wish to use manual event dispatch.  This must be called after SteamAPI_Init, but before
+/// you use any of the other manual dispatch functions below.
+SteamAPI_ManualDispatch_Init :: () -> void #foreign libsteam_api;
+
+/// Perform certain periodic actions that need to be performed.
+SteamAPI_ManualDispatch_RunFrame :: (hSteamPipe: HSteamPipe) -> void #foreign libsteam_api;
+
+/// Fetch the next pending callback on the given pipe, if any.  If a callback is available, true is returned
+/// and the structure is populated.  In this case, you MUST call SteamAPI_ManualDispatch_FreeLastCallback
+/// (after dispatching the callback) before calling SteamAPI_ManualDispatch_GetNextCallback again.
+SteamAPI_ManualDispatch_GetNextCallback :: (hSteamPipe: HSteamPipe, pCallbackMsg: *CallbackMsg_t) -> bool #foreign libsteam_api;
+
+/// You must call this after dispatching the callback, if SteamAPI_ManualDispatch_GetNextCallback returns true.
+SteamAPI_ManualDispatch_FreeLastCallback :: (hSteamPipe: HSteamPipe) -> void #foreign libsteam_api;
+
+/// Return the call result for the specified call on the specified pipe.  You really should
+/// only call this in a handler for SteamAPICallCompleted_t callback.
+SteamAPI_ManualDispatch_GetAPICallResult :: (hSteamPipe: HSteamPipe, hSteamAPICall: SteamAPICall_t, pCallback: *void, cubCallback: s32, iCallbackExpected: s32, pbFailed: *bool) -> bool #foreign libsteam_api;
+
+// Internal implementation of SteamAPI_InitEx.  This is done in a way that checks
+// all of the versions of interfaces from headers being compiled into this code.
+SteamInternal_SteamAPI_Init :: (pszInternalCheckInterfaceVersions: *u8, pOutErrMsg: *SteamErrMsg) -> ESteamAPIInitResult #foreign libsteam_api;
 
 uint64_steamid :: uint64;
 uint64_gameid :: uint64;
@@ -7137,6 +8984,746 @@ SteamAPI_SteamDatagramHostedAddress_Clear :: (self: *SteamDatagramHostedAddress)
 SteamAPI_SteamDatagramHostedAddress_GetPopID :: (self: *SteamDatagramHostedAddress) -> SteamNetworkingPOPID #foreign libsteam_api;
 SteamAPI_SteamDatagramHostedAddress_SetDevAddress :: (self: *SteamDatagramHostedAddress, nIP: uint32, nPort: uint16, popid: SteamNetworkingPOPID) -> void #foreign libsteam_api;
 
+EServerMode :: enum u32 {
+    Invalid                 :: 0;
+    NoAuthentication        :: 1;
+    Authentication          :: 2;
+    AuthenticationAndSecure :: 3;
+
+    eServerModeInvalid                 :: Invalid;
+    eServerModeNoAuthentication        :: NoAuthentication;
+    eServerModeAuthentication          :: Authentication;
+    eServerModeAuthenticationAndSecure :: AuthenticationAndSecure;
+}
+
+// Shutdown SteamGameSeverXxx interfaces, log out, and free resources.
+SteamGameServer_Shutdown :: () -> void #foreign libsteam_api;
+
+SteamGameServer_BSecure :: () -> bool #foreign libsteam_api;
+SteamGameServer_GetSteamID :: () -> uint64 #foreign libsteam_api;
+
+SteamInternal_GameServer_Init_V2 :: (unIP: uint32, usGamePort: uint16, usQueryPort: uint16, eServerMode: EServerMode, pchVersionString: *u8, pszInternalCheckInterfaceVersions: *u8, pOutErrMsg: *SteamErrMsg) -> ESteamAPIInitResult #foreign libsteam_api;
+
+//-----------------------------------------------------------------------------
+/// ISteamNetworkingFakeUDPPort
+///
+/// Acts like a UDP port, sending and receiving datagrams addressed using
+/// FakeIP addresses.
+///
+/// See: ISteamNetworkingSockets::CreateFakeUDPPort
+ISteamNetworkingFakeUDPPort :: struct {
+    vtable: *ISteamNetworkingFakeUDPPort_VTable;
+}
+ISteamNetworkingFakeUDPPort_VTable :: struct #type_info_none {
+    DestroyFakeUDPPort: *void;
+
+    SendMessageToFakeIP: *void;
+
+    ReceiveMessages: *void;
+
+    ScheduleCleanup: *void;
+}
+
+
+/// A struct used to describe a "fake IP" we have been assigned to
+/// use as an identifier.  This callback is posted when
+/// ISteamNetworkingSoockets::BeginAsyncRequestFakeIP completes.
+/// See also ISteamNetworkingSockets::GetFakeIP
+SteamNetworkingFakeIPResult_t :: struct {
+    anon_enum_261 :: enum u32 {
+        k_iCallback :: 1223;
+    }
+
+    /// Status/result of the allocation request.  Possible failure values are:
+    /// - k_EResultBusy - you called GetFakeIP but the request has not completed.
+    /// - k_EResultInvalidParam - you called GetFakeIP with an invalid port index
+    /// - k_EResultLimitExceeded - You asked for too many ports, or made an
+    ///   additional request after one had already succeeded
+    /// - k_EResultNoMatch - GetFakeIP was called, but no request has been made
+    ///
+    /// Note that, with the exception of k_EResultBusy (if you are polling),
+    /// it is highly recommended to treat all failures as fatal.
+    m_eResult:  EResult;
+
+    /// Local identity of the ISteamNetworkingSockets object that made
+    /// this request and is assigned the IP.  This is needed in the callback
+    /// in the case where there are multiple ISteamNetworkingSockets objects.
+    /// (E.g. one for the user, and another for the local gameserver).
+    m_identity: SteamNetworkingIdentity;
+
+    /// Fake IPv4 IP address that we have been assigned.  NOTE: this
+    /// IP address is not exclusively ours!  Steam tries to avoid sharing
+    /// IP addresses, but this may not always be possible.  The IP address
+    /// may be currently in use by another host, but with different port(s).
+    /// The exact same IP:port address may have been used previously.
+    /// Steam tries to avoid reusing ports until they have not been in use for
+    /// some time, but this may not always be possible.
+    m_unIP:     uint32;
+
+    /// Port number(s) assigned to us.  Only the first entries will contain
+    /// nonzero values.  Entries corresponding to ports beyond what was
+    /// allocated for you will be zero.
+    ///
+    /// (NOTE: At the time of this writing, the maximum number of ports you may
+    /// request is 4.)
+    anon_enum_262 :: enum u32 {
+        k_nMaxReturnPorts :: 8;
+    }
+    m_unPorts:  [8] uint16;
+}
+
 #scope_file
 
+#import "Basic"; // For assert
+
 libsteam_api :: #library "bin/linux/libsteam_api";
+
+#run {
+    {
+        instance: SteamIPAddress_t;
+        assert(((cast(*void)(*instance.m_eType)) - cast(*void)(*instance)) == 16, "SteamIPAddress_t.m_eType has unexpected offset % instead of 16", ((cast(*void)(*instance.m_eType)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamIPAddress_t.m_eType)) == 4, "SteamIPAddress_t.m_eType has unexpected size % instead of 4", size_of(type_of(SteamIPAddress_t.m_eType)));
+        assert(size_of(SteamIPAddress_t) == 20, "SteamIPAddress_t has size % instead of 20", size_of(SteamIPAddress_t));
+    }
+
+    {
+        instance: CSteamID.SteamID_t.SteamIDComponent_t;
+        // Bitfields are currently not correctly aligned
+        // assert(((cast(*void)(*instance.m_unAccountID)) - cast(*void)(*instance)) == 0, "CSteamID.SteamID_t.SteamIDComponent_t.m_unAccountID has unexpected offset % instead of 0", ((cast(*void)(*instance.m_unAccountID)) - cast(*void)(*instance)));
+        assert(size_of(type_of(CSteamID.SteamID_t.SteamIDComponent_t.m_unAccountID)) == 4, "CSteamID.SteamID_t.SteamIDComponent_t.m_unAccountID has unexpected size % instead of 4", size_of(type_of(CSteamID.SteamID_t.SteamIDComponent_t.m_unAccountID)));
+        // Bitfields are currently not correctly aligned
+        // assert(((cast(*void)(*instance.m_unAccountInstance)) - cast(*void)(*instance)) == 4, "CSteamID.SteamID_t.SteamIDComponent_t.m_unAccountInstance has unexpected offset % instead of 4", ((cast(*void)(*instance.m_unAccountInstance)) - cast(*void)(*instance)));
+        assert(size_of(type_of(CSteamID.SteamID_t.SteamIDComponent_t.m_unAccountInstance)) == 4, "CSteamID.SteamID_t.SteamIDComponent_t.m_unAccountInstance has unexpected size % instead of 4", size_of(type_of(CSteamID.SteamID_t.SteamIDComponent_t.m_unAccountInstance)));
+        // Bitfields are currently not correctly aligned
+        // assert(((cast(*void)(*instance.m_EAccountType)) - cast(*void)(*instance)) == 6, "CSteamID.SteamID_t.SteamIDComponent_t.m_EAccountType has unexpected offset % instead of 6", ((cast(*void)(*instance.m_EAccountType)) - cast(*void)(*instance)));
+        assert(size_of(type_of(CSteamID.SteamID_t.SteamIDComponent_t.m_EAccountType)) == 4, "CSteamID.SteamID_t.SteamIDComponent_t.m_EAccountType has unexpected size % instead of 4", size_of(type_of(CSteamID.SteamID_t.SteamIDComponent_t.m_EAccountType)));
+        // Bitfields are currently not correctly aligned
+        // assert(((cast(*void)(*instance.m_EUniverse)) - cast(*void)(*instance)) == 7, "CSteamID.SteamID_t.SteamIDComponent_t.m_EUniverse has unexpected offset % instead of 7", ((cast(*void)(*instance.m_EUniverse)) - cast(*void)(*instance)));
+        assert(size_of(type_of(CSteamID.SteamID_t.SteamIDComponent_t.m_EUniverse)) == 4, "CSteamID.SteamID_t.SteamIDComponent_t.m_EUniverse has unexpected size % instead of 4", size_of(type_of(CSteamID.SteamID_t.SteamIDComponent_t.m_EUniverse)));
+        assert(size_of(CSteamID.SteamID_t.SteamIDComponent_t) == 8, "CSteamID.SteamID_t.SteamIDComponent_t has size % instead of 8", size_of(CSteamID.SteamID_t.SteamIDComponent_t));
+    }
+
+    {
+        instance: CSteamID.SteamID_t;
+        assert(((cast(*void)(*instance.m_comp)) - cast(*void)(*instance)) == 0, "CSteamID.SteamID_t.m_comp has unexpected offset % instead of 0", ((cast(*void)(*instance.m_comp)) - cast(*void)(*instance)));
+        assert(size_of(type_of(CSteamID.SteamID_t.m_comp)) == 8, "CSteamID.SteamID_t.m_comp has unexpected size % instead of 8", size_of(type_of(CSteamID.SteamID_t.m_comp)));
+        assert(((cast(*void)(*instance.m_unAll64Bits)) - cast(*void)(*instance)) == 0, "CSteamID.SteamID_t.m_unAll64Bits has unexpected offset % instead of 0", ((cast(*void)(*instance.m_unAll64Bits)) - cast(*void)(*instance)));
+        assert(size_of(type_of(CSteamID.SteamID_t.m_unAll64Bits)) == 8, "CSteamID.SteamID_t.m_unAll64Bits has unexpected size % instead of 8", size_of(type_of(CSteamID.SteamID_t.m_unAll64Bits)));
+        assert(size_of(CSteamID.SteamID_t) == 8, "CSteamID.SteamID_t has size % instead of 8", size_of(CSteamID.SteamID_t));
+    }
+
+    {
+        instance: CSteamID;
+        assert(((cast(*void)(*instance.m_steamid)) - cast(*void)(*instance)) == 0, "CSteamID.m_steamid has unexpected offset % instead of 0", ((cast(*void)(*instance.m_steamid)) - cast(*void)(*instance)));
+        assert(size_of(type_of(CSteamID.m_steamid)) == 8, "CSteamID.m_steamid has unexpected size % instead of 8", size_of(type_of(CSteamID.m_steamid)));
+        assert(size_of(CSteamID) == 8, "CSteamID has size % instead of 8", size_of(CSteamID));
+    }
+
+    {
+        instance: CGameID.GameID_t;
+        // Bitfields are currently not correctly aligned
+        // assert(((cast(*void)(*instance.m_nAppID)) - cast(*void)(*instance)) == 0, "CGameID.GameID_t.m_nAppID has unexpected offset % instead of 0", ((cast(*void)(*instance.m_nAppID)) - cast(*void)(*instance)));
+        assert(size_of(type_of(CGameID.GameID_t.m_nAppID)) == 4, "CGameID.GameID_t.m_nAppID has unexpected size % instead of 4", size_of(type_of(CGameID.GameID_t.m_nAppID)));
+        // Bitfields are currently not correctly aligned
+        // assert(((cast(*void)(*instance.m_nType)) - cast(*void)(*instance)) == 3, "CGameID.GameID_t.m_nType has unexpected offset % instead of 3", ((cast(*void)(*instance.m_nType)) - cast(*void)(*instance)));
+        assert(size_of(type_of(CGameID.GameID_t.m_nType)) == 4, "CGameID.GameID_t.m_nType has unexpected size % instead of 4", size_of(type_of(CGameID.GameID_t.m_nType)));
+        // Bitfields are currently not correctly aligned
+        // assert(((cast(*void)(*instance.m_nModID)) - cast(*void)(*instance)) == 4, "CGameID.GameID_t.m_nModID has unexpected offset % instead of 4", ((cast(*void)(*instance.m_nModID)) - cast(*void)(*instance)));
+        assert(size_of(type_of(CGameID.GameID_t.m_nModID)) == 4, "CGameID.GameID_t.m_nModID has unexpected size % instead of 4", size_of(type_of(CGameID.GameID_t.m_nModID)));
+        assert(size_of(CGameID.GameID_t) == 8, "CGameID.GameID_t has size % instead of 8", size_of(CGameID.GameID_t));
+    }
+
+    assert(size_of(CGameID) == 8, "CGameID has size % instead of 8", size_of(CGameID));
+
+    {
+        instance: CCallbackBase;
+        assert(((cast(*void)(*instance.m_nCallbackFlags)) - cast(*void)(*instance)) == 8, "CCallbackBase.m_nCallbackFlags has unexpected offset % instead of 8", ((cast(*void)(*instance.m_nCallbackFlags)) - cast(*void)(*instance)));
+        assert(size_of(type_of(CCallbackBase.m_nCallbackFlags)) == 1, "CCallbackBase.m_nCallbackFlags has unexpected size % instead of 1", size_of(type_of(CCallbackBase.m_nCallbackFlags)));
+        assert(((cast(*void)(*instance.m_iCallback)) - cast(*void)(*instance)) == 12, "CCallbackBase.m_iCallback has unexpected offset % instead of 12", ((cast(*void)(*instance.m_iCallback)) - cast(*void)(*instance)));
+        assert(size_of(type_of(CCallbackBase.m_iCallback)) == 4, "CCallbackBase.m_iCallback has unexpected size % instead of 4", size_of(type_of(CCallbackBase.m_iCallback)));
+        assert(size_of(CCallbackBase) == 16, "CCallbackBase has size % instead of 16", size_of(CCallbackBase));
+    }
+
+    {
+        instance: CallbackMsg_t;
+        assert(((cast(*void)(*instance.m_hSteamUser)) - cast(*void)(*instance)) == 0, "CallbackMsg_t.m_hSteamUser has unexpected offset % instead of 0", ((cast(*void)(*instance.m_hSteamUser)) - cast(*void)(*instance)));
+        assert(size_of(type_of(CallbackMsg_t.m_hSteamUser)) == 4, "CallbackMsg_t.m_hSteamUser has unexpected size % instead of 4", size_of(type_of(CallbackMsg_t.m_hSteamUser)));
+        assert(((cast(*void)(*instance.m_iCallback)) - cast(*void)(*instance)) == 4, "CallbackMsg_t.m_iCallback has unexpected offset % instead of 4", ((cast(*void)(*instance.m_iCallback)) - cast(*void)(*instance)));
+        assert(size_of(type_of(CallbackMsg_t.m_iCallback)) == 4, "CallbackMsg_t.m_iCallback has unexpected size % instead of 4", size_of(type_of(CallbackMsg_t.m_iCallback)));
+        assert(((cast(*void)(*instance.m_pubParam)) - cast(*void)(*instance)) == 8, "CallbackMsg_t.m_pubParam has unexpected offset % instead of 8", ((cast(*void)(*instance.m_pubParam)) - cast(*void)(*instance)));
+        assert(size_of(type_of(CallbackMsg_t.m_pubParam)) == 8, "CallbackMsg_t.m_pubParam has unexpected size % instead of 8", size_of(type_of(CallbackMsg_t.m_pubParam)));
+        assert(((cast(*void)(*instance.m_cubParam)) - cast(*void)(*instance)) == 16, "CallbackMsg_t.m_cubParam has unexpected offset % instead of 16", ((cast(*void)(*instance.m_cubParam)) - cast(*void)(*instance)));
+        assert(size_of(type_of(CallbackMsg_t.m_cubParam)) == 4, "CallbackMsg_t.m_cubParam has unexpected size % instead of 4", size_of(type_of(CallbackMsg_t.m_cubParam)));
+        assert(size_of(CallbackMsg_t) == 20, "CallbackMsg_t has size % instead of 20", size_of(CallbackMsg_t));
+    }
+
+    assert(size_of(ISteamApps) == 8, "ISteamApps has size % instead of 8", size_of(ISteamApps));
+
+    assert(size_of(ISteamClient) == 8, "ISteamClient has size % instead of 8", size_of(ISteamClient));
+
+    {
+        instance: InputAnalogActionData_t;
+        assert(((cast(*void)(*instance.eMode)) - cast(*void)(*instance)) == 0, "InputAnalogActionData_t.eMode has unexpected offset % instead of 0", ((cast(*void)(*instance.eMode)) - cast(*void)(*instance)));
+        assert(size_of(type_of(InputAnalogActionData_t.eMode)) == 4, "InputAnalogActionData_t.eMode has unexpected size % instead of 4", size_of(type_of(InputAnalogActionData_t.eMode)));
+        assert(((cast(*void)(*instance.x)) - cast(*void)(*instance)) == 4, "InputAnalogActionData_t.x has unexpected offset % instead of 4", ((cast(*void)(*instance.x)) - cast(*void)(*instance)));
+        assert(size_of(type_of(InputAnalogActionData_t.x)) == 4, "InputAnalogActionData_t.x has unexpected size % instead of 4", size_of(type_of(InputAnalogActionData_t.x)));
+        assert(((cast(*void)(*instance.y)) - cast(*void)(*instance)) == 8, "InputAnalogActionData_t.y has unexpected offset % instead of 8", ((cast(*void)(*instance.y)) - cast(*void)(*instance)));
+        assert(size_of(type_of(InputAnalogActionData_t.y)) == 4, "InputAnalogActionData_t.y has unexpected size % instead of 4", size_of(type_of(InputAnalogActionData_t.y)));
+        assert(((cast(*void)(*instance.bActive)) - cast(*void)(*instance)) == 12, "InputAnalogActionData_t.bActive has unexpected offset % instead of 12", ((cast(*void)(*instance.bActive)) - cast(*void)(*instance)));
+        assert(size_of(type_of(InputAnalogActionData_t.bActive)) == 1, "InputAnalogActionData_t.bActive has unexpected size % instead of 1", size_of(type_of(InputAnalogActionData_t.bActive)));
+        assert(size_of(InputAnalogActionData_t) == 13, "InputAnalogActionData_t has size % instead of 13", size_of(InputAnalogActionData_t));
+    }
+
+    {
+        instance: InputDigitalActionData_t;
+        assert(((cast(*void)(*instance.bState)) - cast(*void)(*instance)) == 0, "InputDigitalActionData_t.bState has unexpected offset % instead of 0", ((cast(*void)(*instance.bState)) - cast(*void)(*instance)));
+        assert(size_of(type_of(InputDigitalActionData_t.bState)) == 1, "InputDigitalActionData_t.bState has unexpected size % instead of 1", size_of(type_of(InputDigitalActionData_t.bState)));
+        assert(((cast(*void)(*instance.bActive)) - cast(*void)(*instance)) == 1, "InputDigitalActionData_t.bActive has unexpected offset % instead of 1", ((cast(*void)(*instance.bActive)) - cast(*void)(*instance)));
+        assert(size_of(type_of(InputDigitalActionData_t.bActive)) == 1, "InputDigitalActionData_t.bActive has unexpected size % instead of 1", size_of(type_of(InputDigitalActionData_t.bActive)));
+        assert(size_of(InputDigitalActionData_t) == 2, "InputDigitalActionData_t has size % instead of 2", size_of(InputDigitalActionData_t));
+    }
+
+    {
+        instance: InputMotionData_t;
+        assert(((cast(*void)(*instance.rotQuatX)) - cast(*void)(*instance)) == 0, "InputMotionData_t.rotQuatX has unexpected offset % instead of 0", ((cast(*void)(*instance.rotQuatX)) - cast(*void)(*instance)));
+        assert(size_of(type_of(InputMotionData_t.rotQuatX)) == 4, "InputMotionData_t.rotQuatX has unexpected size % instead of 4", size_of(type_of(InputMotionData_t.rotQuatX)));
+        assert(((cast(*void)(*instance.rotQuatY)) - cast(*void)(*instance)) == 4, "InputMotionData_t.rotQuatY has unexpected offset % instead of 4", ((cast(*void)(*instance.rotQuatY)) - cast(*void)(*instance)));
+        assert(size_of(type_of(InputMotionData_t.rotQuatY)) == 4, "InputMotionData_t.rotQuatY has unexpected size % instead of 4", size_of(type_of(InputMotionData_t.rotQuatY)));
+        assert(((cast(*void)(*instance.rotQuatZ)) - cast(*void)(*instance)) == 8, "InputMotionData_t.rotQuatZ has unexpected offset % instead of 8", ((cast(*void)(*instance.rotQuatZ)) - cast(*void)(*instance)));
+        assert(size_of(type_of(InputMotionData_t.rotQuatZ)) == 4, "InputMotionData_t.rotQuatZ has unexpected size % instead of 4", size_of(type_of(InputMotionData_t.rotQuatZ)));
+        assert(((cast(*void)(*instance.rotQuatW)) - cast(*void)(*instance)) == 12, "InputMotionData_t.rotQuatW has unexpected offset % instead of 12", ((cast(*void)(*instance.rotQuatW)) - cast(*void)(*instance)));
+        assert(size_of(type_of(InputMotionData_t.rotQuatW)) == 4, "InputMotionData_t.rotQuatW has unexpected size % instead of 4", size_of(type_of(InputMotionData_t.rotQuatW)));
+        assert(((cast(*void)(*instance.posAccelX)) - cast(*void)(*instance)) == 16, "InputMotionData_t.posAccelX has unexpected offset % instead of 16", ((cast(*void)(*instance.posAccelX)) - cast(*void)(*instance)));
+        assert(size_of(type_of(InputMotionData_t.posAccelX)) == 4, "InputMotionData_t.posAccelX has unexpected size % instead of 4", size_of(type_of(InputMotionData_t.posAccelX)));
+        assert(((cast(*void)(*instance.posAccelY)) - cast(*void)(*instance)) == 20, "InputMotionData_t.posAccelY has unexpected offset % instead of 20", ((cast(*void)(*instance.posAccelY)) - cast(*void)(*instance)));
+        assert(size_of(type_of(InputMotionData_t.posAccelY)) == 4, "InputMotionData_t.posAccelY has unexpected size % instead of 4", size_of(type_of(InputMotionData_t.posAccelY)));
+        assert(((cast(*void)(*instance.posAccelZ)) - cast(*void)(*instance)) == 24, "InputMotionData_t.posAccelZ has unexpected offset % instead of 24", ((cast(*void)(*instance.posAccelZ)) - cast(*void)(*instance)));
+        assert(size_of(type_of(InputMotionData_t.posAccelZ)) == 4, "InputMotionData_t.posAccelZ has unexpected size % instead of 4", size_of(type_of(InputMotionData_t.posAccelZ)));
+        assert(((cast(*void)(*instance.rotVelX)) - cast(*void)(*instance)) == 28, "InputMotionData_t.rotVelX has unexpected offset % instead of 28", ((cast(*void)(*instance.rotVelX)) - cast(*void)(*instance)));
+        assert(size_of(type_of(InputMotionData_t.rotVelX)) == 4, "InputMotionData_t.rotVelX has unexpected size % instead of 4", size_of(type_of(InputMotionData_t.rotVelX)));
+        assert(((cast(*void)(*instance.rotVelY)) - cast(*void)(*instance)) == 32, "InputMotionData_t.rotVelY has unexpected offset % instead of 32", ((cast(*void)(*instance.rotVelY)) - cast(*void)(*instance)));
+        assert(size_of(type_of(InputMotionData_t.rotVelY)) == 4, "InputMotionData_t.rotVelY has unexpected size % instead of 4", size_of(type_of(InputMotionData_t.rotVelY)));
+        assert(((cast(*void)(*instance.rotVelZ)) - cast(*void)(*instance)) == 36, "InputMotionData_t.rotVelZ has unexpected offset % instead of 36", ((cast(*void)(*instance.rotVelZ)) - cast(*void)(*instance)));
+        assert(size_of(type_of(InputMotionData_t.rotVelZ)) == 4, "InputMotionData_t.rotVelZ has unexpected size % instead of 4", size_of(type_of(InputMotionData_t.rotVelZ)));
+        assert(size_of(InputMotionData_t) == 40, "InputMotionData_t has size % instead of 40", size_of(InputMotionData_t));
+    }
+
+    {
+        instance: SteamInputActionEvent_t.AnalogAction_t;
+        assert(((cast(*void)(*instance.actionHandle)) - cast(*void)(*instance)) == 0, "SteamInputActionEvent_t.AnalogAction_t.actionHandle has unexpected offset % instead of 0", ((cast(*void)(*instance.actionHandle)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamInputActionEvent_t.AnalogAction_t.actionHandle)) == 8, "SteamInputActionEvent_t.AnalogAction_t.actionHandle has unexpected size % instead of 8", size_of(type_of(SteamInputActionEvent_t.AnalogAction_t.actionHandle)));
+        assert(((cast(*void)(*instance.analogActionData)) - cast(*void)(*instance)) == 8, "SteamInputActionEvent_t.AnalogAction_t.analogActionData has unexpected offset % instead of 8", ((cast(*void)(*instance.analogActionData)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamInputActionEvent_t.AnalogAction_t.analogActionData)) == 13, "SteamInputActionEvent_t.AnalogAction_t.analogActionData has unexpected size % instead of 13", size_of(type_of(SteamInputActionEvent_t.AnalogAction_t.analogActionData)));
+        assert(size_of(SteamInputActionEvent_t.AnalogAction_t) == 21, "SteamInputActionEvent_t.AnalogAction_t has size % instead of 21", size_of(SteamInputActionEvent_t.AnalogAction_t));
+    }
+
+    {
+        instance: SteamInputActionEvent_t.DigitalAction_t;
+        assert(((cast(*void)(*instance.actionHandle)) - cast(*void)(*instance)) == 0, "SteamInputActionEvent_t.DigitalAction_t.actionHandle has unexpected offset % instead of 0", ((cast(*void)(*instance.actionHandle)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamInputActionEvent_t.DigitalAction_t.actionHandle)) == 8, "SteamInputActionEvent_t.DigitalAction_t.actionHandle has unexpected size % instead of 8", size_of(type_of(SteamInputActionEvent_t.DigitalAction_t.actionHandle)));
+        assert(((cast(*void)(*instance.digitalActionData)) - cast(*void)(*instance)) == 8, "SteamInputActionEvent_t.DigitalAction_t.digitalActionData has unexpected offset % instead of 8", ((cast(*void)(*instance.digitalActionData)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamInputActionEvent_t.DigitalAction_t.digitalActionData)) == 2, "SteamInputActionEvent_t.DigitalAction_t.digitalActionData has unexpected size % instead of 2", size_of(type_of(SteamInputActionEvent_t.DigitalAction_t.digitalActionData)));
+        assert(size_of(SteamInputActionEvent_t.DigitalAction_t) == 10, "SteamInputActionEvent_t.DigitalAction_t has size % instead of 10", size_of(SteamInputActionEvent_t.DigitalAction_t));
+    }
+
+    {
+        instance: SteamInputActionEvent_t;
+        assert(((cast(*void)(*instance.controllerHandle)) - cast(*void)(*instance)) == 0, "SteamInputActionEvent_t.controllerHandle has unexpected offset % instead of 0", ((cast(*void)(*instance.controllerHandle)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamInputActionEvent_t.controllerHandle)) == 8, "SteamInputActionEvent_t.controllerHandle has unexpected size % instead of 8", size_of(type_of(SteamInputActionEvent_t.controllerHandle)));
+        assert(((cast(*void)(*instance.eEventType)) - cast(*void)(*instance)) == 8, "SteamInputActionEvent_t.eEventType has unexpected offset % instead of 8", ((cast(*void)(*instance.eEventType)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamInputActionEvent_t.eEventType)) == 4, "SteamInputActionEvent_t.eEventType has unexpected size % instead of 4", size_of(type_of(SteamInputActionEvent_t.eEventType)));
+        assert(size_of(SteamInputActionEvent_t) == 33, "SteamInputActionEvent_t has size % instead of 33", size_of(SteamInputActionEvent_t));
+    }
+
+    assert(size_of(ISteamInput) == 8, "ISteamInput has size % instead of 8", size_of(ISteamInput));
+
+    assert(size_of(ISteamController) == 8, "ISteamController has size % instead of 8", size_of(ISteamController));
+
+    {
+        instance: FriendGameInfo_t;
+        assert(((cast(*void)(*instance.m_gameID)) - cast(*void)(*instance)) == 0, "FriendGameInfo_t.m_gameID has unexpected offset % instead of 0", ((cast(*void)(*instance.m_gameID)) - cast(*void)(*instance)));
+        assert(size_of(type_of(FriendGameInfo_t.m_gameID)) == 8, "FriendGameInfo_t.m_gameID has unexpected size % instead of 8", size_of(type_of(FriendGameInfo_t.m_gameID)));
+        assert(((cast(*void)(*instance.m_unGameIP)) - cast(*void)(*instance)) == 8, "FriendGameInfo_t.m_unGameIP has unexpected offset % instead of 8", ((cast(*void)(*instance.m_unGameIP)) - cast(*void)(*instance)));
+        assert(size_of(type_of(FriendGameInfo_t.m_unGameIP)) == 4, "FriendGameInfo_t.m_unGameIP has unexpected size % instead of 4", size_of(type_of(FriendGameInfo_t.m_unGameIP)));
+        assert(((cast(*void)(*instance.m_usGamePort)) - cast(*void)(*instance)) == 12, "FriendGameInfo_t.m_usGamePort has unexpected offset % instead of 12", ((cast(*void)(*instance.m_usGamePort)) - cast(*void)(*instance)));
+        assert(size_of(type_of(FriendGameInfo_t.m_usGamePort)) == 2, "FriendGameInfo_t.m_usGamePort has unexpected size % instead of 2", size_of(type_of(FriendGameInfo_t.m_usGamePort)));
+        assert(((cast(*void)(*instance.m_usQueryPort)) - cast(*void)(*instance)) == 14, "FriendGameInfo_t.m_usQueryPort has unexpected offset % instead of 14", ((cast(*void)(*instance.m_usQueryPort)) - cast(*void)(*instance)));
+        assert(size_of(type_of(FriendGameInfo_t.m_usQueryPort)) == 2, "FriendGameInfo_t.m_usQueryPort has unexpected size % instead of 2", size_of(type_of(FriendGameInfo_t.m_usQueryPort)));
+        assert(((cast(*void)(*instance.m_steamIDLobby)) - cast(*void)(*instance)) == 16, "FriendGameInfo_t.m_steamIDLobby has unexpected offset % instead of 16", ((cast(*void)(*instance.m_steamIDLobby)) - cast(*void)(*instance)));
+        assert(size_of(type_of(FriendGameInfo_t.m_steamIDLobby)) == 8, "FriendGameInfo_t.m_steamIDLobby has unexpected size % instead of 8", size_of(type_of(FriendGameInfo_t.m_steamIDLobby)));
+        assert(size_of(FriendGameInfo_t) == 24, "FriendGameInfo_t has size % instead of 24", size_of(FriendGameInfo_t));
+    }
+
+    assert(size_of(ISteamFriends) == 8, "ISteamFriends has size % instead of 8", size_of(ISteamFriends));
+
+    assert(size_of(ISteamGameServer) == 8, "ISteamGameServer has size % instead of 8", size_of(ISteamGameServer));
+
+    assert(size_of(ISteamGameServerStats) == 8, "ISteamGameServerStats has size % instead of 8", size_of(ISteamGameServerStats));
+
+    assert(size_of(ISteamHTMLSurface) == 8, "ISteamHTMLSurface has size % instead of 8", size_of(ISteamHTMLSurface));
+
+    assert(size_of(ISteamHTTP) == 8, "ISteamHTTP has size % instead of 8", size_of(ISteamHTTP));
+
+    {
+        instance: SteamItemDetails_t;
+        assert(((cast(*void)(*instance.m_itemId)) - cast(*void)(*instance)) == 0, "SteamItemDetails_t.m_itemId has unexpected offset % instead of 0", ((cast(*void)(*instance.m_itemId)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamItemDetails_t.m_itemId)) == 8, "SteamItemDetails_t.m_itemId has unexpected size % instead of 8", size_of(type_of(SteamItemDetails_t.m_itemId)));
+        assert(((cast(*void)(*instance.m_iDefinition)) - cast(*void)(*instance)) == 8, "SteamItemDetails_t.m_iDefinition has unexpected offset % instead of 8", ((cast(*void)(*instance.m_iDefinition)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamItemDetails_t.m_iDefinition)) == 4, "SteamItemDetails_t.m_iDefinition has unexpected size % instead of 4", size_of(type_of(SteamItemDetails_t.m_iDefinition)));
+        assert(((cast(*void)(*instance.m_unQuantity)) - cast(*void)(*instance)) == 12, "SteamItemDetails_t.m_unQuantity has unexpected offset % instead of 12", ((cast(*void)(*instance.m_unQuantity)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamItemDetails_t.m_unQuantity)) == 2, "SteamItemDetails_t.m_unQuantity has unexpected size % instead of 2", size_of(type_of(SteamItemDetails_t.m_unQuantity)));
+        assert(((cast(*void)(*instance.m_unFlags)) - cast(*void)(*instance)) == 14, "SteamItemDetails_t.m_unFlags has unexpected offset % instead of 14", ((cast(*void)(*instance.m_unFlags)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamItemDetails_t.m_unFlags)) == 2, "SteamItemDetails_t.m_unFlags has unexpected size % instead of 2", size_of(type_of(SteamItemDetails_t.m_unFlags)));
+        assert(size_of(SteamItemDetails_t) == 16, "SteamItemDetails_t has size % instead of 16", size_of(SteamItemDetails_t));
+    }
+
+    assert(size_of(ISteamInventory) == 8, "ISteamInventory has size % instead of 8", size_of(ISteamInventory));
+
+    {
+        instance: MatchMakingKeyValuePair_t;
+        assert(((cast(*void)(*instance.m_szKey)) - cast(*void)(*instance)) == 0, "MatchMakingKeyValuePair_t.m_szKey has unexpected offset % instead of 0", ((cast(*void)(*instance.m_szKey)) - cast(*void)(*instance)));
+        assert(size_of(type_of(MatchMakingKeyValuePair_t.m_szKey)) == 256, "MatchMakingKeyValuePair_t.m_szKey has unexpected size % instead of 256", size_of(type_of(MatchMakingKeyValuePair_t.m_szKey)));
+        assert(((cast(*void)(*instance.m_szValue)) - cast(*void)(*instance)) == 256, "MatchMakingKeyValuePair_t.m_szValue has unexpected offset % instead of 256", ((cast(*void)(*instance.m_szValue)) - cast(*void)(*instance)));
+        assert(size_of(type_of(MatchMakingKeyValuePair_t.m_szValue)) == 256, "MatchMakingKeyValuePair_t.m_szValue has unexpected size % instead of 256", size_of(type_of(MatchMakingKeyValuePair_t.m_szValue)));
+        assert(size_of(MatchMakingKeyValuePair_t) == 512, "MatchMakingKeyValuePair_t has size % instead of 512", size_of(MatchMakingKeyValuePair_t));
+    }
+
+    {
+        instance: servernetadr_t;
+        assert(((cast(*void)(*instance.m_usConnectionPort)) - cast(*void)(*instance)) == 0, "servernetadr_t.m_usConnectionPort has unexpected offset % instead of 0", ((cast(*void)(*instance.m_usConnectionPort)) - cast(*void)(*instance)));
+        assert(size_of(type_of(servernetadr_t.m_usConnectionPort)) == 2, "servernetadr_t.m_usConnectionPort has unexpected size % instead of 2", size_of(type_of(servernetadr_t.m_usConnectionPort)));
+        assert(((cast(*void)(*instance.m_usQueryPort)) - cast(*void)(*instance)) == 2, "servernetadr_t.m_usQueryPort has unexpected offset % instead of 2", ((cast(*void)(*instance.m_usQueryPort)) - cast(*void)(*instance)));
+        assert(size_of(type_of(servernetadr_t.m_usQueryPort)) == 2, "servernetadr_t.m_usQueryPort has unexpected size % instead of 2", size_of(type_of(servernetadr_t.m_usQueryPort)));
+        assert(((cast(*void)(*instance.m_unIP)) - cast(*void)(*instance)) == 4, "servernetadr_t.m_unIP has unexpected offset % instead of 4", ((cast(*void)(*instance.m_unIP)) - cast(*void)(*instance)));
+        assert(size_of(type_of(servernetadr_t.m_unIP)) == 4, "servernetadr_t.m_unIP has unexpected size % instead of 4", size_of(type_of(servernetadr_t.m_unIP)));
+        assert(size_of(servernetadr_t) == 8, "servernetadr_t has size % instead of 8", size_of(servernetadr_t));
+    }
+
+    {
+        instance: gameserveritem_t;
+        assert(((cast(*void)(*instance.m_NetAdr)) - cast(*void)(*instance)) == 0, "gameserveritem_t.m_NetAdr has unexpected offset % instead of 0", ((cast(*void)(*instance.m_NetAdr)) - cast(*void)(*instance)));
+        assert(size_of(type_of(gameserveritem_t.m_NetAdr)) == 8, "gameserveritem_t.m_NetAdr has unexpected size % instead of 8", size_of(type_of(gameserveritem_t.m_NetAdr)));
+        assert(((cast(*void)(*instance.m_nPing)) - cast(*void)(*instance)) == 8, "gameserveritem_t.m_nPing has unexpected offset % instead of 8", ((cast(*void)(*instance.m_nPing)) - cast(*void)(*instance)));
+        assert(size_of(type_of(gameserveritem_t.m_nPing)) == 4, "gameserveritem_t.m_nPing has unexpected size % instead of 4", size_of(type_of(gameserveritem_t.m_nPing)));
+        assert(((cast(*void)(*instance.m_bHadSuccessfulResponse)) - cast(*void)(*instance)) == 12, "gameserveritem_t.m_bHadSuccessfulResponse has unexpected offset % instead of 12", ((cast(*void)(*instance.m_bHadSuccessfulResponse)) - cast(*void)(*instance)));
+        assert(size_of(type_of(gameserveritem_t.m_bHadSuccessfulResponse)) == 1, "gameserveritem_t.m_bHadSuccessfulResponse has unexpected size % instead of 1", size_of(type_of(gameserveritem_t.m_bHadSuccessfulResponse)));
+        assert(((cast(*void)(*instance.m_bDoNotRefresh)) - cast(*void)(*instance)) == 13, "gameserveritem_t.m_bDoNotRefresh has unexpected offset % instead of 13", ((cast(*void)(*instance.m_bDoNotRefresh)) - cast(*void)(*instance)));
+        assert(size_of(type_of(gameserveritem_t.m_bDoNotRefresh)) == 1, "gameserveritem_t.m_bDoNotRefresh has unexpected size % instead of 1", size_of(type_of(gameserveritem_t.m_bDoNotRefresh)));
+        assert(((cast(*void)(*instance.m_szGameDir)) - cast(*void)(*instance)) == 14, "gameserveritem_t.m_szGameDir has unexpected offset % instead of 14", ((cast(*void)(*instance.m_szGameDir)) - cast(*void)(*instance)));
+        assert(size_of(type_of(gameserveritem_t.m_szGameDir)) == 32, "gameserveritem_t.m_szGameDir has unexpected size % instead of 32", size_of(type_of(gameserveritem_t.m_szGameDir)));
+        assert(((cast(*void)(*instance.m_szMap)) - cast(*void)(*instance)) == 46, "gameserveritem_t.m_szMap has unexpected offset % instead of 46", ((cast(*void)(*instance.m_szMap)) - cast(*void)(*instance)));
+        assert(size_of(type_of(gameserveritem_t.m_szMap)) == 32, "gameserveritem_t.m_szMap has unexpected size % instead of 32", size_of(type_of(gameserveritem_t.m_szMap)));
+        assert(((cast(*void)(*instance.m_szGameDescription)) - cast(*void)(*instance)) == 78, "gameserveritem_t.m_szGameDescription has unexpected offset % instead of 78", ((cast(*void)(*instance.m_szGameDescription)) - cast(*void)(*instance)));
+        assert(size_of(type_of(gameserveritem_t.m_szGameDescription)) == 64, "gameserveritem_t.m_szGameDescription has unexpected size % instead of 64", size_of(type_of(gameserveritem_t.m_szGameDescription)));
+        assert(((cast(*void)(*instance.m_nAppID)) - cast(*void)(*instance)) == 144, "gameserveritem_t.m_nAppID has unexpected offset % instead of 144", ((cast(*void)(*instance.m_nAppID)) - cast(*void)(*instance)));
+        assert(size_of(type_of(gameserveritem_t.m_nAppID)) == 4, "gameserveritem_t.m_nAppID has unexpected size % instead of 4", size_of(type_of(gameserveritem_t.m_nAppID)));
+        assert(((cast(*void)(*instance.m_nPlayers)) - cast(*void)(*instance)) == 148, "gameserveritem_t.m_nPlayers has unexpected offset % instead of 148", ((cast(*void)(*instance.m_nPlayers)) - cast(*void)(*instance)));
+        assert(size_of(type_of(gameserveritem_t.m_nPlayers)) == 4, "gameserveritem_t.m_nPlayers has unexpected size % instead of 4", size_of(type_of(gameserveritem_t.m_nPlayers)));
+        assert(((cast(*void)(*instance.m_nMaxPlayers)) - cast(*void)(*instance)) == 152, "gameserveritem_t.m_nMaxPlayers has unexpected offset % instead of 152", ((cast(*void)(*instance.m_nMaxPlayers)) - cast(*void)(*instance)));
+        assert(size_of(type_of(gameserveritem_t.m_nMaxPlayers)) == 4, "gameserveritem_t.m_nMaxPlayers has unexpected size % instead of 4", size_of(type_of(gameserveritem_t.m_nMaxPlayers)));
+        assert(((cast(*void)(*instance.m_nBotPlayers)) - cast(*void)(*instance)) == 156, "gameserveritem_t.m_nBotPlayers has unexpected offset % instead of 156", ((cast(*void)(*instance.m_nBotPlayers)) - cast(*void)(*instance)));
+        assert(size_of(type_of(gameserveritem_t.m_nBotPlayers)) == 4, "gameserveritem_t.m_nBotPlayers has unexpected size % instead of 4", size_of(type_of(gameserveritem_t.m_nBotPlayers)));
+        assert(((cast(*void)(*instance.m_bPassword)) - cast(*void)(*instance)) == 160, "gameserveritem_t.m_bPassword has unexpected offset % instead of 160", ((cast(*void)(*instance.m_bPassword)) - cast(*void)(*instance)));
+        assert(size_of(type_of(gameserveritem_t.m_bPassword)) == 1, "gameserveritem_t.m_bPassword has unexpected size % instead of 1", size_of(type_of(gameserveritem_t.m_bPassword)));
+        assert(((cast(*void)(*instance.m_bSecure)) - cast(*void)(*instance)) == 161, "gameserveritem_t.m_bSecure has unexpected offset % instead of 161", ((cast(*void)(*instance.m_bSecure)) - cast(*void)(*instance)));
+        assert(size_of(type_of(gameserveritem_t.m_bSecure)) == 1, "gameserveritem_t.m_bSecure has unexpected size % instead of 1", size_of(type_of(gameserveritem_t.m_bSecure)));
+        assert(((cast(*void)(*instance.m_ulTimeLastPlayed)) - cast(*void)(*instance)) == 164, "gameserveritem_t.m_ulTimeLastPlayed has unexpected offset % instead of 164", ((cast(*void)(*instance.m_ulTimeLastPlayed)) - cast(*void)(*instance)));
+        assert(size_of(type_of(gameserveritem_t.m_ulTimeLastPlayed)) == 4, "gameserveritem_t.m_ulTimeLastPlayed has unexpected size % instead of 4", size_of(type_of(gameserveritem_t.m_ulTimeLastPlayed)));
+        assert(((cast(*void)(*instance.m_nServerVersion)) - cast(*void)(*instance)) == 168, "gameserveritem_t.m_nServerVersion has unexpected offset % instead of 168", ((cast(*void)(*instance.m_nServerVersion)) - cast(*void)(*instance)));
+        assert(size_of(type_of(gameserveritem_t.m_nServerVersion)) == 4, "gameserveritem_t.m_nServerVersion has unexpected size % instead of 4", size_of(type_of(gameserveritem_t.m_nServerVersion)));
+        assert(((cast(*void)(*instance.m_szServerName)) - cast(*void)(*instance)) == 172, "gameserveritem_t.m_szServerName has unexpected offset % instead of 172", ((cast(*void)(*instance.m_szServerName)) - cast(*void)(*instance)));
+        assert(size_of(type_of(gameserveritem_t.m_szServerName)) == 64, "gameserveritem_t.m_szServerName has unexpected size % instead of 64", size_of(type_of(gameserveritem_t.m_szServerName)));
+        assert(((cast(*void)(*instance.m_szGameTags)) - cast(*void)(*instance)) == 236, "gameserveritem_t.m_szGameTags has unexpected offset % instead of 236", ((cast(*void)(*instance.m_szGameTags)) - cast(*void)(*instance)));
+        assert(size_of(type_of(gameserveritem_t.m_szGameTags)) == 128, "gameserveritem_t.m_szGameTags has unexpected size % instead of 128", size_of(type_of(gameserveritem_t.m_szGameTags)));
+        assert(((cast(*void)(*instance.m_steamID)) - cast(*void)(*instance)) == 364, "gameserveritem_t.m_steamID has unexpected offset % instead of 364", ((cast(*void)(*instance.m_steamID)) - cast(*void)(*instance)));
+        assert(size_of(type_of(gameserveritem_t.m_steamID)) == 8, "gameserveritem_t.m_steamID has unexpected size % instead of 8", size_of(type_of(gameserveritem_t.m_steamID)));
+        assert(size_of(gameserveritem_t) == 372, "gameserveritem_t has size % instead of 372", size_of(gameserveritem_t));
+    }
+
+    assert(size_of(ISteamMatchmaking) == 8, "ISteamMatchmaking has size % instead of 8", size_of(ISteamMatchmaking));
+
+    assert(size_of(ISteamMatchmakingServerListResponse) == 8, "ISteamMatchmakingServerListResponse has size % instead of 8", size_of(ISteamMatchmakingServerListResponse));
+
+    assert(size_of(ISteamMatchmakingPingResponse) == 8, "ISteamMatchmakingPingResponse has size % instead of 8", size_of(ISteamMatchmakingPingResponse));
+
+    assert(size_of(ISteamMatchmakingPlayersResponse) == 8, "ISteamMatchmakingPlayersResponse has size % instead of 8", size_of(ISteamMatchmakingPlayersResponse));
+
+    assert(size_of(ISteamMatchmakingRulesResponse) == 8, "ISteamMatchmakingRulesResponse has size % instead of 8", size_of(ISteamMatchmakingRulesResponse));
+
+    assert(size_of(ISteamMatchmakingServers) == 8, "ISteamMatchmakingServers has size % instead of 8", size_of(ISteamMatchmakingServers));
+
+    assert(size_of(ISteamGameSearch) == 8, "ISteamGameSearch has size % instead of 8", size_of(ISteamGameSearch));
+
+    {
+        instance: SteamPartyBeaconLocation_t;
+        assert(((cast(*void)(*instance.m_eType)) - cast(*void)(*instance)) == 0, "SteamPartyBeaconLocation_t.m_eType has unexpected offset % instead of 0", ((cast(*void)(*instance.m_eType)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamPartyBeaconLocation_t.m_eType)) == 4, "SteamPartyBeaconLocation_t.m_eType has unexpected size % instead of 4", size_of(type_of(SteamPartyBeaconLocation_t.m_eType)));
+        assert(((cast(*void)(*instance.m_ulLocationID)) - cast(*void)(*instance)) == 4, "SteamPartyBeaconLocation_t.m_ulLocationID has unexpected offset % instead of 4", ((cast(*void)(*instance.m_ulLocationID)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamPartyBeaconLocation_t.m_ulLocationID)) == 8, "SteamPartyBeaconLocation_t.m_ulLocationID has unexpected size % instead of 8", size_of(type_of(SteamPartyBeaconLocation_t.m_ulLocationID)));
+        assert(size_of(SteamPartyBeaconLocation_t) == 12, "SteamPartyBeaconLocation_t has size % instead of 12", size_of(SteamPartyBeaconLocation_t));
+    }
+
+    assert(size_of(ISteamParties) == 8, "ISteamParties has size % instead of 8", size_of(ISteamParties));
+
+    assert(size_of(ISteamMusic) == 8, "ISteamMusic has size % instead of 8", size_of(ISteamMusic));
+
+    assert(size_of(ISteamMusicRemote) == 8, "ISteamMusicRemote has size % instead of 8", size_of(ISteamMusicRemote));
+
+    {
+        instance: P2PSessionState_t;
+        assert(((cast(*void)(*instance.m_bConnectionActive)) - cast(*void)(*instance)) == 0, "P2PSessionState_t.m_bConnectionActive has unexpected offset % instead of 0", ((cast(*void)(*instance.m_bConnectionActive)) - cast(*void)(*instance)));
+        assert(size_of(type_of(P2PSessionState_t.m_bConnectionActive)) == 1, "P2PSessionState_t.m_bConnectionActive has unexpected size % instead of 1", size_of(type_of(P2PSessionState_t.m_bConnectionActive)));
+        assert(((cast(*void)(*instance.m_bConnecting)) - cast(*void)(*instance)) == 1, "P2PSessionState_t.m_bConnecting has unexpected offset % instead of 1", ((cast(*void)(*instance.m_bConnecting)) - cast(*void)(*instance)));
+        assert(size_of(type_of(P2PSessionState_t.m_bConnecting)) == 1, "P2PSessionState_t.m_bConnecting has unexpected size % instead of 1", size_of(type_of(P2PSessionState_t.m_bConnecting)));
+        assert(((cast(*void)(*instance.m_eP2PSessionError)) - cast(*void)(*instance)) == 2, "P2PSessionState_t.m_eP2PSessionError has unexpected offset % instead of 2", ((cast(*void)(*instance.m_eP2PSessionError)) - cast(*void)(*instance)));
+        assert(size_of(type_of(P2PSessionState_t.m_eP2PSessionError)) == 1, "P2PSessionState_t.m_eP2PSessionError has unexpected size % instead of 1", size_of(type_of(P2PSessionState_t.m_eP2PSessionError)));
+        assert(((cast(*void)(*instance.m_bUsingRelay)) - cast(*void)(*instance)) == 3, "P2PSessionState_t.m_bUsingRelay has unexpected offset % instead of 3", ((cast(*void)(*instance.m_bUsingRelay)) - cast(*void)(*instance)));
+        assert(size_of(type_of(P2PSessionState_t.m_bUsingRelay)) == 1, "P2PSessionState_t.m_bUsingRelay has unexpected size % instead of 1", size_of(type_of(P2PSessionState_t.m_bUsingRelay)));
+        assert(((cast(*void)(*instance.m_nBytesQueuedForSend)) - cast(*void)(*instance)) == 4, "P2PSessionState_t.m_nBytesQueuedForSend has unexpected offset % instead of 4", ((cast(*void)(*instance.m_nBytesQueuedForSend)) - cast(*void)(*instance)));
+        assert(size_of(type_of(P2PSessionState_t.m_nBytesQueuedForSend)) == 4, "P2PSessionState_t.m_nBytesQueuedForSend has unexpected size % instead of 4", size_of(type_of(P2PSessionState_t.m_nBytesQueuedForSend)));
+        assert(((cast(*void)(*instance.m_nPacketsQueuedForSend)) - cast(*void)(*instance)) == 8, "P2PSessionState_t.m_nPacketsQueuedForSend has unexpected offset % instead of 8", ((cast(*void)(*instance.m_nPacketsQueuedForSend)) - cast(*void)(*instance)));
+        assert(size_of(type_of(P2PSessionState_t.m_nPacketsQueuedForSend)) == 4, "P2PSessionState_t.m_nPacketsQueuedForSend has unexpected size % instead of 4", size_of(type_of(P2PSessionState_t.m_nPacketsQueuedForSend)));
+        assert(((cast(*void)(*instance.m_nRemoteIP)) - cast(*void)(*instance)) == 12, "P2PSessionState_t.m_nRemoteIP has unexpected offset % instead of 12", ((cast(*void)(*instance.m_nRemoteIP)) - cast(*void)(*instance)));
+        assert(size_of(type_of(P2PSessionState_t.m_nRemoteIP)) == 4, "P2PSessionState_t.m_nRemoteIP has unexpected size % instead of 4", size_of(type_of(P2PSessionState_t.m_nRemoteIP)));
+        assert(((cast(*void)(*instance.m_nRemotePort)) - cast(*void)(*instance)) == 16, "P2PSessionState_t.m_nRemotePort has unexpected offset % instead of 16", ((cast(*void)(*instance.m_nRemotePort)) - cast(*void)(*instance)));
+        assert(size_of(type_of(P2PSessionState_t.m_nRemotePort)) == 2, "P2PSessionState_t.m_nRemotePort has unexpected size % instead of 2", size_of(type_of(P2PSessionState_t.m_nRemotePort)));
+        assert(size_of(P2PSessionState_t) == 20, "P2PSessionState_t has size % instead of 20", size_of(P2PSessionState_t));
+    }
+
+    assert(size_of(ISteamNetworking) == 8, "ISteamNetworking has size % instead of 8", size_of(ISteamNetworking));
+
+    {
+        instance: SteamNetworkingIPAddr.IPv4MappedAddress;
+        assert(((cast(*void)(*instance.m_8zeros)) - cast(*void)(*instance)) == 0, "SteamNetworkingIPAddr.IPv4MappedAddress.m_8zeros has unexpected offset % instead of 0", ((cast(*void)(*instance.m_8zeros)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkingIPAddr.IPv4MappedAddress.m_8zeros)) == 8, "SteamNetworkingIPAddr.IPv4MappedAddress.m_8zeros has unexpected size % instead of 8", size_of(type_of(SteamNetworkingIPAddr.IPv4MappedAddress.m_8zeros)));
+        assert(((cast(*void)(*instance.m_0000)) - cast(*void)(*instance)) == 8, "SteamNetworkingIPAddr.IPv4MappedAddress.m_0000 has unexpected offset % instead of 8", ((cast(*void)(*instance.m_0000)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkingIPAddr.IPv4MappedAddress.m_0000)) == 2, "SteamNetworkingIPAddr.IPv4MappedAddress.m_0000 has unexpected size % instead of 2", size_of(type_of(SteamNetworkingIPAddr.IPv4MappedAddress.m_0000)));
+        assert(((cast(*void)(*instance.m_ffff)) - cast(*void)(*instance)) == 10, "SteamNetworkingIPAddr.IPv4MappedAddress.m_ffff has unexpected offset % instead of 10", ((cast(*void)(*instance.m_ffff)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkingIPAddr.IPv4MappedAddress.m_ffff)) == 2, "SteamNetworkingIPAddr.IPv4MappedAddress.m_ffff has unexpected size % instead of 2", size_of(type_of(SteamNetworkingIPAddr.IPv4MappedAddress.m_ffff)));
+        assert(((cast(*void)(*instance.m_ip)) - cast(*void)(*instance)) == 12, "SteamNetworkingIPAddr.IPv4MappedAddress.m_ip has unexpected offset % instead of 12", ((cast(*void)(*instance.m_ip)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkingIPAddr.IPv4MappedAddress.m_ip)) == 4, "SteamNetworkingIPAddr.IPv4MappedAddress.m_ip has unexpected size % instead of 4", size_of(type_of(SteamNetworkingIPAddr.IPv4MappedAddress.m_ip)));
+        assert(size_of(SteamNetworkingIPAddr.IPv4MappedAddress) == 16, "SteamNetworkingIPAddr.IPv4MappedAddress has size % instead of 16", size_of(SteamNetworkingIPAddr.IPv4MappedAddress));
+    }
+
+    {
+        instance: SteamNetworkingIPAddr;
+        assert(((cast(*void)(*instance.m_port)) - cast(*void)(*instance)) == 16, "SteamNetworkingIPAddr.m_port has unexpected offset % instead of 16", ((cast(*void)(*instance.m_port)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkingIPAddr.m_port)) == 2, "SteamNetworkingIPAddr.m_port has unexpected size % instead of 2", size_of(type_of(SteamNetworkingIPAddr.m_port)));
+        assert(size_of(SteamNetworkingIPAddr) == 18, "SteamNetworkingIPAddr has size % instead of 18", size_of(SteamNetworkingIPAddr));
+    }
+
+    {
+        instance: SteamNetworkingIdentity;
+        assert(((cast(*void)(*instance.m_eType)) - cast(*void)(*instance)) == 0, "SteamNetworkingIdentity.m_eType has unexpected offset % instead of 0", ((cast(*void)(*instance.m_eType)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkingIdentity.m_eType)) == 4, "SteamNetworkingIdentity.m_eType has unexpected size % instead of 4", size_of(type_of(SteamNetworkingIdentity.m_eType)));
+        assert(((cast(*void)(*instance.m_cbSize)) - cast(*void)(*instance)) == 4, "SteamNetworkingIdentity.m_cbSize has unexpected offset % instead of 4", ((cast(*void)(*instance.m_cbSize)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkingIdentity.m_cbSize)) == 4, "SteamNetworkingIdentity.m_cbSize has unexpected size % instead of 4", size_of(type_of(SteamNetworkingIdentity.m_cbSize)));
+        assert(size_of(SteamNetworkingIdentity) == 136, "SteamNetworkingIdentity has size % instead of 136", size_of(SteamNetworkingIdentity));
+    }
+
+    {
+        instance: SteamNetConnectionInfo_t;
+        assert(((cast(*void)(*instance.m_identityRemote)) - cast(*void)(*instance)) == 0, "SteamNetConnectionInfo_t.m_identityRemote has unexpected offset % instead of 0", ((cast(*void)(*instance.m_identityRemote)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionInfo_t.m_identityRemote)) == 136, "SteamNetConnectionInfo_t.m_identityRemote has unexpected size % instead of 136", size_of(type_of(SteamNetConnectionInfo_t.m_identityRemote)));
+        assert(((cast(*void)(*instance.m_nUserData)) - cast(*void)(*instance)) == 136, "SteamNetConnectionInfo_t.m_nUserData has unexpected offset % instead of 136", ((cast(*void)(*instance.m_nUserData)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionInfo_t.m_nUserData)) == 8, "SteamNetConnectionInfo_t.m_nUserData has unexpected size % instead of 8", size_of(type_of(SteamNetConnectionInfo_t.m_nUserData)));
+        assert(((cast(*void)(*instance.m_hListenSocket)) - cast(*void)(*instance)) == 144, "SteamNetConnectionInfo_t.m_hListenSocket has unexpected offset % instead of 144", ((cast(*void)(*instance.m_hListenSocket)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionInfo_t.m_hListenSocket)) == 4, "SteamNetConnectionInfo_t.m_hListenSocket has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionInfo_t.m_hListenSocket)));
+        assert(((cast(*void)(*instance.m_addrRemote)) - cast(*void)(*instance)) == 148, "SteamNetConnectionInfo_t.m_addrRemote has unexpected offset % instead of 148", ((cast(*void)(*instance.m_addrRemote)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionInfo_t.m_addrRemote)) == 18, "SteamNetConnectionInfo_t.m_addrRemote has unexpected size % instead of 18", size_of(type_of(SteamNetConnectionInfo_t.m_addrRemote)));
+        assert(((cast(*void)(*instance.m__pad1)) - cast(*void)(*instance)) == 166, "SteamNetConnectionInfo_t.m__pad1 has unexpected offset % instead of 166", ((cast(*void)(*instance.m__pad1)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionInfo_t.m__pad1)) == 2, "SteamNetConnectionInfo_t.m__pad1 has unexpected size % instead of 2", size_of(type_of(SteamNetConnectionInfo_t.m__pad1)));
+        assert(((cast(*void)(*instance.m_idPOPRemote)) - cast(*void)(*instance)) == 168, "SteamNetConnectionInfo_t.m_idPOPRemote has unexpected offset % instead of 168", ((cast(*void)(*instance.m_idPOPRemote)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionInfo_t.m_idPOPRemote)) == 4, "SteamNetConnectionInfo_t.m_idPOPRemote has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionInfo_t.m_idPOPRemote)));
+        assert(((cast(*void)(*instance.m_idPOPRelay)) - cast(*void)(*instance)) == 172, "SteamNetConnectionInfo_t.m_idPOPRelay has unexpected offset % instead of 172", ((cast(*void)(*instance.m_idPOPRelay)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionInfo_t.m_idPOPRelay)) == 4, "SteamNetConnectionInfo_t.m_idPOPRelay has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionInfo_t.m_idPOPRelay)));
+        assert(((cast(*void)(*instance.m_eState)) - cast(*void)(*instance)) == 176, "SteamNetConnectionInfo_t.m_eState has unexpected offset % instead of 176", ((cast(*void)(*instance.m_eState)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionInfo_t.m_eState)) == 4, "SteamNetConnectionInfo_t.m_eState has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionInfo_t.m_eState)));
+        assert(((cast(*void)(*instance.m_eEndReason)) - cast(*void)(*instance)) == 180, "SteamNetConnectionInfo_t.m_eEndReason has unexpected offset % instead of 180", ((cast(*void)(*instance.m_eEndReason)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionInfo_t.m_eEndReason)) == 4, "SteamNetConnectionInfo_t.m_eEndReason has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionInfo_t.m_eEndReason)));
+        assert(((cast(*void)(*instance.m_szEndDebug)) - cast(*void)(*instance)) == 184, "SteamNetConnectionInfo_t.m_szEndDebug has unexpected offset % instead of 184", ((cast(*void)(*instance.m_szEndDebug)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionInfo_t.m_szEndDebug)) == 128, "SteamNetConnectionInfo_t.m_szEndDebug has unexpected size % instead of 128", size_of(type_of(SteamNetConnectionInfo_t.m_szEndDebug)));
+        assert(((cast(*void)(*instance.m_szConnectionDescription)) - cast(*void)(*instance)) == 312, "SteamNetConnectionInfo_t.m_szConnectionDescription has unexpected offset % instead of 312", ((cast(*void)(*instance.m_szConnectionDescription)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionInfo_t.m_szConnectionDescription)) == 128, "SteamNetConnectionInfo_t.m_szConnectionDescription has unexpected size % instead of 128", size_of(type_of(SteamNetConnectionInfo_t.m_szConnectionDescription)));
+        assert(((cast(*void)(*instance.m_nFlags)) - cast(*void)(*instance)) == 440, "SteamNetConnectionInfo_t.m_nFlags has unexpected offset % instead of 440", ((cast(*void)(*instance.m_nFlags)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionInfo_t.m_nFlags)) == 4, "SteamNetConnectionInfo_t.m_nFlags has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionInfo_t.m_nFlags)));
+        assert(((cast(*void)(*instance.reserved)) - cast(*void)(*instance)) == 444, "SteamNetConnectionInfo_t.reserved has unexpected offset % instead of 444", ((cast(*void)(*instance.reserved)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionInfo_t.reserved)) == 252, "SteamNetConnectionInfo_t.reserved has unexpected size % instead of 252", size_of(type_of(SteamNetConnectionInfo_t.reserved)));
+        assert(size_of(SteamNetConnectionInfo_t) == 696, "SteamNetConnectionInfo_t has size % instead of 696", size_of(SteamNetConnectionInfo_t));
+    }
+
+    {
+        instance: SteamNetConnectionRealTimeStatus_t;
+        assert(((cast(*void)(*instance.m_eState)) - cast(*void)(*instance)) == 0, "SteamNetConnectionRealTimeStatus_t.m_eState has unexpected offset % instead of 0", ((cast(*void)(*instance.m_eState)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_eState)) == 4, "SteamNetConnectionRealTimeStatus_t.m_eState has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_eState)));
+        assert(((cast(*void)(*instance.m_nPing)) - cast(*void)(*instance)) == 4, "SteamNetConnectionRealTimeStatus_t.m_nPing has unexpected offset % instead of 4", ((cast(*void)(*instance.m_nPing)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_nPing)) == 4, "SteamNetConnectionRealTimeStatus_t.m_nPing has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_nPing)));
+        assert(((cast(*void)(*instance.m_flConnectionQualityLocal)) - cast(*void)(*instance)) == 8, "SteamNetConnectionRealTimeStatus_t.m_flConnectionQualityLocal has unexpected offset % instead of 8", ((cast(*void)(*instance.m_flConnectionQualityLocal)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_flConnectionQualityLocal)) == 4, "SteamNetConnectionRealTimeStatus_t.m_flConnectionQualityLocal has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_flConnectionQualityLocal)));
+        assert(((cast(*void)(*instance.m_flConnectionQualityRemote)) - cast(*void)(*instance)) == 12, "SteamNetConnectionRealTimeStatus_t.m_flConnectionQualityRemote has unexpected offset % instead of 12", ((cast(*void)(*instance.m_flConnectionQualityRemote)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_flConnectionQualityRemote)) == 4, "SteamNetConnectionRealTimeStatus_t.m_flConnectionQualityRemote has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_flConnectionQualityRemote)));
+        assert(((cast(*void)(*instance.m_flOutPacketsPerSec)) - cast(*void)(*instance)) == 16, "SteamNetConnectionRealTimeStatus_t.m_flOutPacketsPerSec has unexpected offset % instead of 16", ((cast(*void)(*instance.m_flOutPacketsPerSec)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_flOutPacketsPerSec)) == 4, "SteamNetConnectionRealTimeStatus_t.m_flOutPacketsPerSec has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_flOutPacketsPerSec)));
+        assert(((cast(*void)(*instance.m_flOutBytesPerSec)) - cast(*void)(*instance)) == 20, "SteamNetConnectionRealTimeStatus_t.m_flOutBytesPerSec has unexpected offset % instead of 20", ((cast(*void)(*instance.m_flOutBytesPerSec)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_flOutBytesPerSec)) == 4, "SteamNetConnectionRealTimeStatus_t.m_flOutBytesPerSec has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_flOutBytesPerSec)));
+        assert(((cast(*void)(*instance.m_flInPacketsPerSec)) - cast(*void)(*instance)) == 24, "SteamNetConnectionRealTimeStatus_t.m_flInPacketsPerSec has unexpected offset % instead of 24", ((cast(*void)(*instance.m_flInPacketsPerSec)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_flInPacketsPerSec)) == 4, "SteamNetConnectionRealTimeStatus_t.m_flInPacketsPerSec has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_flInPacketsPerSec)));
+        assert(((cast(*void)(*instance.m_flInBytesPerSec)) - cast(*void)(*instance)) == 28, "SteamNetConnectionRealTimeStatus_t.m_flInBytesPerSec has unexpected offset % instead of 28", ((cast(*void)(*instance.m_flInBytesPerSec)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_flInBytesPerSec)) == 4, "SteamNetConnectionRealTimeStatus_t.m_flInBytesPerSec has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_flInBytesPerSec)));
+        assert(((cast(*void)(*instance.m_nSendRateBytesPerSecond)) - cast(*void)(*instance)) == 32, "SteamNetConnectionRealTimeStatus_t.m_nSendRateBytesPerSecond has unexpected offset % instead of 32", ((cast(*void)(*instance.m_nSendRateBytesPerSecond)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_nSendRateBytesPerSecond)) == 4, "SteamNetConnectionRealTimeStatus_t.m_nSendRateBytesPerSecond has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_nSendRateBytesPerSecond)));
+        assert(((cast(*void)(*instance.m_cbPendingUnreliable)) - cast(*void)(*instance)) == 36, "SteamNetConnectionRealTimeStatus_t.m_cbPendingUnreliable has unexpected offset % instead of 36", ((cast(*void)(*instance.m_cbPendingUnreliable)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_cbPendingUnreliable)) == 4, "SteamNetConnectionRealTimeStatus_t.m_cbPendingUnreliable has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_cbPendingUnreliable)));
+        assert(((cast(*void)(*instance.m_cbPendingReliable)) - cast(*void)(*instance)) == 40, "SteamNetConnectionRealTimeStatus_t.m_cbPendingReliable has unexpected offset % instead of 40", ((cast(*void)(*instance.m_cbPendingReliable)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_cbPendingReliable)) == 4, "SteamNetConnectionRealTimeStatus_t.m_cbPendingReliable has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_cbPendingReliable)));
+        assert(((cast(*void)(*instance.m_cbSentUnackedReliable)) - cast(*void)(*instance)) == 44, "SteamNetConnectionRealTimeStatus_t.m_cbSentUnackedReliable has unexpected offset % instead of 44", ((cast(*void)(*instance.m_cbSentUnackedReliable)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_cbSentUnackedReliable)) == 4, "SteamNetConnectionRealTimeStatus_t.m_cbSentUnackedReliable has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_cbSentUnackedReliable)));
+        assert(((cast(*void)(*instance.m_usecQueueTime)) - cast(*void)(*instance)) == 48, "SteamNetConnectionRealTimeStatus_t.m_usecQueueTime has unexpected offset % instead of 48", ((cast(*void)(*instance.m_usecQueueTime)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_usecQueueTime)) == 8, "SteamNetConnectionRealTimeStatus_t.m_usecQueueTime has unexpected size % instead of 8", size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_usecQueueTime)));
+        assert(((cast(*void)(*instance.reserved)) - cast(*void)(*instance)) == 56, "SteamNetConnectionRealTimeStatus_t.reserved has unexpected offset % instead of 56", ((cast(*void)(*instance.reserved)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionRealTimeStatus_t.reserved)) == 64, "SteamNetConnectionRealTimeStatus_t.reserved has unexpected size % instead of 64", size_of(type_of(SteamNetConnectionRealTimeStatus_t.reserved)));
+        assert(size_of(SteamNetConnectionRealTimeStatus_t) == 120, "SteamNetConnectionRealTimeStatus_t has size % instead of 120", size_of(SteamNetConnectionRealTimeStatus_t));
+    }
+
+    {
+        instance: SteamNetConnectionRealTimeLaneStatus_t;
+        assert(((cast(*void)(*instance.m_cbPendingUnreliable)) - cast(*void)(*instance)) == 0, "SteamNetConnectionRealTimeLaneStatus_t.m_cbPendingUnreliable has unexpected offset % instead of 0", ((cast(*void)(*instance.m_cbPendingUnreliable)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionRealTimeLaneStatus_t.m_cbPendingUnreliable)) == 4, "SteamNetConnectionRealTimeLaneStatus_t.m_cbPendingUnreliable has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeLaneStatus_t.m_cbPendingUnreliable)));
+        assert(((cast(*void)(*instance.m_cbPendingReliable)) - cast(*void)(*instance)) == 4, "SteamNetConnectionRealTimeLaneStatus_t.m_cbPendingReliable has unexpected offset % instead of 4", ((cast(*void)(*instance.m_cbPendingReliable)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionRealTimeLaneStatus_t.m_cbPendingReliable)) == 4, "SteamNetConnectionRealTimeLaneStatus_t.m_cbPendingReliable has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeLaneStatus_t.m_cbPendingReliable)));
+        assert(((cast(*void)(*instance.m_cbSentUnackedReliable)) - cast(*void)(*instance)) == 8, "SteamNetConnectionRealTimeLaneStatus_t.m_cbSentUnackedReliable has unexpected offset % instead of 8", ((cast(*void)(*instance.m_cbSentUnackedReliable)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionRealTimeLaneStatus_t.m_cbSentUnackedReliable)) == 4, "SteamNetConnectionRealTimeLaneStatus_t.m_cbSentUnackedReliable has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeLaneStatus_t.m_cbSentUnackedReliable)));
+        assert(((cast(*void)(*instance._reservePad1)) - cast(*void)(*instance)) == 12, "SteamNetConnectionRealTimeLaneStatus_t._reservePad1 has unexpected offset % instead of 12", ((cast(*void)(*instance._reservePad1)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionRealTimeLaneStatus_t._reservePad1)) == 4, "SteamNetConnectionRealTimeLaneStatus_t._reservePad1 has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeLaneStatus_t._reservePad1)));
+        assert(((cast(*void)(*instance.m_usecQueueTime)) - cast(*void)(*instance)) == 16, "SteamNetConnectionRealTimeLaneStatus_t.m_usecQueueTime has unexpected offset % instead of 16", ((cast(*void)(*instance.m_usecQueueTime)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionRealTimeLaneStatus_t.m_usecQueueTime)) == 8, "SteamNetConnectionRealTimeLaneStatus_t.m_usecQueueTime has unexpected size % instead of 8", size_of(type_of(SteamNetConnectionRealTimeLaneStatus_t.m_usecQueueTime)));
+        assert(((cast(*void)(*instance.reserved)) - cast(*void)(*instance)) == 24, "SteamNetConnectionRealTimeLaneStatus_t.reserved has unexpected offset % instead of 24", ((cast(*void)(*instance.reserved)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionRealTimeLaneStatus_t.reserved)) == 40, "SteamNetConnectionRealTimeLaneStatus_t.reserved has unexpected size % instead of 40", size_of(type_of(SteamNetConnectionRealTimeLaneStatus_t.reserved)));
+        assert(size_of(SteamNetConnectionRealTimeLaneStatus_t) == 64, "SteamNetConnectionRealTimeLaneStatus_t has size % instead of 64", size_of(SteamNetConnectionRealTimeLaneStatus_t));
+    }
+
+    {
+        instance: SteamNetworkingMessage_t;
+        assert(((cast(*void)(*instance.m_pData)) - cast(*void)(*instance)) == 0, "SteamNetworkingMessage_t.m_pData has unexpected offset % instead of 0", ((cast(*void)(*instance.m_pData)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkingMessage_t.m_pData)) == 8, "SteamNetworkingMessage_t.m_pData has unexpected size % instead of 8", size_of(type_of(SteamNetworkingMessage_t.m_pData)));
+        assert(((cast(*void)(*instance.m_cbSize)) - cast(*void)(*instance)) == 8, "SteamNetworkingMessage_t.m_cbSize has unexpected offset % instead of 8", ((cast(*void)(*instance.m_cbSize)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkingMessage_t.m_cbSize)) == 4, "SteamNetworkingMessage_t.m_cbSize has unexpected size % instead of 4", size_of(type_of(SteamNetworkingMessage_t.m_cbSize)));
+        assert(((cast(*void)(*instance.m_conn)) - cast(*void)(*instance)) == 12, "SteamNetworkingMessage_t.m_conn has unexpected offset % instead of 12", ((cast(*void)(*instance.m_conn)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkingMessage_t.m_conn)) == 4, "SteamNetworkingMessage_t.m_conn has unexpected size % instead of 4", size_of(type_of(SteamNetworkingMessage_t.m_conn)));
+        assert(((cast(*void)(*instance.m_identityPeer)) - cast(*void)(*instance)) == 16, "SteamNetworkingMessage_t.m_identityPeer has unexpected offset % instead of 16", ((cast(*void)(*instance.m_identityPeer)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkingMessage_t.m_identityPeer)) == 136, "SteamNetworkingMessage_t.m_identityPeer has unexpected size % instead of 136", size_of(type_of(SteamNetworkingMessage_t.m_identityPeer)));
+        assert(((cast(*void)(*instance.m_nConnUserData)) - cast(*void)(*instance)) == 152, "SteamNetworkingMessage_t.m_nConnUserData has unexpected offset % instead of 152", ((cast(*void)(*instance.m_nConnUserData)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkingMessage_t.m_nConnUserData)) == 8, "SteamNetworkingMessage_t.m_nConnUserData has unexpected size % instead of 8", size_of(type_of(SteamNetworkingMessage_t.m_nConnUserData)));
+        assert(((cast(*void)(*instance.m_usecTimeReceived)) - cast(*void)(*instance)) == 160, "SteamNetworkingMessage_t.m_usecTimeReceived has unexpected offset % instead of 160", ((cast(*void)(*instance.m_usecTimeReceived)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkingMessage_t.m_usecTimeReceived)) == 8, "SteamNetworkingMessage_t.m_usecTimeReceived has unexpected size % instead of 8", size_of(type_of(SteamNetworkingMessage_t.m_usecTimeReceived)));
+        assert(((cast(*void)(*instance.m_nMessageNumber)) - cast(*void)(*instance)) == 168, "SteamNetworkingMessage_t.m_nMessageNumber has unexpected offset % instead of 168", ((cast(*void)(*instance.m_nMessageNumber)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkingMessage_t.m_nMessageNumber)) == 8, "SteamNetworkingMessage_t.m_nMessageNumber has unexpected size % instead of 8", size_of(type_of(SteamNetworkingMessage_t.m_nMessageNumber)));
+        assert(((cast(*void)(*instance.m_pfnFreeData)) - cast(*void)(*instance)) == 176, "SteamNetworkingMessage_t.m_pfnFreeData has unexpected offset % instead of 176", ((cast(*void)(*instance.m_pfnFreeData)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkingMessage_t.m_pfnFreeData)) == 8, "SteamNetworkingMessage_t.m_pfnFreeData has unexpected size % instead of 8", size_of(type_of(SteamNetworkingMessage_t.m_pfnFreeData)));
+        assert(((cast(*void)(*instance.m_pfnRelease)) - cast(*void)(*instance)) == 184, "SteamNetworkingMessage_t.m_pfnRelease has unexpected offset % instead of 184", ((cast(*void)(*instance.m_pfnRelease)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkingMessage_t.m_pfnRelease)) == 8, "SteamNetworkingMessage_t.m_pfnRelease has unexpected size % instead of 8", size_of(type_of(SteamNetworkingMessage_t.m_pfnRelease)));
+        assert(((cast(*void)(*instance.m_nChannel)) - cast(*void)(*instance)) == 192, "SteamNetworkingMessage_t.m_nChannel has unexpected offset % instead of 192", ((cast(*void)(*instance.m_nChannel)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkingMessage_t.m_nChannel)) == 4, "SteamNetworkingMessage_t.m_nChannel has unexpected size % instead of 4", size_of(type_of(SteamNetworkingMessage_t.m_nChannel)));
+        assert(((cast(*void)(*instance.m_nFlags)) - cast(*void)(*instance)) == 196, "SteamNetworkingMessage_t.m_nFlags has unexpected offset % instead of 196", ((cast(*void)(*instance.m_nFlags)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkingMessage_t.m_nFlags)) == 4, "SteamNetworkingMessage_t.m_nFlags has unexpected size % instead of 4", size_of(type_of(SteamNetworkingMessage_t.m_nFlags)));
+        assert(((cast(*void)(*instance.m_nUserData)) - cast(*void)(*instance)) == 200, "SteamNetworkingMessage_t.m_nUserData has unexpected offset % instead of 200", ((cast(*void)(*instance.m_nUserData)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkingMessage_t.m_nUserData)) == 8, "SteamNetworkingMessage_t.m_nUserData has unexpected size % instead of 8", size_of(type_of(SteamNetworkingMessage_t.m_nUserData)));
+        assert(((cast(*void)(*instance.m_idxLane)) - cast(*void)(*instance)) == 208, "SteamNetworkingMessage_t.m_idxLane has unexpected offset % instead of 208", ((cast(*void)(*instance.m_idxLane)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkingMessage_t.m_idxLane)) == 2, "SteamNetworkingMessage_t.m_idxLane has unexpected size % instead of 2", size_of(type_of(SteamNetworkingMessage_t.m_idxLane)));
+        assert(((cast(*void)(*instance._pad1__)) - cast(*void)(*instance)) == 210, "SteamNetworkingMessage_t._pad1__ has unexpected offset % instead of 210", ((cast(*void)(*instance._pad1__)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkingMessage_t._pad1__)) == 2, "SteamNetworkingMessage_t._pad1__ has unexpected size % instead of 2", size_of(type_of(SteamNetworkingMessage_t._pad1__)));
+        assert(size_of(SteamNetworkingMessage_t) == 216, "SteamNetworkingMessage_t has size % instead of 216", size_of(SteamNetworkingMessage_t));
+    }
+
+    {
+        instance: SteamNetworkPingLocation_t;
+        assert(((cast(*void)(*instance.m_data)) - cast(*void)(*instance)) == 0, "SteamNetworkPingLocation_t.m_data has unexpected offset % instead of 0", ((cast(*void)(*instance.m_data)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkPingLocation_t.m_data)) == 512, "SteamNetworkPingLocation_t.m_data has unexpected size % instead of 512", size_of(type_of(SteamNetworkPingLocation_t.m_data)));
+        assert(size_of(SteamNetworkPingLocation_t) == 512, "SteamNetworkPingLocation_t has size % instead of 512", size_of(SteamNetworkPingLocation_t));
+    }
+
+    {
+        instance: SteamNetworkingConfigValue_t;
+        assert(((cast(*void)(*instance.m_eValue)) - cast(*void)(*instance)) == 0, "SteamNetworkingConfigValue_t.m_eValue has unexpected offset % instead of 0", ((cast(*void)(*instance.m_eValue)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkingConfigValue_t.m_eValue)) == 4, "SteamNetworkingConfigValue_t.m_eValue has unexpected size % instead of 4", size_of(type_of(SteamNetworkingConfigValue_t.m_eValue)));
+        assert(((cast(*void)(*instance.m_eDataType)) - cast(*void)(*instance)) == 4, "SteamNetworkingConfigValue_t.m_eDataType has unexpected offset % instead of 4", ((cast(*void)(*instance.m_eDataType)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkingConfigValue_t.m_eDataType)) == 4, "SteamNetworkingConfigValue_t.m_eDataType has unexpected size % instead of 4", size_of(type_of(SteamNetworkingConfigValue_t.m_eDataType)));
+        assert(((cast(*void)(*instance.m_val)) - cast(*void)(*instance)) == 8, "SteamNetworkingConfigValue_t.m_val has unexpected offset % instead of 8", ((cast(*void)(*instance.m_val)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkingConfigValue_t.m_val)) == 8, "SteamNetworkingConfigValue_t.m_val has unexpected size % instead of 8", size_of(type_of(SteamNetworkingConfigValue_t.m_val)));
+        assert(size_of(SteamNetworkingConfigValue_t) == 16, "SteamNetworkingConfigValue_t has size % instead of 16", size_of(SteamNetworkingConfigValue_t));
+    }
+
+    assert(size_of(ISteamNetworkingMessages) == 8, "ISteamNetworkingMessages has size % instead of 8", size_of(ISteamNetworkingMessages));
+
+    {
+        instance: SteamNetworkingMessagesSessionRequest_t;
+        assert(((cast(*void)(*instance.m_identityRemote)) - cast(*void)(*instance)) == 0, "SteamNetworkingMessagesSessionRequest_t.m_identityRemote has unexpected offset % instead of 0", ((cast(*void)(*instance.m_identityRemote)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkingMessagesSessionRequest_t.m_identityRemote)) == 136, "SteamNetworkingMessagesSessionRequest_t.m_identityRemote has unexpected size % instead of 136", size_of(type_of(SteamNetworkingMessagesSessionRequest_t.m_identityRemote)));
+        assert(size_of(SteamNetworkingMessagesSessionRequest_t) == 136, "SteamNetworkingMessagesSessionRequest_t has size % instead of 136", size_of(SteamNetworkingMessagesSessionRequest_t));
+    }
+
+    {
+        instance: SteamNetworkingMessagesSessionFailed_t;
+        assert(((cast(*void)(*instance.m_info)) - cast(*void)(*instance)) == 0, "SteamNetworkingMessagesSessionFailed_t.m_info has unexpected offset % instead of 0", ((cast(*void)(*instance.m_info)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkingMessagesSessionFailed_t.m_info)) == 696, "SteamNetworkingMessagesSessionFailed_t.m_info has unexpected size % instead of 696", size_of(type_of(SteamNetworkingMessagesSessionFailed_t.m_info)));
+        assert(size_of(SteamNetworkingMessagesSessionFailed_t) == 696, "SteamNetworkingMessagesSessionFailed_t has size % instead of 696", size_of(SteamNetworkingMessagesSessionFailed_t));
+    }
+
+    assert(size_of(ISteamNetworkingSockets) == 8, "ISteamNetworkingSockets has size % instead of 8", size_of(ISteamNetworkingSockets));
+
+    {
+        instance: SteamNetConnectionStatusChangedCallback_t;
+        assert(((cast(*void)(*instance.m_hConn)) - cast(*void)(*instance)) == 0, "SteamNetConnectionStatusChangedCallback_t.m_hConn has unexpected offset % instead of 0", ((cast(*void)(*instance.m_hConn)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionStatusChangedCallback_t.m_hConn)) == 4, "SteamNetConnectionStatusChangedCallback_t.m_hConn has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionStatusChangedCallback_t.m_hConn)));
+        assert(((cast(*void)(*instance.m_info)) - cast(*void)(*instance)) == 4, "SteamNetConnectionStatusChangedCallback_t.m_info has unexpected offset % instead of 4", ((cast(*void)(*instance.m_info)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionStatusChangedCallback_t.m_info)) == 696, "SteamNetConnectionStatusChangedCallback_t.m_info has unexpected size % instead of 696", size_of(type_of(SteamNetConnectionStatusChangedCallback_t.m_info)));
+        assert(((cast(*void)(*instance.m_eOldState)) - cast(*void)(*instance)) == 700, "SteamNetConnectionStatusChangedCallback_t.m_eOldState has unexpected offset % instead of 700", ((cast(*void)(*instance.m_eOldState)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetConnectionStatusChangedCallback_t.m_eOldState)) == 4, "SteamNetConnectionStatusChangedCallback_t.m_eOldState has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionStatusChangedCallback_t.m_eOldState)));
+        assert(size_of(SteamNetConnectionStatusChangedCallback_t) == 704, "SteamNetConnectionStatusChangedCallback_t has size % instead of 704", size_of(SteamNetConnectionStatusChangedCallback_t));
+    }
+
+    {
+        instance: SteamNetAuthenticationStatus_t;
+        assert(((cast(*void)(*instance.m_eAvail)) - cast(*void)(*instance)) == 0, "SteamNetAuthenticationStatus_t.m_eAvail has unexpected offset % instead of 0", ((cast(*void)(*instance.m_eAvail)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetAuthenticationStatus_t.m_eAvail)) == 4, "SteamNetAuthenticationStatus_t.m_eAvail has unexpected size % instead of 4", size_of(type_of(SteamNetAuthenticationStatus_t.m_eAvail)));
+        assert(((cast(*void)(*instance.m_debugMsg)) - cast(*void)(*instance)) == 4, "SteamNetAuthenticationStatus_t.m_debugMsg has unexpected offset % instead of 4", ((cast(*void)(*instance.m_debugMsg)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetAuthenticationStatus_t.m_debugMsg)) == 256, "SteamNetAuthenticationStatus_t.m_debugMsg has unexpected size % instead of 256", size_of(type_of(SteamNetAuthenticationStatus_t.m_debugMsg)));
+        assert(size_of(SteamNetAuthenticationStatus_t) == 260, "SteamNetAuthenticationStatus_t has size % instead of 260", size_of(SteamNetAuthenticationStatus_t));
+    }
+
+    assert(size_of(ISteamNetworkingUtils) == 8, "ISteamNetworkingUtils has size % instead of 8", size_of(ISteamNetworkingUtils));
+
+    {
+        instance: SteamRelayNetworkStatus_t;
+        assert(((cast(*void)(*instance.m_eAvail)) - cast(*void)(*instance)) == 0, "SteamRelayNetworkStatus_t.m_eAvail has unexpected offset % instead of 0", ((cast(*void)(*instance.m_eAvail)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamRelayNetworkStatus_t.m_eAvail)) == 4, "SteamRelayNetworkStatus_t.m_eAvail has unexpected size % instead of 4", size_of(type_of(SteamRelayNetworkStatus_t.m_eAvail)));
+        assert(((cast(*void)(*instance.m_bPingMeasurementInProgress)) - cast(*void)(*instance)) == 4, "SteamRelayNetworkStatus_t.m_bPingMeasurementInProgress has unexpected offset % instead of 4", ((cast(*void)(*instance.m_bPingMeasurementInProgress)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamRelayNetworkStatus_t.m_bPingMeasurementInProgress)) == 4, "SteamRelayNetworkStatus_t.m_bPingMeasurementInProgress has unexpected size % instead of 4", size_of(type_of(SteamRelayNetworkStatus_t.m_bPingMeasurementInProgress)));
+        assert(((cast(*void)(*instance.m_eAvailNetworkConfig)) - cast(*void)(*instance)) == 8, "SteamRelayNetworkStatus_t.m_eAvailNetworkConfig has unexpected offset % instead of 8", ((cast(*void)(*instance.m_eAvailNetworkConfig)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamRelayNetworkStatus_t.m_eAvailNetworkConfig)) == 4, "SteamRelayNetworkStatus_t.m_eAvailNetworkConfig has unexpected size % instead of 4", size_of(type_of(SteamRelayNetworkStatus_t.m_eAvailNetworkConfig)));
+        assert(((cast(*void)(*instance.m_eAvailAnyRelay)) - cast(*void)(*instance)) == 12, "SteamRelayNetworkStatus_t.m_eAvailAnyRelay has unexpected offset % instead of 12", ((cast(*void)(*instance.m_eAvailAnyRelay)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamRelayNetworkStatus_t.m_eAvailAnyRelay)) == 4, "SteamRelayNetworkStatus_t.m_eAvailAnyRelay has unexpected size % instead of 4", size_of(type_of(SteamRelayNetworkStatus_t.m_eAvailAnyRelay)));
+        assert(((cast(*void)(*instance.m_debugMsg)) - cast(*void)(*instance)) == 16, "SteamRelayNetworkStatus_t.m_debugMsg has unexpected offset % instead of 16", ((cast(*void)(*instance.m_debugMsg)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamRelayNetworkStatus_t.m_debugMsg)) == 256, "SteamRelayNetworkStatus_t.m_debugMsg has unexpected size % instead of 256", size_of(type_of(SteamRelayNetworkStatus_t.m_debugMsg)));
+        assert(size_of(SteamRelayNetworkStatus_t) == 272, "SteamRelayNetworkStatus_t has size % instead of 272", size_of(SteamRelayNetworkStatus_t));
+    }
+
+    assert(size_of(ISteamParentalSettings) == 8, "ISteamParentalSettings has size % instead of 8", size_of(ISteamParentalSettings));
+
+    assert(size_of(ISteamRemotePlay) == 8, "ISteamRemotePlay has size % instead of 8", size_of(ISteamRemotePlay));
+
+    {
+        instance: SteamParamStringArray_t;
+        assert(((cast(*void)(*instance.m_ppStrings)) - cast(*void)(*instance)) == 0, "SteamParamStringArray_t.m_ppStrings has unexpected offset % instead of 0", ((cast(*void)(*instance.m_ppStrings)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamParamStringArray_t.m_ppStrings)) == 8, "SteamParamStringArray_t.m_ppStrings has unexpected size % instead of 8", size_of(type_of(SteamParamStringArray_t.m_ppStrings)));
+        assert(((cast(*void)(*instance.m_nNumStrings)) - cast(*void)(*instance)) == 8, "SteamParamStringArray_t.m_nNumStrings has unexpected offset % instead of 8", ((cast(*void)(*instance.m_nNumStrings)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamParamStringArray_t.m_nNumStrings)) == 4, "SteamParamStringArray_t.m_nNumStrings has unexpected size % instead of 4", size_of(type_of(SteamParamStringArray_t.m_nNumStrings)));
+        assert(size_of(SteamParamStringArray_t) == 12, "SteamParamStringArray_t has size % instead of 12", size_of(SteamParamStringArray_t));
+    }
+
+    assert(size_of(ISteamRemoteStorage) == 8, "ISteamRemoteStorage has size % instead of 8", size_of(ISteamRemoteStorage));
+
+    assert(size_of(ISteamScreenshots) == 8, "ISteamScreenshots has size % instead of 8", size_of(ISteamScreenshots));
+
+    assert(size_of(ISteamTimeline) == 8, "ISteamTimeline has size % instead of 8", size_of(ISteamTimeline));
+
+    {
+        instance: SteamUGCDetails_t;
+        assert(((cast(*void)(*instance.m_nPublishedFileId)) - cast(*void)(*instance)) == 0, "SteamUGCDetails_t.m_nPublishedFileId has unexpected offset % instead of 0", ((cast(*void)(*instance.m_nPublishedFileId)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamUGCDetails_t.m_nPublishedFileId)) == 8, "SteamUGCDetails_t.m_nPublishedFileId has unexpected size % instead of 8", size_of(type_of(SteamUGCDetails_t.m_nPublishedFileId)));
+        assert(((cast(*void)(*instance.m_eResult)) - cast(*void)(*instance)) == 8, "SteamUGCDetails_t.m_eResult has unexpected offset % instead of 8", ((cast(*void)(*instance.m_eResult)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamUGCDetails_t.m_eResult)) == 4, "SteamUGCDetails_t.m_eResult has unexpected size % instead of 4", size_of(type_of(SteamUGCDetails_t.m_eResult)));
+        assert(((cast(*void)(*instance.m_eFileType)) - cast(*void)(*instance)) == 12, "SteamUGCDetails_t.m_eFileType has unexpected offset % instead of 12", ((cast(*void)(*instance.m_eFileType)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamUGCDetails_t.m_eFileType)) == 4, "SteamUGCDetails_t.m_eFileType has unexpected size % instead of 4", size_of(type_of(SteamUGCDetails_t.m_eFileType)));
+        assert(((cast(*void)(*instance.m_nCreatorAppID)) - cast(*void)(*instance)) == 16, "SteamUGCDetails_t.m_nCreatorAppID has unexpected offset % instead of 16", ((cast(*void)(*instance.m_nCreatorAppID)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamUGCDetails_t.m_nCreatorAppID)) == 4, "SteamUGCDetails_t.m_nCreatorAppID has unexpected size % instead of 4", size_of(type_of(SteamUGCDetails_t.m_nCreatorAppID)));
+        assert(((cast(*void)(*instance.m_nConsumerAppID)) - cast(*void)(*instance)) == 20, "SteamUGCDetails_t.m_nConsumerAppID has unexpected offset % instead of 20", ((cast(*void)(*instance.m_nConsumerAppID)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamUGCDetails_t.m_nConsumerAppID)) == 4, "SteamUGCDetails_t.m_nConsumerAppID has unexpected size % instead of 4", size_of(type_of(SteamUGCDetails_t.m_nConsumerAppID)));
+        assert(((cast(*void)(*instance.m_rgchTitle)) - cast(*void)(*instance)) == 24, "SteamUGCDetails_t.m_rgchTitle has unexpected offset % instead of 24", ((cast(*void)(*instance.m_rgchTitle)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamUGCDetails_t.m_rgchTitle)) == 129, "SteamUGCDetails_t.m_rgchTitle has unexpected size % instead of 129", size_of(type_of(SteamUGCDetails_t.m_rgchTitle)));
+        assert(((cast(*void)(*instance.m_rgchDescription)) - cast(*void)(*instance)) == 153, "SteamUGCDetails_t.m_rgchDescription has unexpected offset % instead of 153", ((cast(*void)(*instance.m_rgchDescription)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamUGCDetails_t.m_rgchDescription)) == 8000, "SteamUGCDetails_t.m_rgchDescription has unexpected size % instead of 8000", size_of(type_of(SteamUGCDetails_t.m_rgchDescription)));
+        assert(((cast(*void)(*instance.m_ulSteamIDOwner)) - cast(*void)(*instance)) == 8156, "SteamUGCDetails_t.m_ulSteamIDOwner has unexpected offset % instead of 8156", ((cast(*void)(*instance.m_ulSteamIDOwner)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamUGCDetails_t.m_ulSteamIDOwner)) == 8, "SteamUGCDetails_t.m_ulSteamIDOwner has unexpected size % instead of 8", size_of(type_of(SteamUGCDetails_t.m_ulSteamIDOwner)));
+        assert(((cast(*void)(*instance.m_rtimeCreated)) - cast(*void)(*instance)) == 8164, "SteamUGCDetails_t.m_rtimeCreated has unexpected offset % instead of 8164", ((cast(*void)(*instance.m_rtimeCreated)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamUGCDetails_t.m_rtimeCreated)) == 4, "SteamUGCDetails_t.m_rtimeCreated has unexpected size % instead of 4", size_of(type_of(SteamUGCDetails_t.m_rtimeCreated)));
+        assert(((cast(*void)(*instance.m_rtimeUpdated)) - cast(*void)(*instance)) == 8168, "SteamUGCDetails_t.m_rtimeUpdated has unexpected offset % instead of 8168", ((cast(*void)(*instance.m_rtimeUpdated)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamUGCDetails_t.m_rtimeUpdated)) == 4, "SteamUGCDetails_t.m_rtimeUpdated has unexpected size % instead of 4", size_of(type_of(SteamUGCDetails_t.m_rtimeUpdated)));
+        assert(((cast(*void)(*instance.m_rtimeAddedToUserList)) - cast(*void)(*instance)) == 8172, "SteamUGCDetails_t.m_rtimeAddedToUserList has unexpected offset % instead of 8172", ((cast(*void)(*instance.m_rtimeAddedToUserList)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamUGCDetails_t.m_rtimeAddedToUserList)) == 4, "SteamUGCDetails_t.m_rtimeAddedToUserList has unexpected size % instead of 4", size_of(type_of(SteamUGCDetails_t.m_rtimeAddedToUserList)));
+        assert(((cast(*void)(*instance.m_eVisibility)) - cast(*void)(*instance)) == 8176, "SteamUGCDetails_t.m_eVisibility has unexpected offset % instead of 8176", ((cast(*void)(*instance.m_eVisibility)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamUGCDetails_t.m_eVisibility)) == 4, "SteamUGCDetails_t.m_eVisibility has unexpected size % instead of 4", size_of(type_of(SteamUGCDetails_t.m_eVisibility)));
+        assert(((cast(*void)(*instance.m_bBanned)) - cast(*void)(*instance)) == 8180, "SteamUGCDetails_t.m_bBanned has unexpected offset % instead of 8180", ((cast(*void)(*instance.m_bBanned)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamUGCDetails_t.m_bBanned)) == 1, "SteamUGCDetails_t.m_bBanned has unexpected size % instead of 1", size_of(type_of(SteamUGCDetails_t.m_bBanned)));
+        assert(((cast(*void)(*instance.m_bAcceptedForUse)) - cast(*void)(*instance)) == 8181, "SteamUGCDetails_t.m_bAcceptedForUse has unexpected offset % instead of 8181", ((cast(*void)(*instance.m_bAcceptedForUse)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamUGCDetails_t.m_bAcceptedForUse)) == 1, "SteamUGCDetails_t.m_bAcceptedForUse has unexpected size % instead of 1", size_of(type_of(SteamUGCDetails_t.m_bAcceptedForUse)));
+        assert(((cast(*void)(*instance.m_bTagsTruncated)) - cast(*void)(*instance)) == 8182, "SteamUGCDetails_t.m_bTagsTruncated has unexpected offset % instead of 8182", ((cast(*void)(*instance.m_bTagsTruncated)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamUGCDetails_t.m_bTagsTruncated)) == 1, "SteamUGCDetails_t.m_bTagsTruncated has unexpected size % instead of 1", size_of(type_of(SteamUGCDetails_t.m_bTagsTruncated)));
+        assert(((cast(*void)(*instance.m_rgchTags)) - cast(*void)(*instance)) == 8183, "SteamUGCDetails_t.m_rgchTags has unexpected offset % instead of 8183", ((cast(*void)(*instance.m_rgchTags)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamUGCDetails_t.m_rgchTags)) == 1025, "SteamUGCDetails_t.m_rgchTags has unexpected size % instead of 1025", size_of(type_of(SteamUGCDetails_t.m_rgchTags)));
+        assert(((cast(*void)(*instance.m_hFile)) - cast(*void)(*instance)) == 9208, "SteamUGCDetails_t.m_hFile has unexpected offset % instead of 9208", ((cast(*void)(*instance.m_hFile)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamUGCDetails_t.m_hFile)) == 8, "SteamUGCDetails_t.m_hFile has unexpected size % instead of 8", size_of(type_of(SteamUGCDetails_t.m_hFile)));
+        assert(((cast(*void)(*instance.m_hPreviewFile)) - cast(*void)(*instance)) == 9216, "SteamUGCDetails_t.m_hPreviewFile has unexpected offset % instead of 9216", ((cast(*void)(*instance.m_hPreviewFile)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamUGCDetails_t.m_hPreviewFile)) == 8, "SteamUGCDetails_t.m_hPreviewFile has unexpected size % instead of 8", size_of(type_of(SteamUGCDetails_t.m_hPreviewFile)));
+        assert(((cast(*void)(*instance.m_pchFileName)) - cast(*void)(*instance)) == 9224, "SteamUGCDetails_t.m_pchFileName has unexpected offset % instead of 9224", ((cast(*void)(*instance.m_pchFileName)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamUGCDetails_t.m_pchFileName)) == 260, "SteamUGCDetails_t.m_pchFileName has unexpected size % instead of 260", size_of(type_of(SteamUGCDetails_t.m_pchFileName)));
+        assert(((cast(*void)(*instance.m_nFileSize)) - cast(*void)(*instance)) == 9484, "SteamUGCDetails_t.m_nFileSize has unexpected offset % instead of 9484", ((cast(*void)(*instance.m_nFileSize)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamUGCDetails_t.m_nFileSize)) == 4, "SteamUGCDetails_t.m_nFileSize has unexpected size % instead of 4", size_of(type_of(SteamUGCDetails_t.m_nFileSize)));
+        assert(((cast(*void)(*instance.m_nPreviewFileSize)) - cast(*void)(*instance)) == 9488, "SteamUGCDetails_t.m_nPreviewFileSize has unexpected offset % instead of 9488", ((cast(*void)(*instance.m_nPreviewFileSize)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamUGCDetails_t.m_nPreviewFileSize)) == 4, "SteamUGCDetails_t.m_nPreviewFileSize has unexpected size % instead of 4", size_of(type_of(SteamUGCDetails_t.m_nPreviewFileSize)));
+        assert(((cast(*void)(*instance.m_rgchURL)) - cast(*void)(*instance)) == 9492, "SteamUGCDetails_t.m_rgchURL has unexpected offset % instead of 9492", ((cast(*void)(*instance.m_rgchURL)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamUGCDetails_t.m_rgchURL)) == 256, "SteamUGCDetails_t.m_rgchURL has unexpected size % instead of 256", size_of(type_of(SteamUGCDetails_t.m_rgchURL)));
+        assert(((cast(*void)(*instance.m_unVotesUp)) - cast(*void)(*instance)) == 9748, "SteamUGCDetails_t.m_unVotesUp has unexpected offset % instead of 9748", ((cast(*void)(*instance.m_unVotesUp)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamUGCDetails_t.m_unVotesUp)) == 4, "SteamUGCDetails_t.m_unVotesUp has unexpected size % instead of 4", size_of(type_of(SteamUGCDetails_t.m_unVotesUp)));
+        assert(((cast(*void)(*instance.m_unVotesDown)) - cast(*void)(*instance)) == 9752, "SteamUGCDetails_t.m_unVotesDown has unexpected offset % instead of 9752", ((cast(*void)(*instance.m_unVotesDown)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamUGCDetails_t.m_unVotesDown)) == 4, "SteamUGCDetails_t.m_unVotesDown has unexpected size % instead of 4", size_of(type_of(SteamUGCDetails_t.m_unVotesDown)));
+        assert(((cast(*void)(*instance.m_flScore)) - cast(*void)(*instance)) == 9756, "SteamUGCDetails_t.m_flScore has unexpected offset % instead of 9756", ((cast(*void)(*instance.m_flScore)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamUGCDetails_t.m_flScore)) == 4, "SteamUGCDetails_t.m_flScore has unexpected size % instead of 4", size_of(type_of(SteamUGCDetails_t.m_flScore)));
+        assert(((cast(*void)(*instance.m_unNumChildren)) - cast(*void)(*instance)) == 9760, "SteamUGCDetails_t.m_unNumChildren has unexpected offset % instead of 9760", ((cast(*void)(*instance.m_unNumChildren)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamUGCDetails_t.m_unNumChildren)) == 4, "SteamUGCDetails_t.m_unNumChildren has unexpected size % instead of 4", size_of(type_of(SteamUGCDetails_t.m_unNumChildren)));
+        assert(((cast(*void)(*instance.m_ulTotalFilesSize)) - cast(*void)(*instance)) == 9764, "SteamUGCDetails_t.m_ulTotalFilesSize has unexpected offset % instead of 9764", ((cast(*void)(*instance.m_ulTotalFilesSize)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamUGCDetails_t.m_ulTotalFilesSize)) == 8, "SteamUGCDetails_t.m_ulTotalFilesSize has unexpected size % instead of 8", size_of(type_of(SteamUGCDetails_t.m_ulTotalFilesSize)));
+        assert(size_of(SteamUGCDetails_t) == 9772, "SteamUGCDetails_t has size % instead of 9772", size_of(SteamUGCDetails_t));
+    }
+
+    assert(size_of(ISteamUGC) == 8, "ISteamUGC has size % instead of 8", size_of(ISteamUGC));
+
+    assert(size_of(ISteamUser) == 8, "ISteamUser has size % instead of 8", size_of(ISteamUser));
+
+    {
+        instance: LeaderboardEntry_t;
+        assert(((cast(*void)(*instance.m_steamIDUser)) - cast(*void)(*instance)) == 0, "LeaderboardEntry_t.m_steamIDUser has unexpected offset % instead of 0", ((cast(*void)(*instance.m_steamIDUser)) - cast(*void)(*instance)));
+        assert(size_of(type_of(LeaderboardEntry_t.m_steamIDUser)) == 8, "LeaderboardEntry_t.m_steamIDUser has unexpected size % instead of 8", size_of(type_of(LeaderboardEntry_t.m_steamIDUser)));
+        assert(((cast(*void)(*instance.m_nGlobalRank)) - cast(*void)(*instance)) == 8, "LeaderboardEntry_t.m_nGlobalRank has unexpected offset % instead of 8", ((cast(*void)(*instance.m_nGlobalRank)) - cast(*void)(*instance)));
+        assert(size_of(type_of(LeaderboardEntry_t.m_nGlobalRank)) == 4, "LeaderboardEntry_t.m_nGlobalRank has unexpected size % instead of 4", size_of(type_of(LeaderboardEntry_t.m_nGlobalRank)));
+        assert(((cast(*void)(*instance.m_nScore)) - cast(*void)(*instance)) == 12, "LeaderboardEntry_t.m_nScore has unexpected offset % instead of 12", ((cast(*void)(*instance.m_nScore)) - cast(*void)(*instance)));
+        assert(size_of(type_of(LeaderboardEntry_t.m_nScore)) == 4, "LeaderboardEntry_t.m_nScore has unexpected size % instead of 4", size_of(type_of(LeaderboardEntry_t.m_nScore)));
+        assert(((cast(*void)(*instance.m_cDetails)) - cast(*void)(*instance)) == 16, "LeaderboardEntry_t.m_cDetails has unexpected offset % instead of 16", ((cast(*void)(*instance.m_cDetails)) - cast(*void)(*instance)));
+        assert(size_of(type_of(LeaderboardEntry_t.m_cDetails)) == 4, "LeaderboardEntry_t.m_cDetails has unexpected size % instead of 4", size_of(type_of(LeaderboardEntry_t.m_cDetails)));
+        assert(((cast(*void)(*instance.m_hUGC)) - cast(*void)(*instance)) == 20, "LeaderboardEntry_t.m_hUGC has unexpected offset % instead of 20", ((cast(*void)(*instance.m_hUGC)) - cast(*void)(*instance)));
+        assert(size_of(type_of(LeaderboardEntry_t.m_hUGC)) == 8, "LeaderboardEntry_t.m_hUGC has unexpected size % instead of 8", size_of(type_of(LeaderboardEntry_t.m_hUGC)));
+        assert(size_of(LeaderboardEntry_t) == 28, "LeaderboardEntry_t has size % instead of 28", size_of(LeaderboardEntry_t));
+    }
+
+    assert(size_of(ISteamUserStats) == 8, "ISteamUserStats has size % instead of 8", size_of(ISteamUserStats));
+
+    assert(size_of(ISteamUtils) == 8, "ISteamUtils has size % instead of 8", size_of(ISteamUtils));
+
+    assert(size_of(ISteamVideo) == 8, "ISteamVideo has size % instead of 8", size_of(ISteamVideo));
+
+    assert(size_of(ISteamNetworkingFakeUDPPort) == 8, "ISteamNetworkingFakeUDPPort has size % instead of 8", size_of(ISteamNetworkingFakeUDPPort));
+
+    {
+        instance: SteamNetworkingFakeIPResult_t;
+        assert(((cast(*void)(*instance.m_eResult)) - cast(*void)(*instance)) == 0, "SteamNetworkingFakeIPResult_t.m_eResult has unexpected offset % instead of 0", ((cast(*void)(*instance.m_eResult)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkingFakeIPResult_t.m_eResult)) == 4, "SteamNetworkingFakeIPResult_t.m_eResult has unexpected size % instead of 4", size_of(type_of(SteamNetworkingFakeIPResult_t.m_eResult)));
+        assert(((cast(*void)(*instance.m_identity)) - cast(*void)(*instance)) == 4, "SteamNetworkingFakeIPResult_t.m_identity has unexpected offset % instead of 4", ((cast(*void)(*instance.m_identity)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkingFakeIPResult_t.m_identity)) == 136, "SteamNetworkingFakeIPResult_t.m_identity has unexpected size % instead of 136", size_of(type_of(SteamNetworkingFakeIPResult_t.m_identity)));
+        assert(((cast(*void)(*instance.m_unIP)) - cast(*void)(*instance)) == 140, "SteamNetworkingFakeIPResult_t.m_unIP has unexpected offset % instead of 140", ((cast(*void)(*instance.m_unIP)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkingFakeIPResult_t.m_unIP)) == 4, "SteamNetworkingFakeIPResult_t.m_unIP has unexpected size % instead of 4", size_of(type_of(SteamNetworkingFakeIPResult_t.m_unIP)));
+        assert(((cast(*void)(*instance.m_unPorts)) - cast(*void)(*instance)) == 144, "SteamNetworkingFakeIPResult_t.m_unPorts has unexpected offset % instead of 144", ((cast(*void)(*instance.m_unPorts)) - cast(*void)(*instance)));
+        assert(size_of(type_of(SteamNetworkingFakeIPResult_t.m_unPorts)) == 16, "SteamNetworkingFakeIPResult_t.m_unPorts has unexpected size % instead of 16", size_of(type_of(SteamNetworkingFakeIPResult_t.m_unPorts)));
+        assert(size_of(SteamNetworkingFakeIPResult_t) == 160, "SteamNetworkingFakeIPResult_t has size % instead of 160", size_of(SteamNetworkingFakeIPResult_t));
+    }
+}
+
