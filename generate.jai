@@ -108,6 +108,7 @@
         valid_binding := ends_with(decl_filename, "steam_api_flat.h");
         valid_binding = valid_binding || (decl.kind == .ENUM && decl.parent == null);
         valid_binding = valid_binding || (decl.kind == .FUNCTION && decl.parent == null);
+        valid_binding = valid_binding || (decl.kind == .STRUCT && decl.parent == null);
 
         // it doesn't seem to output constants like k_HSteamNetPollGroup_Invalid although I don't know why... just because they're const?
 

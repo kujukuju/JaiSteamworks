@@ -1,7 +1,7 @@
 // Workspace: Target Program
 
 //
-// #insert text. Generated from /mnt/c/jai/modules/Bindings_Generator/module.jai:337.
+// #insert text. Generated from C:/jai/modules/Bindings_Generator/module.jai:337.
 //
     ([2] string).[
         .["FLT_MIN", "FLOAT32_MIN"],
@@ -44,8 +44,8 @@
         .["INT64_MIN", "S64_MIN"],
         .["INT64_MAX", "S64_MAX"],
         .["UINT64_MAX", "U64_MAX"],
-            .["LONG_MIN", "S64_MIN"],
-            .["LONG_MAX", "S64_MAX"],
+            .["LONG_MIN", "S32_MIN"],
+            .["LONG_MAX", "S32_MAX"],
             .["ULONG_MIN", "0"],
-            .["ULONG_MAX", "U64_MAX"],
+            .["ULONG_MAX", "U32_MAX"],
 ];
