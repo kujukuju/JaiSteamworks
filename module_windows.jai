@@ -3837,7 +3837,7 @@ PersonaStateChange_t :: struct {
 
 // used in PersonaStateChange_t::m_nChangeFlags to describe what's changed about a user
 // these flags describe what the client has learned has changed recently, so on startup you'll see a name, avatar & relationship change for every friend
-EPersonaChange :: enum s32 {
+EPersonaChange :: enum_flags s32 {
     EPersonaChangeName                :: 1;
     EPersonaChangeStatus              :: 2;
     EPersonaChangeComeOnline          :: 4;
@@ -7764,7 +7764,7 @@ SteamNetConnectionStatusChangedCallback_t :: struct {
     m_hConn:     HSteamNetConnection;
 
     /// Full connection info
-    m_info:      SteamNetConnectionInfo_t;
+    m_info:      SteamNetConnectionInfo_t #align 8;
 
     /// Previous state.  (Current state is in m_info.m_eState)
     m_eOldState: ESteamNetworkingConnectionState;
