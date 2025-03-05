@@ -8,7 +8,7 @@
 
 #run {
     using opts: Generate_Bindings_Options;
-    
+
     #if OS == .WINDOWS {
         array_add(*libpaths, "bin/windows");
         array_add(*libnames, "steam_api64");
@@ -89,7 +89,7 @@
     generate_compile_time_struct_checks = true;
     generate_c_style_api_for_vtable = false;
     generate_vtable_helpers = false;
-    
+
     opts.visitor = (decl: *Declaration, parent_decl: *Declaration) -> Declaration_Visit_Result {
         decl_filename: string;
         if decl && decl.location.file {
@@ -125,7 +125,7 @@
     };
 
     #if OS == .WINDOWS {
-        generate_bindings(opts, "module_windows.jai");
+        generate_bindings(opts, "module_windows_new.jai");
     } else #if OS == .LINUX {
         generate_bindings(opts, "module_linux.jai");
     } else #if OS == .MACOS {
@@ -171,13 +171,8 @@ readd_declarations_recusive :: (decl: *Declaration) {
     if decl.type {
         readd_ctype_recusive(decl.type);
     }
-    
-    if #complete decl.kind == {
-        case .NONE;
-        case .DECLARATION;
-        case .FUNCTION;
-        case .ENUM;
-        case .TYPEDEF;
+
+    if decl.kind == {
         case .STRUCT;
             struct_decl := cast(*Struct) decl;
             for metadata: struct_decl.metadata {
@@ -201,13 +196,6 @@ readd_declarations_recusive :: (decl: *Declaration) {
             for declaration: namespace_decl.declarations {
                 readd_declarations_recusive(declaration);
             }
-
-        case .MACRO_DEFINITION;
-        case .LITERAL;
-        case .UNARY_OPERATOR;
-        case .BINARY_OPERATOR;
-        case .STRUCT_LITERAL;
-        case .PAREN_EXPRESSION;
     }
 }
 
