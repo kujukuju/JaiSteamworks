@@ -20,7 +20,7 @@
 #pragma pack( push, 8 )
 #else
 #error steam_api_common.h should define VALVE_CALLBACK_PACK_xxx
-#endif 
+#endif
 
 
 typedef uint64 UGCQueryHandle_t;
@@ -175,7 +175,7 @@ const uint32 k_cchDeveloperMetadataMax = 5000;
 struct SteamUGCDetails_t
 {
 	PublishedFileId_t m_nPublishedFileId;
-	EResult m_eResult;												// The result of the operation.	
+	EResult m_eResult;												// The result of the operation.
 	EWorkshopFileType m_eFileType;									// Type of the file
 	AppId_t m_nCreatorAppID;										// ID of the app that created this file.
 	AppId_t m_nConsumerAppID;										// ID of the app that will consume this file.
@@ -189,7 +189,7 @@ struct SteamUGCDetails_t
 	bool m_bBanned;													// whether the file was banned
 	bool m_bAcceptedForUse;											// developer has specifically flagged this item as accepted in the Workshop
 	bool m_bTagsTruncated;											// whether the list of tags was too long to be returned in the provided buffer
-	char m_rgchTags[k_cchTagListMax];								// comma separated list of all tags associated with this file	
+	char m_rgchTags[k_cchTagListMax];								// comma separated list of all tags associated with this file
 	// file/url information
 	UGCHandle_t m_hFile;											// The handle of the primary file
 	UGCHandle_t m_hPreviewFile;										// The handle of the preview file
@@ -254,7 +254,7 @@ public:
 	virtual bool GetSupportedGameVersionData( UGCQueryHandle_t handle, uint32 index, uint32 versionIndex, STEAM_OUT_STRING_COUNT( cchGameBranchSize ) char *pchGameBranchMin, STEAM_OUT_STRING_COUNT( cchGameBranchSize ) char *pchGameBranchMax, uint32 cchGameBranchSize ) = 0;
 
 	virtual uint32 GetQueryUGCContentDescriptors( UGCQueryHandle_t handle, uint32 index, EUGCContentDescriptorID *pvecDescriptors, uint32 cMaxEntries ) = 0;
-	
+
 	// Release the request to free up memory, after retrieving results
 	virtual bool ReleaseQueryUGCRequest( UGCQueryHandle_t handle ) = 0;
 
@@ -333,7 +333,7 @@ public:
 	virtual SteamAPICall_t SubscribeItem( PublishedFileId_t nPublishedFileID ) = 0; // subscribe to this item, will be installed ASAP
 	STEAM_CALL_RESULT( RemoteStorageUnsubscribePublishedFileResult_t )
 	virtual SteamAPICall_t UnsubscribeItem( PublishedFileId_t nPublishedFileID ) = 0; // unsubscribe from this item, will be uninstalled after game quits
-	virtual uint32 GetNumSubscribedItems() = 0; // number of subscribed items 
+	virtual uint32 GetNumSubscribedItems() = 0; // number of subscribed items
 	virtual uint32 GetSubscribedItems( PublishedFileId_t* pvecPublishedFileID, uint32 cMaxEntries ) = 0; // all subscribed item PublishFileIDs
 
 	// get EItemState flags about item on this client
@@ -345,7 +345,7 @@ public:
 
 	// get info about pending update for items that have k_EItemStateNeedsUpdate set. punBytesTotal will be valid after download started once
 	virtual bool GetItemDownloadInfo( PublishedFileId_t nPublishedFileID, uint64 *punBytesDownloaded, uint64 *punBytesTotal ) = 0;
-		
+
 	// download new or update already installed item. If function returns true, wait for DownloadItemResult_t. If the item is already installed,
 	// then files on disk should not be used until callback received. If item is not subscribed to, it will be cached for some time.
 	// If bHighPriority is set, any other item download will be suspended and this item downloaded ASAP.
@@ -381,7 +381,7 @@ public:
 	// until all app dependencies have been returned
 	STEAM_CALL_RESULT( GetAppDependenciesResult_t )
 	virtual SteamAPICall_t GetAppDependencies( PublishedFileId_t nPublishedFileID ) = 0;
-	
+
 	// delete the item without prompting the user
 	STEAM_CALL_RESULT( DeleteItemResult_t )
 	virtual SteamAPICall_t DeleteItem( PublishedFileId_t nPublishedFileID ) = 0;
@@ -433,7 +433,7 @@ struct SteamUGCRequestUGCDetailsResult_t
 
 
 //-----------------------------------------------------------------------------
-// Purpose: result for ISteamUGC::CreateItem() 
+// Purpose: result for ISteamUGC::CreateItem()
 //-----------------------------------------------------------------------------
 struct CreateItemResult_t
 {
@@ -445,7 +445,7 @@ struct CreateItemResult_t
 
 
 //-----------------------------------------------------------------------------
-// Purpose: result for ISteamUGC::SubmitItemUpdate() 
+// Purpose: result for ISteamUGC::SubmitItemUpdate()
 //-----------------------------------------------------------------------------
 struct SubmitItemUpdateResult_t
 {

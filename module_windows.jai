@@ -901,122 +901,122 @@ ISteamPS3OverlayRender :: struct {}
 // Purpose: Base values for callback identifiers, each callback must
 //			have a unique ID.
 //-----------------------------------------------------------------------------
-anon_enum_1 :: enum s32 {
+// anon_enum_1 :: enum s32 {
     k_iSteamUserCallbacks :: 100;
-}
-anon_enum_2 :: enum s32 {
+// }
+// anon_enum_2 :: enum s32 {
     k_iSteamGameServerCallbacks :: 200;
-}
-anon_enum_3 :: enum s32 {
+// }
+// anon_enum_3 :: enum s32 {
     k_iSteamFriendsCallbacks :: 300;
-}
-anon_enum_4 :: enum s32 {
+// }
+// anon_enum_4 :: enum s32 {
     k_iSteamBillingCallbacks :: 400;
-}
-anon_enum_5 :: enum s32 {
+// }
+// anon_enum_5 :: enum s32 {
     k_iSteamMatchmakingCallbacks :: 500;
-}
-anon_enum_6 :: enum s32 {
+// }
+// anon_enum_6 :: enum s32 {
     k_iSteamContentServerCallbacks :: 600;
-}
-anon_enum_7 :: enum s32 {
+// }
+// anon_enum_7 :: enum s32 {
     k_iSteamUtilsCallbacks :: 700;
-}
-anon_enum_8 :: enum s32 {
+// }
+// anon_enum_8 :: enum s32 {
     k_iSteamAppsCallbacks :: 1000;
-}
-anon_enum_9 :: enum s32 {
+// }
+// anon_enum_9 :: enum s32 {
     k_iSteamUserStatsCallbacks :: 1100;
-}
-anon_enum_10 :: enum s32 {
+// }
+// anon_enum_10 :: enum s32 {
     k_iSteamNetworkingCallbacks :: 1200;
-}
-anon_enum_11 :: enum s32 {
+// }
+// anon_enum_11 :: enum s32 {
     k_iSteamNetworkingSocketsCallbacks :: 1220;
-}
-anon_enum_12 :: enum s32 {
+// }
+// anon_enum_12 :: enum s32 {
     k_iSteamNetworkingMessagesCallbacks :: 1250;
-}
-anon_enum_13 :: enum s32 {
+// }
+// anon_enum_13 :: enum s32 {
     k_iSteamNetworkingUtilsCallbacks :: 1280;
-}
-anon_enum_14 :: enum s32 {
+// }
+// anon_enum_14 :: enum s32 {
     k_iSteamRemoteStorageCallbacks :: 1300;
-}
-anon_enum_15 :: enum s32 {
+// }
+// anon_enum_15 :: enum s32 {
     k_iSteamGameServerItemsCallbacks :: 1500;
-}
-anon_enum_16 :: enum s32 {
+// }
+// anon_enum_16 :: enum s32 {
     k_iSteamGameCoordinatorCallbacks :: 1700;
-}
-anon_enum_17 :: enum s32 {
+// }
+// anon_enum_17 :: enum s32 {
     k_iSteamGameServerStatsCallbacks :: 1800;
-}
-anon_enum_18 :: enum s32 {
+// }
+// anon_enum_18 :: enum s32 {
     k_iSteam2AsyncCallbacks :: 1900;
-}
-anon_enum_19 :: enum s32 {
+// }
+// anon_enum_19 :: enum s32 {
     k_iSteamGameStatsCallbacks :: 2000;
-}
-anon_enum_20 :: enum s32 {
+// }
+// anon_enum_20 :: enum s32 {
     k_iSteamHTTPCallbacks :: 2100;
-}
-anon_enum_21 :: enum s32 {
+// }
+// anon_enum_21 :: enum s32 {
     k_iSteamScreenshotsCallbacks :: 2300;
-}
+// }
 
 // NOTE: 2500-2599 are reserved
-anon_enum_22 :: enum s32 {
+// anon_enum_22 :: enum s32 {
     k_iSteamStreamLauncherCallbacks :: 2600;
-}
-anon_enum_23 :: enum s32 {
+// }
+// anon_enum_23 :: enum s32 {
     k_iSteamControllerCallbacks :: 2800;
-}
-anon_enum_24 :: enum s32 {
+// }
+// anon_enum_24 :: enum s32 {
     k_iSteamUGCCallbacks :: 3400;
-}
-anon_enum_25 :: enum s32 {
+// }
+// anon_enum_25 :: enum s32 {
     k_iSteamStreamClientCallbacks :: 3500;
-}
-anon_enum_26 :: enum s32 {
+// }
+// anon_enum_26 :: enum s32 {
     k_iSteamMusicCallbacks :: 4000;
-}
-anon_enum_27 :: enum s32 {
+// }
+// anon_enum_27 :: enum s32 {
     k_iSteamMusicRemoteCallbacks :: 4100;
-}
-anon_enum_28 :: enum s32 {
+// }
+// anon_enum_28 :: enum s32 {
     k_iSteamGameNotificationCallbacks :: 4400;
-}
-anon_enum_29 :: enum s32 {
+// }
+// anon_enum_29 :: enum s32 {
     k_iSteamHTMLSurfaceCallbacks :: 4500;
-}
-anon_enum_30 :: enum s32 {
+// }
+// anon_enum_30 :: enum s32 {
     k_iSteamVideoCallbacks :: 4600;
-}
-anon_enum_31 :: enum s32 {
+// }
+// anon_enum_31 :: enum s32 {
     k_iSteamInventoryCallbacks :: 4700;
-}
-anon_enum_32 :: enum s32 {
+// }
+// anon_enum_32 :: enum s32 {
     k_ISteamParentalSettingsCallbacks :: 5000;
-}
-anon_enum_33 :: enum s32 {
+// }
+// anon_enum_33 :: enum s32 {
     k_iSteamGameSearchCallbacks :: 5200;
-}
-anon_enum_34 :: enum s32 {
+// }
+// anon_enum_34 :: enum s32 {
     k_iSteamPartiesCallbacks :: 5300;
-}
-anon_enum_35 :: enum s32 {
+// }
+// anon_enum_35 :: enum s32 {
     k_iSteamSTARCallbacks :: 5500;
-}
-anon_enum_36 :: enum s32 {
+// }
+// anon_enum_36 :: enum s32 {
     k_iSteamRemotePlayCallbacks :: 5700;
-}
-anon_enum_37 :: enum s32 {
+// }
+// anon_enum_37 :: enum s32 {
     k_iSteamChatCallbacks :: 5900;
-}
-anon_enum_38 :: enum s32 {
+// }
+// anon_enum_38 :: enum s32 {
     k_iSteamTimelineCallbacks :: 6000;
-}
+// }
 
 CSteamGameServerAPIContext :: struct {
     m_pSteamClient:               *ISteamClient;
@@ -1099,9 +1099,9 @@ ISteamApps_VTable :: struct #type_info_none {
 // Purpose: posted after the user gains ownership of DLC & that DLC is installed
 //-----------------------------------------------------------------------------
 DlcInstalled_t :: struct {
-    anon_enum_39 :: enum s32 {
+//     anon_enum_39 :: enum s32 {
         k_iCallback :: 1005;
-    }
+//     }
     m_nAppID: AppId_t; // AppID of the DLC
 }
 
@@ -1112,9 +1112,9 @@ DlcInstalled_t :: struct {
 // with GetLaunchQueryParam and GetLaunchCommandLine
 //---------------------------------------------------------------------------------
 NewUrlLaunchParameters_t :: struct {
-    anon_enum_40 :: enum s32 {
+//     anon_enum_40 :: enum s32 {
         k_iCallback :: 1014;
-    }
+//     }
     __empty_struct_padding: u8; // C++ makes empty structs have length 1
 }
 
@@ -1123,9 +1123,9 @@ NewUrlLaunchParameters_t :: struct {
 // for supporting third-party CD keys, or other proof-of-purchase systems.
 //-----------------------------------------------------------------------------
 AppProofOfPurchaseKeyResponse_t :: struct {
-    anon_enum_41 :: enum s32 {
+//     anon_enum_41 :: enum s32 {
         k_iCallback :: 1021;
-    }
+//     }
     m_eResult:      EResult;
     m_nAppID:       uint32;
     m_cchKeyLength: uint32;
@@ -1136,25 +1136,25 @@ AppProofOfPurchaseKeyResponse_t :: struct {
 // Purpose: response to GetFileDetails
 //-----------------------------------------------------------------------------
 FileDetailsResult_t :: struct {
-    anon_enum_42 :: enum s32 {
+//     anon_enum_42 :: enum s32 {
         k_iCallback :: 1023;
-    }
+//     }
     m_eResult:    EResult;
     m_ulFileSize: uint64; // original file size in bytes
     m_FileSHA:    [20] uint8; // original file SHA1 hash
-    m_unFlags:    uint32; // 
+    m_unFlags:    uint32; //
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: called for games in Timed Trial mode
 //-----------------------------------------------------------------------------
 TimedTrialStatus_t :: struct {
-    anon_enum_43 :: enum s32 {
+//     anon_enum_43 :: enum s32 {
         k_iCallback :: 1030;
-    }
+//     }
     m_unAppID:          AppId_t; // appID
     m_bIsOffline:       bool; // if true, time allowed / played refers to offline time, not total time
-    m_unSecondsAllowed: uint32; // how many seconds the app can be played in total 
+    m_unSecondsAllowed: uint32; // how many seconds the app can be played in total
     m_unSecondsPlayed:  uint32; // how many seconds the app was already played
 }
 
@@ -2513,9 +2513,9 @@ ISteamInput_VTable :: struct #type_info_none {
 // per controller if multiple new controllers connect in the same frame
 //-----------------------------------------------------------------------------
 SteamInputDeviceConnected_t :: struct {
-    anon_enum_44 :: enum s32 {
+//     anon_enum_44 :: enum s32 {
         k_iCallback :: 2801;
-    }
+//     }
     m_ulConnectedDeviceHandle: InputHandle_t; // Handle for device
 }
 
@@ -2524,9 +2524,9 @@ SteamInputDeviceConnected_t :: struct {
 // per controller if multiple new controllers connect in the same frame
 //-----------------------------------------------------------------------------
 SteamInputDeviceDisconnected_t :: struct {
-    anon_enum_45 :: enum s32 {
+//     anon_enum_45 :: enum s32 {
         k_iCallback :: 2802;
-    }
+//     }
     m_ulDisconnectedDeviceHandle: InputHandle_t; // Handle for device
 }
 
@@ -2535,14 +2535,14 @@ SteamInputDeviceDisconnected_t :: struct {
 // per controller per focus change for Steam Input enabled controllers
 //-----------------------------------------------------------------------------
 SteamInputConfigurationLoaded_t :: struct {
-    anon_enum_46 :: enum s32 {
+//     anon_enum_46 :: enum s32 {
         k_iCallback :: 2803;
-    }
+//     }
     m_unAppID:            AppId_t;
     m_ulDeviceHandle:     InputHandle_t; // Handle for device
     m_ulMappingCreator:   CSteamID; // May differ from local user when using
 
-    m_unMajorRevision:    uint32; // Binding revision from In-game Action File. 
+    m_unMajorRevision:    uint32; // Binding revision from In-game Action File.
 
     // Same value as queried by GetDeviceBindingRevision
     m_unMinorRevision:    uint32;
@@ -2555,9 +2555,9 @@ SteamInputConfigurationLoaded_t :: struct {
 // slots are shared for all running apps.
 //-----------------------------------------------------------------------------
 SteamInputGamepadSlotChange_t :: struct {
-    anon_enum_47 :: enum s32 {
+//     anon_enum_47 :: enum s32 {
         k_iCallback :: 2804;
-    }
+//     }
     m_unAppID:         AppId_t;
     m_ulDeviceHandle:  InputHandle_t; // Handle for device
     m_eDeviceType:     ESteamInputType; // Type of device
@@ -3599,15 +3599,15 @@ EUserRestriction :: enum s32 {
 }
 
 // size limits on Rich Presence data
-anon_enum_48 :: enum s32 {
+// anon_enum_48 :: enum s32 {
     k_cchMaxRichPresenceKeys :: 30;
-}
-anon_enum_49 :: enum s32 {
+// }
+// anon_enum_49 :: enum s32 {
     k_cchMaxRichPresenceKeyLength :: 64;
-}
-anon_enum_50 :: enum s32 {
+// }
+// anon_enum_50 :: enum s32 {
     k_cchMaxRichPresenceValueLength :: 256;
-}
+// }
 
 // These values are passed as parameters to the store
 EOverlayToStoreFlag :: enum s32 {
@@ -3827,9 +3827,9 @@ ISteamFriends_VTable :: struct #type_info_none {
 // Purpose: called when a friends' status changes
 //-----------------------------------------------------------------------------
 PersonaStateChange_t :: struct {
-    anon_enum_51 :: enum s32 {
+//     anon_enum_51 :: enum s32 {
         k_iCallback :: 304;
-    }
+//     }
 
     m_ulSteamID:    uint64; // steamID of the friend who changed
     m_nChangeFlags: s32; // what's changed
@@ -3876,9 +3876,9 @@ EPersonaChange :: enum_flags s32 {
 //			the game can use this to be pause or resume single player games
 //-----------------------------------------------------------------------------
 GameOverlayActivated_t :: struct {
-    anon_enum_52 :: enum s32 {
+//     anon_enum_52 :: enum s32 {
         k_iCallback :: 331;
-    }
+//     }
     m_bActive:        uint8; // true if it's just been activated, false otherwise
     m_bUserInitiated: bool; // true if the user asked for the overlay to be activated/deactivated
     m_nAppID:         AppId_t; // the appID of the game (should always be the current game)
@@ -3890,9 +3890,9 @@ GameOverlayActivated_t :: struct {
 //			game client should attempt to connect to specified server when this is received
 //-----------------------------------------------------------------------------
 GameServerChangeRequested_t :: struct {
-    anon_enum_53 :: enum s32 {
+//     anon_enum_53 :: enum s32 {
         k_iCallback :: 332;
-    }
+//     }
     m_rgchServer:   [64] u8; // server address ("127.0.0.1:27015", "tf2.valvesoftware.com")
     m_rgchPassword: [64] u8; // server password, if any
 }
@@ -3902,9 +3902,9 @@ GameServerChangeRequested_t :: struct {
 //			game client should attempt to connect to specified lobby when this is received
 //-----------------------------------------------------------------------------
 GameLobbyJoinRequested_t :: struct {
-    anon_enum_54 :: enum s32 {
+//     anon_enum_54 :: enum s32 {
         k_iCallback :: 333;
-    }
+//     }
     m_steamIDLobby:  CSteamID;
 
     // The friend they did the join via (will be invalid if not directly via a friend)
@@ -3920,9 +3920,9 @@ GameLobbyJoinRequested_t :: struct {
 //			if the image wasn't already available
 //-----------------------------------------------------------------------------
 AvatarImageLoaded_t :: struct {
-    anon_enum_55 :: enum s32 {
+//     anon_enum_55 :: enum s32 {
         k_iCallback :: 334;
-    }
+//     }
     m_steamID: CSteamID; // steamid the avatar has been loaded for
     m_iImage:  s32; // the image index of the now loaded image
     m_iWide:   s32; // width of the loaded image
@@ -3933,9 +3933,9 @@ AvatarImageLoaded_t :: struct {
 // Purpose: marks the return of a request officer list call
 //-----------------------------------------------------------------------------
 ClanOfficerListResponse_t :: struct {
-    anon_enum_56 :: enum s32 {
+//     anon_enum_56 :: enum s32 {
         k_iCallback :: 335;
-    }
+//     }
     m_steamIDClan: CSteamID;
     m_cOfficers:   s32;
     m_bSuccess:    uint8;
@@ -3945,9 +3945,9 @@ ClanOfficerListResponse_t :: struct {
 // Purpose: callback indicating updated data about friends rich presence information
 //-----------------------------------------------------------------------------
 FriendRichPresenceUpdate_t :: struct {
-    anon_enum_57 :: enum s32 {
+//     anon_enum_57 :: enum s32 {
         k_iCallback :: 336;
-    }
+//     }
     m_steamIDFriend: CSteamID; // friend who's rich presence has changed
     m_nAppID:        AppId_t; // the appID of the game (should always be the current game)
 } #no_padding
@@ -3957,9 +3957,9 @@ FriendRichPresenceUpdate_t :: struct {
 //			rich presence will have been set with the "connect" key which is set here
 //-----------------------------------------------------------------------------
 GameRichPresenceJoinRequested_t :: struct {
-    anon_enum_58 :: enum s32 {
+//     anon_enum_58 :: enum s32 {
         k_iCallback :: 337;
-    }
+//     }
     m_steamIDFriend: CSteamID; // the friend they did the join via (will be invalid if not directly via a friend)
     m_rgchConnect:   [256] u8;
 }
@@ -3968,9 +3968,9 @@ GameRichPresenceJoinRequested_t :: struct {
 // Purpose: a chat message has been received for a clan chat the game has joined
 //-----------------------------------------------------------------------------
 GameConnectedClanChatMsg_t :: struct {
-    anon_enum_59 :: enum s32 {
+//     anon_enum_59 :: enum s32 {
         k_iCallback :: 338;
-    }
+//     }
     m_steamIDClanChat: CSteamID;
     m_steamIDUser:     CSteamID;
     m_iMessageID:      s32;
@@ -3980,9 +3980,9 @@ GameConnectedClanChatMsg_t :: struct {
 // Purpose: a user has joined a clan chat
 //-----------------------------------------------------------------------------
 GameConnectedChatJoin_t :: struct {
-    anon_enum_60 :: enum s32 {
+//     anon_enum_60 :: enum s32 {
         k_iCallback :: 339;
-    }
+//     }
     m_steamIDClanChat: CSteamID;
     m_steamIDUser:     CSteamID;
 }
@@ -3991,9 +3991,9 @@ GameConnectedChatJoin_t :: struct {
 // Purpose: a user has left the chat we're in
 //-----------------------------------------------------------------------------
 GameConnectedChatLeave_t :: struct {
-    anon_enum_61 :: enum s32 {
+//     anon_enum_61 :: enum s32 {
         k_iCallback :: 340;
-    }
+//     }
     m_steamIDClanChat: CSteamID;
     m_steamIDUser:     CSteamID;
     m_bKicked:         bool; // true if admin kicked
@@ -4004,9 +4004,9 @@ GameConnectedChatLeave_t :: struct {
 // Purpose: a DownloadClanActivityCounts() call has finished
 //-----------------------------------------------------------------------------
 DownloadClanActivityCountsResult_t :: struct {
-    anon_enum_62 :: enum s32 {
+//     anon_enum_62 :: enum s32 {
         k_iCallback :: 341;
-    }
+//     }
     m_bSuccess: bool;
 }
 
@@ -4014,9 +4014,9 @@ DownloadClanActivityCountsResult_t :: struct {
 // Purpose: a JoinClanChatRoom() call has finished
 //-----------------------------------------------------------------------------
 JoinClanChatRoomCompletionResult_t :: struct {
-    anon_enum_63 :: enum s32 {
+//     anon_enum_63 :: enum s32 {
         k_iCallback :: 342;
-    }
+//     }
     m_steamIDClanChat:        CSteamID;
     m_eChatRoomEnterResponse: EChatRoomEnterResponse;
 } #no_padding
@@ -4025,35 +4025,35 @@ JoinClanChatRoomCompletionResult_t :: struct {
 // Purpose: a chat message has been received from a user
 //-----------------------------------------------------------------------------
 GameConnectedFriendChatMsg_t :: struct {
-    anon_enum_64 :: enum s32 {
+//     anon_enum_64 :: enum s32 {
         k_iCallback :: 343;
-    }
+//     }
     m_steamIDUser: CSteamID;
     m_iMessageID:  s32;
 } #no_padding
 
 FriendsGetFollowerCount_t :: struct {
-    anon_enum_65 :: enum s32 {
+//     anon_enum_65 :: enum s32 {
         k_iCallback :: 344;
-    }
+//     }
     m_eResult: EResult;
     m_steamID: CSteamID #align 4;
     m_nCount:  s32;
 } #no_padding
 
 FriendsIsFollowing_t :: struct {
-    anon_enum_66 :: enum s32 {
+//     anon_enum_66 :: enum s32 {
         k_iCallback :: 345;
-    }
+//     }
     m_eResult:      EResult;
     m_steamID:      CSteamID #align 4;
     m_bIsFollowing: bool;
 }
 
 FriendsEnumerateFollowingList_t :: struct {
-    anon_enum_67 :: enum s32 {
+//     anon_enum_67 :: enum s32 {
         k_iCallback :: 346;
-    }
+//     }
     m_eResult:           EResult;
     m_rgSteamID:         [50] CSteamID #align 4;
     m_nResultsReturned:  int32;
@@ -4064,9 +4064,9 @@ FriendsEnumerateFollowingList_t :: struct {
 // Purpose: reports the result of an attempt to change the user's persona name
 //-----------------------------------------------------------------------------
 SetPersonaNameResponse_t :: struct {
-    anon_enum_68 :: enum s32 {
+//     anon_enum_68 :: enum s32 {
         k_iCallback :: 347;
-    }
+//     }
 
     m_bSuccess:      bool; // true if name change succeeded completely.
     m_bLocalSuccess: bool; // true if name change was retained locally.  (We might not have been able to communicate with Steam)
@@ -4077,9 +4077,9 @@ SetPersonaNameResponse_t :: struct {
 // Purpose: Invoked when the status of unread messages changes
 //-----------------------------------------------------------------------------
 UnreadChatMessagesChanged_t :: struct {
-    anon_enum_69 :: enum s32 {
+//     anon_enum_69 :: enum s32 {
         k_iCallback :: 348;
-    }
+//     }
     __empty_struct_padding: u8; // C++ makes empty structs have length 1
 } #no_padding
 
@@ -4087,9 +4087,9 @@ UnreadChatMessagesChanged_t :: struct {
 // Purpose: Dispatched when an overlay browser instance is navigated to a protocol/scheme registered by RegisterProtocolInOverlayBrowser()
 //-----------------------------------------------------------------------------
 OverlayBrowserProtocolNavigation_t :: struct {
-    anon_enum_70 :: enum s32 {
+//     anon_enum_70 :: enum s32 {
         k_iCallback :: 349;
-    }
+//     }
     rgchURI: [1024] u8;
 } #no_padding
 
@@ -4097,9 +4097,9 @@ OverlayBrowserProtocolNavigation_t :: struct {
 // Purpose: A user's equipped profile items have changed
 //-----------------------------------------------------------------------------
 EquippedProfileItemsChanged_t :: struct {
-    anon_enum_71 :: enum s32 {
+//     anon_enum_71 :: enum s32 {
         k_iCallback :: 350;
-    }
+//     }
     m_steamID: CSteamID;
 } #no_padding
 
@@ -4107,9 +4107,9 @@ EquippedProfileItemsChanged_t :: struct {
 // Purpose:
 //-----------------------------------------------------------------------------
 EquippedProfileItems_t :: struct {
-    anon_enum_72 :: enum s32 {
+//     anon_enum_72 :: enum s32 {
         k_iCallback :: 351;
-    }
+//     }
     m_eResult:                   EResult;
     m_steamID:                   CSteamID #align 4;
     m_bHasAnimatedAvatar:        bool;
@@ -4152,17 +4152,17 @@ ISteamGameCoordinator_VTable :: struct #type_info_none {
 
 // callback notification - A new message is available for reading from the message queue
 GCMessageAvailable_t :: struct {
-    anon_enum_73 :: enum s32 {
+//     anon_enum_73 :: enum s32 {
         k_iCallback :: 1701;
-    }
+//     }
     m_nMessageSize: uint32;
 }
 
 // callback notification - A message failed to make it to the GC. It may be down temporarily
 GCMessageFailed_t :: struct {
-    anon_enum_74 :: enum s32 {
+//     anon_enum_74 :: enum s32 {
         k_iCallback :: 1702;
-    }
+//     }
     __empty_struct_padding: u8; // C++ makes empty structs have length 1
 }
 
@@ -4262,18 +4262,18 @@ ISteamGameServer_VTable :: struct #type_info_none {
 
 // client has been approved to connect to this game server
 GSClientApprove_t :: struct {
-    anon_enum_75 :: enum s32 {
+//     anon_enum_75 :: enum s32 {
         k_iCallback :: 201;
-    }
+//     }
     m_SteamID:      CSteamID; // SteamID of approved player
     m_OwnerSteamID: CSteamID; // SteamID of original owner for game license
 }
 
 // client has been denied to connection to this game server
 GSClientDeny_t :: struct {
-    anon_enum_76 :: enum s32 {
+//     anon_enum_76 :: enum s32 {
         k_iCallback :: 202;
-    }
+//     }
     m_SteamID:          CSteamID;
     m_eDenyReason:      EDenyReason;
     m_rgchOptionalText: [128] u8;
@@ -4281,18 +4281,18 @@ GSClientDeny_t :: struct {
 
 // request the game server should kick the user
 GSClientKick_t :: struct {
-    anon_enum_77 :: enum s32 {
+//     anon_enum_77 :: enum s32 {
         k_iCallback :: 203;
-    }
+//     }
     m_SteamID:     CSteamID;
     m_eDenyReason: EDenyReason;
 } #no_padding
 
 // client achievement info
 GSClientAchievementStatus_t :: struct {
-    anon_enum_78 :: enum s32 {
+//     anon_enum_78 :: enum s32 {
         k_iCallback :: 206;
-    }
+//     }
     m_SteamID:        uint64;
     m_pchAchievement: [128] u8;
     m_bUnlocked:      bool;
@@ -4301,17 +4301,17 @@ GSClientAchievementStatus_t :: struct {
 // received when the game server requests to be displayed as secure (VAC protected)
 // m_bSecure is true if the game server should display itself as secure to users, false otherwise
 GSPolicyResponse_t :: struct {
-    anon_enum_79 :: enum s32 {
+//     anon_enum_79 :: enum s32 {
         k_iCallback :: 115;
-    }
+//     }
     m_bSecure: uint8;
 }
 
 // GS gameplay stats info
 GSGameplayStats_t :: struct {
-    anon_enum_80 :: enum s32 {
+//     anon_enum_80 :: enum s32 {
         k_iCallback :: 207;
-    }
+//     }
     m_eResult:              EResult; // Result of the call
     m_nRank:                int32; // Overall rank of the server (0-based)
     m_unTotalConnects:      uint32; // Total number of clients who have ever connected to the server
@@ -4320,9 +4320,9 @@ GSGameplayStats_t :: struct {
 
 // send as a reply to RequestUserGroupStatus()
 GSClientGroupStatus_t :: struct {
-    anon_enum_81 :: enum s32 {
+//     anon_enum_81 :: enum s32 {
         k_iCallback :: 208;
-    }
+//     }
     m_SteamIDUser:  CSteamID;
     m_SteamIDGroup: CSteamID;
     m_bMember:      bool;
@@ -4331,9 +4331,9 @@ GSClientGroupStatus_t :: struct {
 
 // Sent as a reply to GetServerReputation()
 GSReputation_t :: struct {
-    anon_enum_82 :: enum s32 {
+//     anon_enum_82 :: enum s32 {
         k_iCallback :: 209;
-    }
+//     }
     m_eResult:           EResult; // Result of the call;
     m_unReputationScore: uint32; // The reputation score for the game server
     m_bBanned:           bool; // True if the server is banned from the Steam
@@ -4346,17 +4346,17 @@ GSReputation_t :: struct {
 
 // Sent as a reply to AssociateWithClan()
 AssociateWithClanResult_t :: struct {
-    anon_enum_83 :: enum s32 {
+//     anon_enum_83 :: enum s32 {
         k_iCallback :: 210;
-    }
+//     }
     m_eResult: EResult; // Result of the call;
 }
 
 // Sent as a reply to ComputeNewPlayerCompatibility()
 ComputeNewPlayerCompatibilityResult_t :: struct {
-    anon_enum_84 :: enum s32 {
+//     anon_enum_84 :: enum s32 {
         k_iCallback :: 211;
-    }
+//     }
     m_eResult:                           EResult; // Result of the call;
     m_cPlayersThatDontLikeCandidate:     s32;
     m_cPlayersThatCandidateDoesntLike:   s32;
@@ -4397,9 +4397,9 @@ ISteamGameServerStats_VTable :: struct #type_info_none {
 //			from the server
 //-----------------------------------------------------------------------------
 GSStatsReceived_t :: struct {
-    anon_enum_85 :: enum s32 {
+//     anon_enum_85 :: enum s32 {
         k_iCallback :: 1800;
-    }
+//     }
     m_eResult:     EResult; // Success / error fetching the stats
     m_steamIDUser: CSteamID #align 4; // The user for whom the stats are retrieved for
 }
@@ -4408,9 +4408,9 @@ GSStatsReceived_t :: struct {
 // Purpose: result of a request to store the user stats for a game
 //-----------------------------------------------------------------------------
 GSStatsStored_t :: struct {
-    anon_enum_86 :: enum s32 {
+//     anon_enum_86 :: enum s32 {
         k_iCallback :: 1801;
-    }
+//     }
     m_eResult:     EResult; // success / error
     m_steamIDUser: CSteamID #align 4; // The user for whom the stats were stored
 }
@@ -4420,9 +4420,9 @@ GSStatsStored_t :: struct {
 //  Call RequestUserStats again to access stats for this user
 //-----------------------------------------------------------------------------
 GSStatsUnloaded_t :: struct {
-    anon_enum_87 :: enum s32 {
+//     anon_enum_87 :: enum s32 {
         k_iCallback :: 1108;
-    }
+//     }
     m_steamIDUser: CSteamID; // User whose stats have been unloaded
 }
 
@@ -4623,9 +4623,9 @@ ISteamHTMLSurface_VTable :: struct #type_info_none {
 // Purpose: The browser is ready for use
 //-----------------------------------------------------------------------------
 HTML_BrowserReady_t :: struct {
-    anon_enum_88 :: enum s32 {
+//     anon_enum_88 :: enum s32 {
         k_iCallback :: 4501;
-    }
+//     }
     unBrowserHandle: HHTMLBrowser;
 }
 
@@ -4633,9 +4633,9 @@ HTML_BrowserReady_t :: struct {
 // Purpose: the browser has a pending paint
 //-----------------------------------------------------------------------------
 HTML_NeedsPaint_t :: struct {
-    anon_enum_89 :: enum s32 {
+//     anon_enum_89 :: enum s32 {
         k_iCallback :: 4502;
-    }
+//     }
     unBrowserHandle: HHTMLBrowser;
     pBGRA:           *u8;
     unWide:          uint32;
@@ -4655,9 +4655,9 @@ HTML_NeedsPaint_t :: struct {
 //   NOTE - you MUST call AllowStartRequest in response to this callback
 //-----------------------------------------------------------------------------
 HTML_StartRequest_t :: struct {
-    anon_enum_90 :: enum s32 {
+//     anon_enum_90 :: enum s32 {
         k_iCallback :: 4503;
-    }
+//     }
     unBrowserHandle: HHTMLBrowser;
     pchURL:          *u8;
     pchTarget:       *u8;
@@ -4669,9 +4669,9 @@ HTML_StartRequest_t :: struct {
 // Purpose: The browser has been requested to close due to user interaction (usually from a javascript window.close() call)
 //-----------------------------------------------------------------------------
 HTML_CloseBrowser_t :: struct {
-    anon_enum_91 :: enum s32 {
+//     anon_enum_91 :: enum s32 {
         k_iCallback :: 4504;
-    }
+//     }
     unBrowserHandle: HHTMLBrowser;
 }
 
@@ -4679,9 +4679,9 @@ HTML_CloseBrowser_t :: struct {
 // Purpose: the browser is navigating to a new url
 //-----------------------------------------------------------------------------
 HTML_URLChanged_t :: struct {
-    anon_enum_92 :: enum s32 {
+//     anon_enum_92 :: enum s32 {
         k_iCallback :: 4505;
-    }
+//     }
     unBrowserHandle: HHTMLBrowser;
     pchURL:          *u8;
     pchPostData:     *u8;
@@ -4694,9 +4694,9 @@ HTML_URLChanged_t :: struct {
 // Purpose: A page is finished loading
 //-----------------------------------------------------------------------------
 HTML_FinishedRequest_t :: struct {
-    anon_enum_93 :: enum s32 {
+//     anon_enum_93 :: enum s32 {
         k_iCallback :: 4506;
-    }
+//     }
     unBrowserHandle: HHTMLBrowser;
     pchURL:          *u8;
     pchPageTitle:    *u8;
@@ -4706,9 +4706,9 @@ HTML_FinishedRequest_t :: struct {
 // Purpose: a request to load this url in a new tab
 //-----------------------------------------------------------------------------
 HTML_OpenLinkInNewTab_t :: struct {
-    anon_enum_94 :: enum s32 {
+//     anon_enum_94 :: enum s32 {
         k_iCallback :: 4507;
-    }
+//     }
     unBrowserHandle: HHTMLBrowser;
     pchURL:          *u8;
 }
@@ -4717,9 +4717,9 @@ HTML_OpenLinkInNewTab_t :: struct {
 // Purpose: the page has a new title now
 //-----------------------------------------------------------------------------
 HTML_ChangedTitle_t :: struct {
-    anon_enum_95 :: enum s32 {
+//     anon_enum_95 :: enum s32 {
         k_iCallback :: 4508;
-    }
+//     }
     unBrowserHandle: HHTMLBrowser;
     pchTitle:        *u8;
 }
@@ -4728,9 +4728,9 @@ HTML_ChangedTitle_t :: struct {
 // Purpose: results from a search
 //-----------------------------------------------------------------------------
 HTML_SearchResults_t :: struct {
-    anon_enum_96 :: enum s32 {
+//     anon_enum_96 :: enum s32 {
         k_iCallback :: 4509;
-    }
+//     }
     unBrowserHandle: HHTMLBrowser;
     unResults:       uint32;
     unCurrentMatch:  uint32;
@@ -4740,9 +4740,9 @@ HTML_SearchResults_t :: struct {
 // Purpose: page history status changed on the ability to go backwards and forward
 //-----------------------------------------------------------------------------
 HTML_CanGoBackAndForward_t :: struct {
-    anon_enum_97 :: enum s32 {
+//     anon_enum_97 :: enum s32 {
         k_iCallback :: 4510;
-    }
+//     }
     unBrowserHandle: HHTMLBrowser;
     bCanGoBack:      bool;
     bCanGoForward:   bool;
@@ -4752,9 +4752,9 @@ HTML_CanGoBackAndForward_t :: struct {
 // Purpose: details on the visibility and size of the horizontal scrollbar
 //-----------------------------------------------------------------------------
 HTML_HorizontalScroll_t :: struct {
-    anon_enum_98 :: enum s32 {
+//     anon_enum_98 :: enum s32 {
         k_iCallback :: 4511;
-    }
+//     }
     unBrowserHandle: HHTMLBrowser;
     unScrollMax:     uint32;
     unScrollCurrent: uint32;
@@ -4767,9 +4767,9 @@ HTML_HorizontalScroll_t :: struct {
 // Purpose: details on the visibility and size of the vertical scrollbar
 //-----------------------------------------------------------------------------
 HTML_VerticalScroll_t :: struct {
-    anon_enum_99 :: enum s32 {
+//     anon_enum_99 :: enum s32 {
         k_iCallback :: 4512;
-    }
+//     }
     unBrowserHandle: HHTMLBrowser;
     unScrollMax:     uint32;
     unScrollCurrent: uint32;
@@ -4782,9 +4782,9 @@ HTML_VerticalScroll_t :: struct {
 // Purpose: response to GetLinkAtPosition call
 //-----------------------------------------------------------------------------
 HTML_LinkAtPosition_t :: struct {
-    anon_enum_100 :: enum s32 {
+//     anon_enum_100 :: enum s32 {
         k_iCallback :: 4513;
-    }
+//     }
     unBrowserHandle: HHTMLBrowser;
     x:               uint32;
     y:               uint32;
@@ -4798,9 +4798,9 @@ HTML_LinkAtPosition_t :: struct {
 //   when the user dismisses this dialog (or right away to ignore it)
 //-----------------------------------------------------------------------------
 HTML_JSAlert_t :: struct {
-    anon_enum_101 :: enum s32 {
+//     anon_enum_101 :: enum s32 {
         k_iCallback :: 4514;
-    }
+//     }
     unBrowserHandle: HHTMLBrowser;
     pchMessage:      *u8;
 }
@@ -4810,9 +4810,9 @@ HTML_JSAlert_t :: struct {
 //   when the user dismisses this dialog (or right away to ignore it)
 //-----------------------------------------------------------------------------
 HTML_JSConfirm_t :: struct {
-    anon_enum_102 :: enum s32 {
+//     anon_enum_102 :: enum s32 {
         k_iCallback :: 4515;
-    }
+//     }
     unBrowserHandle: HHTMLBrowser;
     pchMessage:      *u8;
 }
@@ -4822,9 +4822,9 @@ HTML_JSConfirm_t :: struct {
 //   then call FileLoadDialogResponse with the file(s) the user selected.
 //-----------------------------------------------------------------------------
 HTML_FileOpenDialog_t :: struct {
-    anon_enum_103 :: enum s32 {
+//     anon_enum_103 :: enum s32 {
         k_iCallback :: 4516;
-    }
+//     }
     unBrowserHandle: HHTMLBrowser;
     pchTitle:        *u8;
     pchInitialFile:  *u8;
@@ -4840,9 +4840,9 @@ HTML_FileOpenDialog_t :: struct {
 // a new browser in response to the attempted popup, if you wish to do so.
 //-----------------------------------------------------------------------------
 HTML_NewWindow_t :: struct {
-    anon_enum_104 :: enum s32 {
+//     anon_enum_104 :: enum s32 {
         k_iCallback :: 4521;
-    }
+//     }
     unBrowserHandle:                  HHTMLBrowser;
     pchURL:                           *u8;
     unX:                              uint32;
@@ -4856,9 +4856,9 @@ HTML_NewWindow_t :: struct {
 // Purpose: change the cursor to display
 //-----------------------------------------------------------------------------
 HTML_SetCursor_t :: struct {
-    anon_enum_105 :: enum s32 {
+//     anon_enum_105 :: enum s32 {
         k_iCallback :: 4522;
-    }
+//     }
     unBrowserHandle: HHTMLBrowser;
     eMouseCursor:    uint32;
 }
@@ -4867,9 +4867,9 @@ HTML_SetCursor_t :: struct {
 // Purpose: informational message from the browser
 //-----------------------------------------------------------------------------
 HTML_StatusText_t :: struct {
-    anon_enum_106 :: enum s32 {
+//     anon_enum_106 :: enum s32 {
         k_iCallback :: 4523;
-    }
+//     }
     unBrowserHandle: HHTMLBrowser;
     pchMsg:          *u8;
 }
@@ -4878,9 +4878,9 @@ HTML_StatusText_t :: struct {
 // Purpose: show a tooltip
 //-----------------------------------------------------------------------------
 HTML_ShowToolTip_t :: struct {
-    anon_enum_107 :: enum s32 {
+//     anon_enum_107 :: enum s32 {
         k_iCallback :: 4524;
-    }
+//     }
     unBrowserHandle: HHTMLBrowser;
     pchMsg:          *u8;
 }
@@ -4889,9 +4889,9 @@ HTML_ShowToolTip_t :: struct {
 // Purpose: update the text of an existing tooltip
 //-----------------------------------------------------------------------------
 HTML_UpdateToolTip_t :: struct {
-    anon_enum_108 :: enum s32 {
+//     anon_enum_108 :: enum s32 {
         k_iCallback :: 4525;
-    }
+//     }
     unBrowserHandle: HHTMLBrowser;
     pchMsg:          *u8;
 }
@@ -4900,9 +4900,9 @@ HTML_UpdateToolTip_t :: struct {
 // Purpose: hide the tooltip you are showing
 //-----------------------------------------------------------------------------
 HTML_HideToolTip_t :: struct {
-    anon_enum_109 :: enum s32 {
+//     anon_enum_109 :: enum s32 {
         k_iCallback :: 4526;
-    }
+//     }
     unBrowserHandle: HHTMLBrowser;
 }
 
@@ -4910,9 +4910,9 @@ HTML_HideToolTip_t :: struct {
 // Purpose: The browser has restarted due to an internal failure, use this new handle value
 //-----------------------------------------------------------------------------
 HTML_BrowserRestarted_t :: struct {
-    anon_enum_110 :: enum s32 {
+//     anon_enum_110 :: enum s32 {
         k_iCallback :: 4527;
-    }
+//     }
     unBrowserHandle:    HHTMLBrowser;
     unOldBrowserHandle: HHTMLBrowser;
 }
@@ -5113,9 +5113,9 @@ ISteamHTTP_VTable :: struct #type_info_none {
 
 
 HTTPRequestCompleted_t :: struct {
-    anon_enum_111 :: enum s32 {
+//     anon_enum_111 :: enum s32 {
         k_iCallback :: 2101;
-    }
+//     }
 
     // Handle value for the request that has completed.
     m_hRequest:           HTTPRequestHandle;
@@ -5136,9 +5136,9 @@ HTTPRequestCompleted_t :: struct {
 }
 
 HTTPRequestHeadersReceived_t :: struct {
-    anon_enum_112 :: enum s32 {
+//     anon_enum_112 :: enum s32 {
         k_iCallback :: 2102;
-    }
+//     }
 
     // Handle value for the request that has received headers.
     m_hRequest:       HTTPRequestHandle;
@@ -5149,9 +5149,9 @@ HTTPRequestHeadersReceived_t :: struct {
 }
 
 HTTPRequestDataReceived_t :: struct {
-    anon_enum_113 :: enum s32 {
+//     anon_enum_113 :: enum s32 {
         k_iCallback :: 2103;
-    }
+//     }
 
     // Handle value for the request that has received data.
     m_hRequest:       HTTPRequestHandle;
@@ -5289,9 +5289,9 @@ ISteamInventory_VTable :: struct #type_info_none {
 // results transition from "Pending" to "OK" or an error state. There will
 // always be exactly one callback per handle.
 SteamInventoryResultReady_t :: struct {
-    anon_enum_114 :: enum s32 {
+//     anon_enum_114 :: enum s32 {
         k_iCallback :: 4700;
-    }
+//     }
     m_handle: SteamInventoryResult_t;
     m_result: EResult;
 }
@@ -5304,9 +5304,9 @@ SteamInventoryResultReady_t :: struct {
 // The normal ResultReady callback will still be triggered immediately
 // afterwards; this is an additional notification for your convenience.
 SteamInventoryFullUpdate_t :: struct {
-    anon_enum_115 :: enum s32 {
+//     anon_enum_115 :: enum s32 {
         k_iCallback :: 4701;
-    }
+//     }
     m_handle: SteamInventoryResult_t;
 }
 
@@ -5315,17 +5315,17 @@ SteamInventoryFullUpdate_t :: struct {
 // LoadItemDefinitions() or any other async request which required
 // a definition update in order to process results from the server.
 SteamInventoryDefinitionUpdate_t :: struct {
-    anon_enum_116 :: enum s32 {
+//     anon_enum_116 :: enum s32 {
         k_iCallback :: 4702;
-    }
+//     }
     __empty_struct_padding: u8; // C++ makes empty structs have length 1
 }
 
 // Returned
 SteamInventoryEligiblePromoItemDefIDs_t :: struct {
-    anon_enum_117 :: enum s32 {
+//     anon_enum_117 :: enum s32 {
         k_iCallback :: 4703;
-    }
+//     }
     m_result:                   EResult;
     m_steamID:                  CSteamID #align 4;
     m_numEligiblePromoItemDefs: s32;
@@ -5334,9 +5334,9 @@ SteamInventoryEligiblePromoItemDefIDs_t :: struct {
 
 // Triggered from StartPurchase call
 SteamInventoryStartPurchaseResult_t :: struct {
-    anon_enum_118 :: enum s32 {
+//     anon_enum_118 :: enum s32 {
         k_iCallback :: 4704;
-    }
+//     }
     m_result:    EResult;
     m_ulOrderID: uint64;
     m_ulTransID: uint64;
@@ -5344,9 +5344,9 @@ SteamInventoryStartPurchaseResult_t :: struct {
 
 // Triggered from RequestPrices
 SteamInventoryRequestPricesResult_t :: struct {
-    anon_enum_119 :: enum s32 {
+//     anon_enum_119 :: enum s32 {
         k_iCallback :: 4705;
-    }
+//     }
     m_result:       EResult;
     m_rgchCurrency: [4] u8;
 }
@@ -5798,9 +5798,9 @@ ISteamParties_VTable :: struct #type_info_none {
 // Purpose: a server was added/removed from the favorites list, you should refresh now
 //-----------------------------------------------------------------------------
 FavoritesListChanged_t :: struct {
-    anon_enum_120 :: enum s32 {
+//     anon_enum_120 :: enum s32 {
         k_iCallback :: 502;
-    }
+//     }
     m_nIP:         uint32; // an IP of 0 means reload the whole list, any other value means just one server
     m_nQueryPort:  uint32;
     m_nConnPort:   uint32;
@@ -5819,9 +5819,9 @@ FavoritesListChanged_t :: struct {
 //			or with the callback GameLobbyJoinRequested_t if they're already in-game
 //-----------------------------------------------------------------------------
 LobbyInvite_t :: struct {
-    anon_enum_121 :: enum s32 {
+//     anon_enum_121 :: enum s32 {
         k_iCallback :: 503;
-    }
+//     }
 
     m_ulSteamIDUser:  uint64; // Steam ID of the person making the invite
     m_ulSteamIDLobby: uint64; // Steam ID of the Lobby
@@ -5834,9 +5834,9 @@ LobbyInvite_t :: struct {
 //			or a higher value on failure (see enum EChatRoomEnterResponse)
 //-----------------------------------------------------------------------------
 LobbyEnter_t :: struct {
-    anon_enum_122 :: enum s32 {
+//     anon_enum_122 :: enum s32 {
         k_iCallback :: 504;
-    }
+//     }
 
     m_ulSteamIDLobby:         uint64; // SteamID of the Lobby you have entered
     m_rgfChatPermissions:     uint32; // Permissions of the current user
@@ -5850,13 +5850,13 @@ LobbyEnter_t :: struct {
 //			if m_ulSteamIDMember == m_ulSteamIDLobby, use GetLobbyData() to access lobby metadata
 //-----------------------------------------------------------------------------
 LobbyDataUpdate_t :: struct {
-    anon_enum_123 :: enum s32 {
+//     anon_enum_123 :: enum s32 {
         k_iCallback :: 505;
-    }
+//     }
 
     m_ulSteamIDLobby:  uint64; // steamID of the Lobby
     m_ulSteamIDMember: uint64; // steamID of the member whose data changed, or the room itself
-    m_bSuccess:        uint8; // true if we lobby data was successfully changed; 
+    m_bSuccess:        uint8; // true if we lobby data was successfully changed;
 }
 
 //-----------------------------------------------------------------------------
@@ -5864,9 +5864,9 @@ LobbyDataUpdate_t :: struct {
 //			this is usually sent when a user has joined or left the lobby
 //-----------------------------------------------------------------------------
 LobbyChatUpdate_t :: struct {
-    anon_enum_124 :: enum s32 {
+//     anon_enum_124 :: enum s32 {
         k_iCallback :: 506;
-    }
+//     }
 
     m_ulSteamIDLobby:           uint64; // Lobby ID
     m_ulSteamIDUserChanged:     uint64; // user who's status in the lobby just changed - can be recipient
@@ -5880,9 +5880,9 @@ LobbyChatUpdate_t :: struct {
 //			use GetLobbyChatEntry( m_iChatID ) to retrieve the contents of this message
 //-----------------------------------------------------------------------------
 LobbyChatMsg_t :: struct {
-    anon_enum_125 :: enum s32 {
+//     anon_enum_125 :: enum s32 {
         k_iCallback :: 507;
-    }
+//     }
 
     m_ulSteamIDLobby: uint64; // the lobby id this is in
     m_ulSteamIDUser:  uint64; // steamID of the user who has sent this message
@@ -5897,9 +5897,9 @@ LobbyChatMsg_t :: struct {
 //			game behavior is to leave the lobby and connect to the specified game server
 //-----------------------------------------------------------------------------
 LobbyGameCreated_t :: struct {
-    anon_enum_126 :: enum s32 {
+//     anon_enum_126 :: enum s32 {
         k_iCallback :: 509;
-    }
+//     }
 
     m_ulSteamIDLobby:      uint64; // the lobby we were in
     m_ulSteamIDGameServer: uint64; // the new game server that has been created or found for the lobby members
@@ -5912,9 +5912,9 @@ LobbyGameCreated_t :: struct {
 //			iterate the returned lobbies with GetLobbyByIndex(), from values 0 to m_nLobbiesMatching-1
 //-----------------------------------------------------------------------------
 LobbyMatchList_t :: struct {
-    anon_enum_127 :: enum s32 {
+//     anon_enum_127 :: enum s32 {
         k_iCallback :: 510;
-    }
+//     }
     m_nLobbiesMatching: uint32; // Number of lobbies that matched search criteria and we have SteamIDs for
 }
 
@@ -5923,9 +5923,9 @@ LobbyMatchList_t :: struct {
 //			can occur if a user loses connection to Steam
 //-----------------------------------------------------------------------------
 LobbyKicked_t :: struct {
-    anon_enum_128 :: enum s32 {
+//     anon_enum_128 :: enum s32 {
         k_iCallback :: 512;
-    }
+//     }
     m_ulSteamIDLobby:         uint64; // Lobby
     m_ulSteamIDAdmin:         uint64; // User who kicked you - possibly the ID of the lobby itself
     m_bKickedDueToDisconnect: uint8; // true if you were kicked from the lobby due to the user losing connection to Steam (currently always true)
@@ -5938,9 +5938,9 @@ LobbyKicked_t :: struct {
 //			a LobbyEnter_t callback will also be received (since the local user is joining their own lobby)
 //-----------------------------------------------------------------------------
 LobbyCreated_t :: struct {
-    anon_enum_129 :: enum s32 {
+//     anon_enum_129 :: enum s32 {
         k_iCallback :: 513;
-    }
+//     }
 
     m_eResult:        EResult; // k_EResultOK - the lobby was successfully created
 
@@ -5954,9 +5954,9 @@ LobbyCreated_t :: struct {
 //			game code should wait until the subsequent LobbyEnter_t callback is received
 //-----------------------------------------------------------------------------
 PSNGameBootInviteResult_t :: struct {
-    anon_enum_130 :: enum s32 {
+//     anon_enum_130 :: enum s32 {
         k_iCallback :: 515;
-    }
+//     }
 
     m_bGameBootInviteExists: bool;
     m_steamIDLobby:          CSteamID #align 1; // Should be valid if m_bGameBootInviteExists == true
@@ -5969,9 +5969,9 @@ PSNGameBootInviteResult_t :: struct {
 //			a LobbyEnter_t callback will also be received (since the local user is joining their own lobby)
 //-----------------------------------------------------------------------------
 FavoritesListAccountsUpdated_t :: struct {
-    anon_enum_131 :: enum s32 {
+//     anon_enum_131 :: enum s32 {
         k_iCallback :: 516;
-    }
+//     }
 
     m_eResult: EResult;
 }
@@ -5979,9 +5979,9 @@ FavoritesListAccountsUpdated_t :: struct {
 //-----------------------------------------------------------------------------
 // Callbacks for ISteamGameSearch (which go through the regular Steam callback registration system)
 SearchForGameProgressCallback_t :: struct {
-    anon_enum_132 :: enum s32 {
+//     anon_enum_132 :: enum s32 {
         k_iCallback :: 5201;
-    }
+//     }
 
     m_ullSearchID:               uint64; // all future callbacks referencing this search will include this Search ID
 
@@ -5995,9 +5995,9 @@ SearchForGameProgressCallback_t :: struct {
 
 // notification to all players searching that a game has been found
 SearchForGameResultCallback_t :: struct {
-    anon_enum_133 :: enum s32 {
+//     anon_enum_133 :: enum s32 {
         k_iCallback :: 5202;
-    }
+//     }
 
     m_ullSearchID:         uint64;
 
@@ -6015,9 +6015,9 @@ SearchForGameResultCallback_t :: struct {
 // callback from RequestPlayersForGame when the matchmaking service has started or ended search
 // callback will also follow a call from CancelRequestPlayersForGame - m_bSearchInProgress will be false
 RequestPlayersForGameProgressCallback_t :: struct {
-    anon_enum_134 :: enum s32 {
+//     anon_enum_134 :: enum s32 {
         k_iCallback :: 5211;
-    }
+//     }
 
     m_eResult:     EResult; // m_ullSearchID will be non-zero if this is k_EResultOK
     m_ullSearchID: uint64; // all future callbacks referencing this search will include this Search ID
@@ -6027,9 +6027,9 @@ RequestPlayersForGameProgressCallback_t :: struct {
 // one of these will be sent per player
 // followed by additional callbacks when players accept or decline the game
 RequestPlayersForGameResultCallback_t :: struct {
-    anon_enum_135 :: enum s32 {
+//     anon_enum_135 :: enum s32 {
         k_iCallback :: 5212;
-    }
+//     }
 
     m_eResult:                   EResult; // m_ullSearchID will be non-zero if this is k_EResultOK
     m_ullSearchID:               uint64;
@@ -6055,9 +6055,9 @@ RequestPlayersForGameResultCallback_t :: struct {
 }
 
 RequestPlayersForGameFinalResultCallback_t :: struct {
-    anon_enum_136 :: enum s32 {
+//     anon_enum_136 :: enum s32 {
         k_iCallback :: 5213;
-    }
+//     }
 
     m_eResult:         EResult;
     m_ullSearchID:     uint64;
@@ -6066,9 +6066,9 @@ RequestPlayersForGameFinalResultCallback_t :: struct {
 
 // this callback confirms that results were received by the matchmaking service for this player
 SubmitPlayerResultResultCallback_t :: struct {
-    anon_enum_137 :: enum s32 {
+//     anon_enum_137 :: enum s32 {
         k_iCallback :: 5214;
-    }
+//     }
 
     m_eResult:       EResult;
     ullUniqueGameID: uint64;
@@ -6078,9 +6078,9 @@ SubmitPlayerResultResultCallback_t :: struct {
 // this callback confirms that the game is recorded as complete on the matchmaking service
 // the next call to RequestPlayersForGame will generate a new unique game ID
 EndGameResultCallback_t :: struct {
-    anon_enum_138 :: enum s32 {
+//     anon_enum_138 :: enum s32 {
         k_iCallback :: 5215;
-    }
+//     }
 
     m_eResult:       EResult;
     ullUniqueGameID: uint64;
@@ -6090,9 +6090,9 @@ EndGameResultCallback_t :: struct {
 // If successful, the connect string contains game-specific instructions to connect
 // to the game with that party.
 JoinPartyCallback_t :: struct {
-    anon_enum_139 :: enum s32 {
+//     anon_enum_139 :: enum s32 {
         k_iCallback :: 5301;
-    }
+//     }
 
     m_eResult:            EResult;
     m_ulBeaconID:         PartyBeaconID_t;
@@ -6102,9 +6102,9 @@ JoinPartyCallback_t :: struct {
 
 // Response to CreateBeacon request. If successful, the beacon ID is provided.
 CreateBeaconCallback_t :: struct {
-    anon_enum_140 :: enum s32 {
+//     anon_enum_140 :: enum s32 {
         k_iCallback :: 5302;
-    }
+//     }
 
     m_eResult:    EResult;
     m_ulBeaconID: PartyBeaconID_t;
@@ -6115,9 +6115,9 @@ CreateBeaconCallback_t :: struct {
 // You should confirm when they join your party by calling OnReservationCompleted().
 // Otherwise, Steam may timeout their reservation eventually.
 ReservationNotificationCallback_t :: struct {
-    anon_enum_141 :: enum s32 {
+//     anon_enum_141 :: enum s32 {
         k_iCallback :: 5303;
-    }
+//     }
 
     m_ulBeaconID:    PartyBeaconID_t;
     m_steamIDJoiner: CSteamID;
@@ -6125,26 +6125,26 @@ ReservationNotificationCallback_t :: struct {
 
 // Response to ChangeNumOpenSlots call
 ChangeNumOpenSlotsCallback_t :: struct {
-    anon_enum_142 :: enum s32 {
+//     anon_enum_142 :: enum s32 {
         k_iCallback :: 5304;
-    }
+//     }
 
     m_eResult: EResult;
 }
 
 // The list of possible Party beacon locations has changed
 AvailableBeaconLocationsUpdated_t :: struct {
-    anon_enum_143 :: enum s32 {
+//     anon_enum_143 :: enum s32 {
         k_iCallback :: 5305;
-    }
+//     }
     __empty_struct_padding: u8; // C++ makes empty structs have length 1
 }
 
 // The list of active beacons may have changed
 ActiveBeaconsUpdated_t :: struct {
-    anon_enum_144 :: enum s32 {
+//     anon_enum_144 :: enum s32 {
         k_iCallback :: 5306;
-    }
+//     }
     __empty_struct_padding: u8; // C++ makes empty structs have length 1
 }
 
@@ -6186,16 +6186,16 @@ ISteamMusic_VTable :: struct #type_info_none {
 
 
 PlaybackStatusHasChanged_t :: struct {
-    anon_enum_145 :: enum s32 {
+//     anon_enum_145 :: enum s32 {
         k_iCallback :: 4001;
-    }
+//     }
     __empty_struct_padding: u8; // C++ makes empty structs have length 1
 }
 
 VolumeHasChanged_t :: struct {
-    anon_enum_146 :: enum s32 {
+//     anon_enum_146 :: enum s32 {
         k_iCallback :: 4002;
-    }
+//     }
     m_flNewVolume: float;
 }
 
@@ -6245,100 +6245,100 @@ ISteamMusicRemote_VTable :: struct #type_info_none {
 
 
 MusicPlayerRemoteWillActivate_t :: struct {
-    anon_enum_147 :: enum s32 {
+//     anon_enum_147 :: enum s32 {
         k_iCallback :: 4101;
-    }
+//     }
     __empty_struct_padding: u8; // C++ makes empty structs have length 1
 }
 
 MusicPlayerRemoteWillDeactivate_t :: struct {
-    anon_enum_148 :: enum s32 {
+//     anon_enum_148 :: enum s32 {
         k_iCallback :: 4102;
-    }
+//     }
     __empty_struct_padding: u8; // C++ makes empty structs have length 1
 }
 
 MusicPlayerRemoteToFront_t :: struct {
-    anon_enum_149 :: enum s32 {
+//     anon_enum_149 :: enum s32 {
         k_iCallback :: 4103;
-    }
+//     }
     __empty_struct_padding: u8; // C++ makes empty structs have length 1
 }
 
 MusicPlayerWillQuit_t :: struct {
-    anon_enum_150 :: enum s32 {
+//     anon_enum_150 :: enum s32 {
         k_iCallback :: 4104;
-    }
+//     }
     __empty_struct_padding: u8; // C++ makes empty structs have length 1
 }
 
 MusicPlayerWantsPlay_t :: struct {
-    anon_enum_151 :: enum s32 {
+//     anon_enum_151 :: enum s32 {
         k_iCallback :: 4105;
-    }
+//     }
     __empty_struct_padding: u8; // C++ makes empty structs have length 1
 }
 
 MusicPlayerWantsPause_t :: struct {
-    anon_enum_152 :: enum s32 {
+//     anon_enum_152 :: enum s32 {
         k_iCallback :: 4106;
-    }
+//     }
     __empty_struct_padding: u8; // C++ makes empty structs have length 1
 }
 
 MusicPlayerWantsPlayPrevious_t :: struct {
-    anon_enum_153 :: enum s32 {
+//     anon_enum_153 :: enum s32 {
         k_iCallback :: 4107;
-    }
+//     }
     __empty_struct_padding: u8; // C++ makes empty structs have length 1
 }
 
 MusicPlayerWantsPlayNext_t :: struct {
-    anon_enum_154 :: enum s32 {
+//     anon_enum_154 :: enum s32 {
         k_iCallback :: 4108;
-    }
+//     }
     __empty_struct_padding: u8; // C++ makes empty structs have length 1
 }
 
 MusicPlayerWantsShuffled_t :: struct {
-    anon_enum_155 :: enum s32 {
+//     anon_enum_155 :: enum s32 {
         k_iCallback :: 4109;
-    }
+//     }
     m_bShuffled: bool;
 }
 
 MusicPlayerWantsLooped_t :: struct {
-    anon_enum_156 :: enum s32 {
+//     anon_enum_156 :: enum s32 {
         k_iCallback :: 4110;
-    }
+//     }
     m_bLooped: bool;
 }
 
 MusicPlayerWantsVolume_t :: struct {
-    anon_enum_157 :: enum s32 {
+//     anon_enum_157 :: enum s32 {
         k_iCallback :: 4011;
-    }
+//     }
     m_flNewVolume: float;
 }
 
 MusicPlayerSelectsQueueEntry_t :: struct {
-    anon_enum_158 :: enum s32 {
+//     anon_enum_158 :: enum s32 {
         k_iCallback :: 4012;
-    }
+//     }
     nID: s32;
 }
 
 MusicPlayerSelectsPlaylistEntry_t :: struct {
-    anon_enum_159 :: enum s32 {
+//     anon_enum_159 :: enum s32 {
         k_iCallback :: 4013;
-    }
+//     }
     nID: s32;
 }
 
 MusicPlayerWantsPlayingRepeatStatus_t :: struct {
-    anon_enum_160 :: enum s32 {
+//     anon_enum_160 :: enum s32 {
         k_iCallback :: 4114;
-    }
+//     }
     m_nPlayingRepeatStatus: s32;
 }
 
@@ -6391,7 +6391,7 @@ P2PSessionState_t :: struct {
     m_bUsingRelay:           uint8; // true if it's going through a relay server (TURN)
     m_nBytesQueuedForSend:   int32;
     m_nPacketsQueuedForSend: int32;
-    m_nRemoteIP:             uint32; // potential IP:Port of remote host. Could be TURN server. 
+    m_nRemoteIP:             uint32; // potential IP:Port of remote host. Could be TURN server.
     m_nRemotePort:           uint16; // Only exists for compatibility with older authentication api's
 }
 
@@ -6507,9 +6507,9 @@ ISteamNetworking_VTable :: struct #type_info_none {
 // callback notification - a user wants to talk to us over the P2P channel via the SendP2PPacket() API
 // in response, a call to AcceptP2PPacketsFromUser() needs to be made, if you want to talk with them
 P2PSessionRequest_t :: struct {
-    anon_enum_161 :: enum s32 {
+//     anon_enum_161 :: enum s32 {
         k_iCallback :: 1202;
-    }
+//     }
     m_steamIDRemote: CSteamID; // user who wants to talk to us
 }
 
@@ -6517,9 +6517,9 @@ P2PSessionRequest_t :: struct {
 // all packets queued packets unsent at this point will be dropped
 // further attempts to send will retry making the connection (but will be dropped if we fail again)
 P2PSessionConnectFail_t :: struct {
-    anon_enum_162 :: enum s32 {
+//     anon_enum_162 :: enum s32 {
         k_iCallback :: 1203;
-    }
+//     }
     m_steamIDRemote:    CSteamID; // user we were sending packets to
     m_eP2PSessionError: uint8; // EP2PSessionError indicating why we're having trouble
 } #no_padding
@@ -6527,9 +6527,9 @@ P2PSessionConnectFail_t :: struct {
 // callback notification - status of a socket has changed
 // used as part of the CreateListenSocket() / CreateP2PConnectionSocket()
 SocketStatusCallback_t :: struct {
-    anon_enum_163 :: enum s32 {
+//     anon_enum_163 :: enum s32 {
         k_iCallback :: 1201;
-    }
+//     }
     m_hSocket:          SNetSocket_t; // the socket used to send/receive data to the remote host
     m_hListenSocket:    SNetListenSocket_t; // this is the server socket that we were listening on; NULL if this was an outgoing connection
     m_steamIDRemote:    CSteamID; // remote steamID we have connected to, if it has one
@@ -6666,9 +6666,9 @@ ESteamNetworkingFakeIPType :: enum s32 {
 SteamNetworkingIPAddr :: struct {
     // Max length of the buffer needed to hold IP formatted using ToString, including '\0'
     // ([0123:4567:89ab:cdef:0123:4567:89ab:cdef]:12345)
-    anon_enum_164 :: enum s32 {
+//     anon_enum_164 :: enum s32 {
         k_cchMaxString :: 48;
-    }
+//     }
 
     /// RFC4038, section 4.2
     IPv4MappedAddress :: struct {
@@ -7563,9 +7563,9 @@ ISteamNetworkingMessages_VTable :: struct #type_info_none {
 
 /// Posted when a remote host is sending us a message, and we do not already have a session with them
 SteamNetworkingMessagesSessionRequest_t :: struct {
-    anon_enum_165 :: enum s32 {
+//     anon_enum_165 :: enum s32 {
         k_iCallback :: 1251;
-    }
+//     }
     m_identityRemote: SteamNetworkingIdentity; // user who wants to talk to us
 }
 
@@ -7581,9 +7581,9 @@ SteamNetworkingMessagesSessionRequest_t :: struct {
 /// way to detect that this is happening is that querying the session state may return
 /// none, connecting, and findingroute again.
 SteamNetworkingMessagesSessionFailed_t :: struct {
-    anon_enum_166 :: enum s32 {
+//     anon_enum_166 :: enum s32 {
         k_iCallback :: 1252;
-    }
+//     }
 
     /// Detailed info about the session that failed.
     /// SteamNetConnectionInfo_t::m_identityRemote indicates who this session
@@ -7756,9 +7756,9 @@ ISteamNetworkingSockets_VTable :: struct #type_info_none {
 ///
 /// Also note that callbacks will be posted when connections are created and destroyed by your own API calls.
 SteamNetConnectionStatusChangedCallback_t :: struct {
-    anon_enum_167 :: enum s32 {
+//     anon_enum_167 :: enum s32 {
         k_iCallback :: 1221;
-    }
+//     }
 
     /// Connection handle
     m_hConn:     HSteamNetConnection;
@@ -7779,9 +7779,9 @@ SteamNetConnectionStatusChangedCallback_t :: struct {
 ///
 /// This callback is posted whenever the state of our readiness changes.
 SteamNetAuthenticationStatus_t :: struct {
-    anon_enum_168 :: enum s32 {
+//     anon_enum_168 :: enum s32 {
         k_iCallback :: 1222;
-    }
+//     }
 
     /// Status
     m_eAvail:   ESteamNetworkingAvailability;
@@ -7850,9 +7850,9 @@ ISteamNetworkingUtils_VTable :: struct #type_info_none {
 /// To do this we first need to fetch the network configuration,
 /// which describes what POPs are available.
 SteamRelayNetworkStatus_t :: struct {
-    anon_enum_169 :: enum s32 {
+//     anon_enum_169 :: enum s32 {
         k_iCallback :: 1281;
-    }
+//     }
 
     /// Summary status.  When this is "current", initialization has
     /// completed.  Anything else means you are not ready yet, or
@@ -7951,9 +7951,9 @@ ISteamParentalSettings_VTable :: struct #type_info_none {
 // Purpose: Callback for querying UGC
 //-----------------------------------------------------------------------------
 SteamParentalSettingsChanged_t :: struct {
-    anon_enum_170 :: enum s32 {
+//     anon_enum_170 :: enum s32 {
         k_iCallback :: 5001;
-    }
+//     }
     __empty_struct_padding: u8; // C++ makes empty structs have length 1
 }
 
@@ -8005,23 +8005,23 @@ ISteamRemotePlay_VTable :: struct #type_info_none {
 
 
 SteamRemotePlaySessionConnected_t :: struct {
-    anon_enum_171 :: enum s32 {
+//     anon_enum_171 :: enum s32 {
         k_iCallback :: 5701;
-    }
+//     }
     m_unSessionID: RemotePlaySessionID_t;
 }
 
 SteamRemotePlaySessionDisconnected_t :: struct {
-    anon_enum_172 :: enum s32 {
+//     anon_enum_172 :: enum s32 {
         k_iCallback :: 5702;
-    }
+//     }
     m_unSessionID: RemotePlaySessionID_t;
 }
 
 SteamRemotePlayTogetherGuestInvite_t :: struct {
-    anon_enum_173 :: enum s32 {
+//     anon_enum_173 :: enum s32 {
         k_iCallback :: 5703;
-    }
+//     }
     m_szConnectURL: [1024] u8;
 }
 
@@ -8314,9 +8314,9 @@ ISteamRemoteStorage_VTable :: struct #type_info_none {
 // Purpose: The result of a call to FileShare()
 //-----------------------------------------------------------------------------
 RemoteStorageFileShareResult_t :: struct {
-    anon_enum_174 :: enum s32 {
+//     anon_enum_174 :: enum s32 {
         k_iCallback :: 1307;
-    }
+//     }
     m_eResult:      EResult; // The result of the operation
     m_hFile:        UGCHandle_t; // The handle that can be shared with users and features
     m_rgchFilename: [260] u8; // The name of the file that was shared
@@ -8326,9 +8326,9 @@ RemoteStorageFileShareResult_t :: struct {
 // Purpose: The result of a call to PublishFile()
 //-----------------------------------------------------------------------------
 RemoteStoragePublishFileResult_t :: struct {
-    anon_enum_175 :: enum s32 {
+//     anon_enum_175 :: enum s32 {
         k_iCallback :: 1309;
-    }
+//     }
     m_eResult:                                  EResult; // The result of the operation.
     m_nPublishedFileId:                         PublishedFileId_t;
     m_bUserNeedsToAcceptWorkshopLegalAgreement: bool;
@@ -8338,9 +8338,9 @@ RemoteStoragePublishFileResult_t :: struct {
 // Purpose: The result of a call to DeletePublishedFile()
 //-----------------------------------------------------------------------------
 RemoteStorageDeletePublishedFileResult_t :: struct {
-    anon_enum_176 :: enum s32 {
+//     anon_enum_176 :: enum s32 {
         k_iCallback :: 1311;
-    }
+//     }
     m_eResult:          EResult; // The result of the operation.
     m_nPublishedFileId: PublishedFileId_t;
 }
@@ -8349,9 +8349,9 @@ RemoteStorageDeletePublishedFileResult_t :: struct {
 // Purpose: The result of a call to EnumerateUserPublishedFiles()
 //-----------------------------------------------------------------------------
 RemoteStorageEnumerateUserPublishedFilesResult_t :: struct {
-    anon_enum_177 :: enum s32 {
+//     anon_enum_177 :: enum s32 {
         k_iCallback :: 1312;
-    }
+//     }
     m_eResult:           EResult; // The result of the operation.
     m_nResultsReturned:  int32;
     m_nTotalResultCount: int32;
@@ -8362,9 +8362,9 @@ RemoteStorageEnumerateUserPublishedFilesResult_t :: struct {
 // Purpose: The result of a call to SubscribePublishedFile()
 //-----------------------------------------------------------------------------
 RemoteStorageSubscribePublishedFileResult_t :: struct {
-    anon_enum_178 :: enum s32 {
+//     anon_enum_178 :: enum s32 {
         k_iCallback :: 1313;
-    }
+//     }
     m_eResult:          EResult; // The result of the operation.
     m_nPublishedFileId: PublishedFileId_t;
 }
@@ -8373,9 +8373,9 @@ RemoteStorageSubscribePublishedFileResult_t :: struct {
 // Purpose: The result of a call to EnumerateSubscribePublishedFiles()
 //-----------------------------------------------------------------------------
 RemoteStorageEnumerateUserSubscribedFilesResult_t :: struct {
-    anon_enum_179 :: enum s32 {
+//     anon_enum_179 :: enum s32 {
         k_iCallback :: 1314;
-    }
+//     }
     m_eResult:           EResult; // The result of the operation.
     m_nResultsReturned:  int32;
     m_nTotalResultCount: int32;
@@ -8387,9 +8387,9 @@ RemoteStorageEnumerateUserSubscribedFilesResult_t :: struct {
 // Purpose: The result of a call to UnsubscribePublishedFile()
 //-----------------------------------------------------------------------------
 RemoteStorageUnsubscribePublishedFileResult_t :: struct {
-    anon_enum_180 :: enum s32 {
+//     anon_enum_180 :: enum s32 {
         k_iCallback :: 1315;
-    }
+//     }
     m_eResult:          EResult; // The result of the operation.
     m_nPublishedFileId: PublishedFileId_t;
 }
@@ -8398,9 +8398,9 @@ RemoteStorageUnsubscribePublishedFileResult_t :: struct {
 // Purpose: The result of a call to CommitPublishedFileUpdate()
 //-----------------------------------------------------------------------------
 RemoteStorageUpdatePublishedFileResult_t :: struct {
-    anon_enum_181 :: enum s32 {
+//     anon_enum_181 :: enum s32 {
         k_iCallback :: 1316;
-    }
+//     }
     m_eResult:                                  EResult; // The result of the operation.
     m_nPublishedFileId:                         PublishedFileId_t;
     m_bUserNeedsToAcceptWorkshopLegalAgreement: bool;
@@ -8410,14 +8410,14 @@ RemoteStorageUpdatePublishedFileResult_t :: struct {
 // Purpose: The result of a call to UGCDownload()
 //-----------------------------------------------------------------------------
 RemoteStorageDownloadUGCResult_t :: struct {
-    anon_enum_182 :: enum s32 {
+//     anon_enum_182 :: enum s32 {
         k_iCallback :: 1317;
-    }
+//     }
     m_eResult:        EResult; // The result of the operation.
     m_hFile:          UGCHandle_t; // The handle to the file that was attempted to be downloaded.
     m_nAppID:         AppId_t; // ID of the app that created this file.
     m_nSizeInBytes:   int32; // The size of the file that was downloaded, in bytes.
-    m_pchFileName:    [260] u8; // The name of the file that was downloaded. 
+    m_pchFileName:    [260] u8; // The name of the file that was downloaded.
     m_ulSteamIDOwner: uint64; // Steam ID of the user who created this content.
 }
 
@@ -8425,9 +8425,9 @@ RemoteStorageDownloadUGCResult_t :: struct {
 // Purpose: The result of a call to GetPublishedFileDetails()
 //-----------------------------------------------------------------------------
 RemoteStorageGetPublishedFileDetailsResult_t :: struct {
-    anon_enum_183 :: enum s32 {
+//     anon_enum_183 :: enum s32 {
         k_iCallback :: 1318;
-    }
+//     }
     m_eResult:          EResult; // The result of the operation.
     m_nPublishedFileId: PublishedFileId_t;
     m_nCreatorAppID:    AppId_t; // ID of the app that created this file.
@@ -8452,9 +8452,9 @@ RemoteStorageGetPublishedFileDetailsResult_t :: struct {
 }
 
 RemoteStorageEnumerateWorkshopFilesResult_t :: struct {
-    anon_enum_184 :: enum s32 {
+//     anon_enum_184 :: enum s32 {
         k_iCallback :: 1319;
-    }
+//     }
     m_eResult:           EResult;
     m_nResultsReturned:  int32;
     m_nTotalResultCount: int32;
@@ -8468,9 +8468,9 @@ RemoteStorageEnumerateWorkshopFilesResult_t :: struct {
 // Purpose: The result of GetPublishedItemVoteDetails
 //-----------------------------------------------------------------------------
 RemoteStorageGetPublishedItemVoteDetailsResult_t :: struct {
-    anon_enum_185 :: enum s32 {
+//     anon_enum_185 :: enum s32 {
         k_iCallback :: 1320;
-    }
+//     }
     m_eResult:           EResult;
     m_unPublishedFileId: PublishedFileId_t;
     m_nVotesFor:         int32;
@@ -8483,9 +8483,9 @@ RemoteStorageGetPublishedItemVoteDetailsResult_t :: struct {
 // Purpose: User subscribed to a file for the app (from within the app or on the web)
 //-----------------------------------------------------------------------------
 RemoteStoragePublishedFileSubscribed_t :: struct {
-    anon_enum_186 :: enum s32 {
+//     anon_enum_186 :: enum s32 {
         k_iCallback :: 1321;
-    }
+//     }
     m_nPublishedFileId: PublishedFileId_t; // The published file id
     m_nAppID:           AppId_t; // ID of the app that will consume this file.
 }
@@ -8494,9 +8494,9 @@ RemoteStoragePublishedFileSubscribed_t :: struct {
 // Purpose: User unsubscribed from a file for the app (from within the app or on the web)
 //-----------------------------------------------------------------------------
 RemoteStoragePublishedFileUnsubscribed_t :: struct {
-    anon_enum_187 :: enum s32 {
+//     anon_enum_187 :: enum s32 {
         k_iCallback :: 1322;
-    }
+//     }
     m_nPublishedFileId: PublishedFileId_t; // The published file id
     m_nAppID:           AppId_t; // ID of the app that will consume this file.
 }
@@ -8505,9 +8505,9 @@ RemoteStoragePublishedFileUnsubscribed_t :: struct {
 // Purpose: Published file that a user owns was deleted (from within the app or the web)
 //-----------------------------------------------------------------------------
 RemoteStoragePublishedFileDeleted_t :: struct {
-    anon_enum_188 :: enum s32 {
+//     anon_enum_188 :: enum s32 {
         k_iCallback :: 1323;
-    }
+//     }
     m_nPublishedFileId: PublishedFileId_t; // The published file id
     m_nAppID:           AppId_t; // ID of the app that will consume this file.
 }
@@ -8516,9 +8516,9 @@ RemoteStoragePublishedFileDeleted_t :: struct {
 // Purpose: The result of a call to UpdateUserPublishedItemVote()
 //-----------------------------------------------------------------------------
 RemoteStorageUpdateUserPublishedItemVoteResult_t :: struct {
-    anon_enum_189 :: enum s32 {
+//     anon_enum_189 :: enum s32 {
         k_iCallback :: 1324;
-    }
+//     }
     m_eResult:          EResult; // The result of the operation.
     m_nPublishedFileId: PublishedFileId_t; // The published file id
 }
@@ -8527,18 +8527,18 @@ RemoteStorageUpdateUserPublishedItemVoteResult_t :: struct {
 // Purpose: The result of a call to GetUserPublishedItemVoteDetails()
 //-----------------------------------------------------------------------------
 RemoteStorageUserVoteDetails_t :: struct {
-    anon_enum_190 :: enum s32 {
+//     anon_enum_190 :: enum s32 {
         k_iCallback :: 1325;
-    }
+//     }
     m_eResult:          EResult; // The result of the operation.
     m_nPublishedFileId: PublishedFileId_t; // The published file id
     m_eVote:            EWorkshopVote; // what the user voted
 }
 
 RemoteStorageEnumerateUserSharedWorkshopFilesResult_t :: struct {
-    anon_enum_191 :: enum s32 {
+//     anon_enum_191 :: enum s32 {
         k_iCallback :: 1326;
-    }
+//     }
     m_eResult:           EResult; // The result of the operation.
     m_nResultsReturned:  int32;
     m_nTotalResultCount: int32;
@@ -8546,18 +8546,18 @@ RemoteStorageEnumerateUserSharedWorkshopFilesResult_t :: struct {
 }
 
 RemoteStorageSetUserPublishedFileActionResult_t :: struct {
-    anon_enum_192 :: enum s32 {
+//     anon_enum_192 :: enum s32 {
         k_iCallback :: 1327;
-    }
+//     }
     m_eResult:          EResult; // The result of the operation.
     m_nPublishedFileId: PublishedFileId_t; // The published file id
     m_eAction:          EWorkshopFileAction; // the action that was attempted
 }
 
 RemoteStorageEnumeratePublishedFilesByUserActionResult_t :: struct {
-    anon_enum_193 :: enum s32 {
+//     anon_enum_193 :: enum s32 {
         k_iCallback :: 1328;
-    }
+//     }
     m_eResult:           EResult; // The result of the operation.
     m_eAction:           EWorkshopFileAction; // the action that was filtered on
     m_nResultsReturned:  int32;
@@ -8570,9 +8570,9 @@ RemoteStorageEnumeratePublishedFilesByUserActionResult_t :: struct {
 // Purpose: Called periodically while a PublishWorkshopFile is in progress
 //-----------------------------------------------------------------------------
 RemoteStoragePublishFileProgress_t :: struct {
-    anon_enum_194 :: enum s32 {
+//     anon_enum_194 :: enum s32 {
         k_iCallback :: 1329;
-    }
+//     }
     m_dPercentFile: float64;
     m_bPreview:     bool;
 }
@@ -8581,9 +8581,9 @@ RemoteStoragePublishFileProgress_t :: struct {
 // Purpose: Called when the content for a published file is updated
 //-----------------------------------------------------------------------------
 RemoteStoragePublishedFileUpdated_t :: struct {
-    anon_enum_195 :: enum s32 {
+//     anon_enum_195 :: enum s32 {
         k_iCallback :: 1330;
-    }
+//     }
     m_nPublishedFileId: PublishedFileId_t; // The published file id
     m_nAppID:           AppId_t; // ID of the app that will consume this file.
     m_ulUnused:         uint64; // not used anymore
@@ -8593,9 +8593,9 @@ RemoteStoragePublishedFileUpdated_t :: struct {
 // Purpose: Called when a FileWriteAsync completes
 //-----------------------------------------------------------------------------
 RemoteStorageFileWriteAsyncComplete_t :: struct {
-    anon_enum_196 :: enum s32 {
+//     anon_enum_196 :: enum s32 {
         k_iCallback :: 1331;
-    }
+//     }
     m_eResult: EResult; // result
 }
 
@@ -8603,9 +8603,9 @@ RemoteStorageFileWriteAsyncComplete_t :: struct {
 // Purpose: Called when a FileReadAsync completes
 //-----------------------------------------------------------------------------
 RemoteStorageFileReadAsyncComplete_t :: struct {
-    anon_enum_197 :: enum s32 {
+//     anon_enum_197 :: enum s32 {
         k_iCallback :: 1332;
-    }
+//     }
     m_hFileReadAsync: SteamAPICall_t; // call handle of the async read which was made
     m_eResult:        EResult; // result
     m_nOffset:        uint32; // offset in the file this read was at
@@ -8618,9 +8618,9 @@ RemoteStorageFileReadAsyncComplete_t :: struct {
 //			Note: only posted if this happens DURING the local app session
 //-----------------------------------------------------------------------------
 RemoteStorageLocalFileChange_t :: struct {
-    anon_enum_198 :: enum s32 {
+//     anon_enum_198 :: enum s32 {
         k_iCallback :: 1333;
-    }
+//     }
     __empty_struct_padding: u8; // C++ makes empty structs have length 1
 }
 
@@ -8675,9 +8675,9 @@ ISteamScreenshots_VTable :: struct #type_info_none {
 // and can now be tagged
 //-----------------------------------------------------------------------------
 ScreenshotReady_t :: struct {
-    anon_enum_199 :: enum s32 {
+//     anon_enum_199 :: enum s32 {
         k_iCallback :: 2301;
-    }
+//     }
     m_hLocal:  ScreenshotHandle;
     m_eResult: EResult;
 }
@@ -8688,9 +8688,9 @@ ScreenshotReady_t :: struct {
 // the screenshot itself.
 //-----------------------------------------------------------------------------
 ScreenshotRequested_t :: struct {
-    anon_enum_200 :: enum s32 {
+//     anon_enum_200 :: enum s32 {
         k_iCallback :: 2302;
-    }
+//     }
     __empty_struct_padding: u8; // C++ makes empty structs have length 1
 }
 
@@ -8974,7 +8974,7 @@ EUGCContentDescriptorID :: enum s32 {
 // Details for a single published file/UGC
 SteamUGCDetails_t :: struct {
     m_nPublishedFileId:     PublishedFileId_t;
-    m_eResult:              EResult; // The result of the operation.	
+    m_eResult:              EResult; // The result of the operation.
     m_eFileType:            EWorkshopFileType; // Type of the file
     m_nCreatorAppID:        AppId_t; // ID of the app that created this file.
     m_nConsumerAppID:       AppId_t; // ID of the app that will consume this file.
@@ -8988,7 +8988,7 @@ SteamUGCDetails_t :: struct {
     m_bBanned:              bool; // whether the file was banned
     m_bAcceptedForUse:      bool; // developer has specifically flagged this item as accepted in the Workshop
     m_bTagsTruncated:       bool; // whether the list of tags was too long to be returned in the provided buffer
-    m_rgchTags:             [1025] u8; // comma separated list of all tags associated with this file	
+    m_rgchTags:             [1025] u8; // comma separated list of all tags associated with this file
 
     m_hFile:                UGCHandle_t; // The handle of the primary file
     m_hPreviewFile:         UGCHandle_t; // The handle of the preview file
@@ -9156,9 +9156,9 @@ ISteamUGC_VTable :: struct #type_info_none {
 // Purpose: Callback for querying UGC
 //-----------------------------------------------------------------------------
 SteamUGCQueryCompleted_t :: struct {
-    anon_enum_201 :: enum s32 {
+//     anon_enum_201 :: enum s32 {
         k_iCallback :: 3401;
-    }
+//     }
     m_handle:                 UGCQueryHandle_t;
     m_eResult:                EResult;
     m_unNumResultsReturned:   uint32;
@@ -9171,9 +9171,9 @@ SteamUGCQueryCompleted_t :: struct {
 // Purpose: Callback for requesting details on one piece of UGC
 //-----------------------------------------------------------------------------
 SteamUGCRequestUGCDetailsResult_t :: struct {
-    anon_enum_202 :: enum s32 {
+//     anon_enum_202 :: enum s32 {
         k_iCallback :: 3402;
-    }
+//     }
     m_details:     SteamUGCDetails_t;
     m_bCachedData: bool; // indicates whether this data was retrieved from the local on-disk cache
 }
@@ -9182,9 +9182,9 @@ SteamUGCRequestUGCDetailsResult_t :: struct {
 // Purpose: result for ISteamUGC::CreateItem()
 //-----------------------------------------------------------------------------
 CreateItemResult_t :: struct {
-    anon_enum_203 :: enum s32 {
+//     anon_enum_203 :: enum s32 {
         k_iCallback :: 3403;
-    }
+//     }
     m_eResult:                                  EResult;
     m_nPublishedFileId:                         PublishedFileId_t; // new item got this UGC PublishFileID
     m_bUserNeedsToAcceptWorkshopLegalAgreement: bool;
@@ -9194,9 +9194,9 @@ CreateItemResult_t :: struct {
 // Purpose: result for ISteamUGC::SubmitItemUpdate()
 //-----------------------------------------------------------------------------
 SubmitItemUpdateResult_t :: struct {
-    anon_enum_204 :: enum s32 {
+//     anon_enum_204 :: enum s32 {
         k_iCallback :: 3404;
-    }
+//     }
     m_eResult:                                  EResult;
     m_bUserNeedsToAcceptWorkshopLegalAgreement: bool;
     m_nPublishedFileId:                         PublishedFileId_t;
@@ -9206,9 +9206,9 @@ SubmitItemUpdateResult_t :: struct {
 // Purpose: a Workshop item has been installed or updated
 //-----------------------------------------------------------------------------
 ItemInstalled_t :: struct {
-    anon_enum_205 :: enum s32 {
+//     anon_enum_205 :: enum s32 {
         k_iCallback :: 3405;
-    }
+//     }
     m_unAppID:          AppId_t;
     m_nPublishedFileId: PublishedFileId_t;
     m_hLegacyContent:   UGCHandle_t;
@@ -9219,9 +9219,9 @@ ItemInstalled_t :: struct {
 // Purpose: result of DownloadItem(), existing item files can be accessed again
 //-----------------------------------------------------------------------------
 DownloadItemResult_t :: struct {
-    anon_enum_206 :: enum s32 {
+//     anon_enum_206 :: enum s32 {
         k_iCallback :: 3406;
-    }
+//     }
     m_unAppID:          AppId_t;
     m_nPublishedFileId: PublishedFileId_t;
     m_eResult:          EResult;
@@ -9231,9 +9231,9 @@ DownloadItemResult_t :: struct {
 // Purpose: result of AddItemToFavorites() or RemoveItemFromFavorites()
 //-----------------------------------------------------------------------------
 UserFavoriteItemsListChanged_t :: struct {
-    anon_enum_207 :: enum s32 {
+//     anon_enum_207 :: enum s32 {
         k_iCallback :: 3407;
-    }
+//     }
     m_nPublishedFileId: PublishedFileId_t;
     m_eResult:          EResult;
     m_bWasAddRequest:   bool;
@@ -9243,9 +9243,9 @@ UserFavoriteItemsListChanged_t :: struct {
 // Purpose: The result of a call to SetUserItemVote()
 //-----------------------------------------------------------------------------
 SetUserItemVoteResult_t :: struct {
-    anon_enum_208 :: enum s32 {
+//     anon_enum_208 :: enum s32 {
         k_iCallback :: 3408;
-    }
+//     }
     m_nPublishedFileId: PublishedFileId_t;
     m_eResult:          EResult;
     m_bVoteUp:          bool;
@@ -9255,9 +9255,9 @@ SetUserItemVoteResult_t :: struct {
 // Purpose: The result of a call to GetUserItemVote()
 //-----------------------------------------------------------------------------
 GetUserItemVoteResult_t :: struct {
-    anon_enum_209 :: enum s32 {
+//     anon_enum_209 :: enum s32 {
         k_iCallback :: 3409;
-    }
+//     }
     m_nPublishedFileId: PublishedFileId_t;
     m_eResult:          EResult;
     m_bVotedUp:         bool;
@@ -9269,9 +9269,9 @@ GetUserItemVoteResult_t :: struct {
 // Purpose: The result of a call to StartPlaytimeTracking()
 //-----------------------------------------------------------------------------
 StartPlaytimeTrackingResult_t :: struct {
-    anon_enum_210 :: enum s32 {
+//     anon_enum_210 :: enum s32 {
         k_iCallback :: 3410;
-    }
+//     }
     m_eResult: EResult;
 }
 
@@ -9279,9 +9279,9 @@ StartPlaytimeTrackingResult_t :: struct {
 // Purpose: The result of a call to StopPlaytimeTracking()
 //-----------------------------------------------------------------------------
 StopPlaytimeTrackingResult_t :: struct {
-    anon_enum_211 :: enum s32 {
+//     anon_enum_211 :: enum s32 {
         k_iCallback :: 3411;
-    }
+//     }
     m_eResult: EResult;
 }
 
@@ -9289,9 +9289,9 @@ StopPlaytimeTrackingResult_t :: struct {
 // Purpose: The result of a call to AddDependency
 //-----------------------------------------------------------------------------
 AddUGCDependencyResult_t :: struct {
-    anon_enum_212 :: enum s32 {
+//     anon_enum_212 :: enum s32 {
         k_iCallback :: 3412;
-    }
+//     }
     m_eResult:               EResult;
     m_nPublishedFileId:      PublishedFileId_t;
     m_nChildPublishedFileId: PublishedFileId_t;
@@ -9301,9 +9301,9 @@ AddUGCDependencyResult_t :: struct {
 // Purpose: The result of a call to RemoveDependency
 //-----------------------------------------------------------------------------
 RemoveUGCDependencyResult_t :: struct {
-    anon_enum_213 :: enum s32 {
+//     anon_enum_213 :: enum s32 {
         k_iCallback :: 3413;
-    }
+//     }
     m_eResult:               EResult;
     m_nPublishedFileId:      PublishedFileId_t;
     m_nChildPublishedFileId: PublishedFileId_t;
@@ -9313,9 +9313,9 @@ RemoveUGCDependencyResult_t :: struct {
 // Purpose: The result of a call to AddAppDependency
 //-----------------------------------------------------------------------------
 AddAppDependencyResult_t :: struct {
-    anon_enum_214 :: enum s32 {
+//     anon_enum_214 :: enum s32 {
         k_iCallback :: 3414;
-    }
+//     }
     m_eResult:          EResult;
     m_nPublishedFileId: PublishedFileId_t;
     m_nAppID:           AppId_t;
@@ -9325,9 +9325,9 @@ AddAppDependencyResult_t :: struct {
 // Purpose: The result of a call to RemoveAppDependency
 //-----------------------------------------------------------------------------
 RemoveAppDependencyResult_t :: struct {
-    anon_enum_215 :: enum s32 {
+//     anon_enum_215 :: enum s32 {
         k_iCallback :: 3415;
-    }
+//     }
     m_eResult:          EResult;
     m_nPublishedFileId: PublishedFileId_t;
     m_nAppID:           AppId_t;
@@ -9338,9 +9338,9 @@ RemoveAppDependencyResult_t :: struct {
 //			multiple times until all app dependencies have been returned.
 //-----------------------------------------------------------------------------
 GetAppDependenciesResult_t :: struct {
-    anon_enum_216 :: enum s32 {
+//     anon_enum_216 :: enum s32 {
         k_iCallback :: 3416;
-    }
+//     }
     m_eResult:                  EResult;
     m_nPublishedFileId:         PublishedFileId_t;
     m_rgAppIDs:                 [32] AppId_t;
@@ -9352,9 +9352,9 @@ GetAppDependenciesResult_t :: struct {
 // Purpose: The result of a call to DeleteItem
 //-----------------------------------------------------------------------------
 DeleteItemResult_t :: struct {
-    anon_enum_217 :: enum s32 {
+//     anon_enum_217 :: enum s32 {
         k_iCallback :: 3417;
-    }
+//     }
     m_eResult:          EResult;
     m_nPublishedFileId: PublishedFileId_t;
 }
@@ -9363,9 +9363,9 @@ DeleteItemResult_t :: struct {
 // Purpose: signal that the list of subscribed items changed
 //-----------------------------------------------------------------------------
 UserSubscribedItemsListChanged_t :: struct {
-    anon_enum_218 :: enum s32 {
+//     anon_enum_218 :: enum s32 {
         k_iCallback :: 3418;
-    }
+//     }
     m_nAppID: AppId_t;
 }
 
@@ -9373,9 +9373,9 @@ UserSubscribedItemsListChanged_t :: struct {
 // Purpose: Status of the user's acceptable/rejection of the app's specific Workshop EULA
 //-----------------------------------------------------------------------------
 WorkshopEULAStatus_t :: struct {
-    anon_enum_219 :: enum s32 {
+//     anon_enum_219 :: enum s32 {
         k_iCallback :: 3420;
-    }
+//     }
     m_eResult:      EResult;
     m_nAppID:       AppId_t;
     m_unVersion:    uint32;
@@ -9468,9 +9468,9 @@ ISteamUser_VTable :: struct #type_info_none {
 //			or a Steam server update.
 //-----------------------------------------------------------------------------
 SteamServersConnected_t :: struct {
-    anon_enum_220 :: enum s32 {
+//     anon_enum_220 :: enum s32 {
         k_iCallback :: 101;
-    }
+//     }
     __empty_struct_padding: u8; // C++ makes empty structs have length 1
 }
 
@@ -9480,9 +9480,9 @@ SteamServersConnected_t :: struct {
 //			and has failed in it's retry to establish a connection
 //-----------------------------------------------------------------------------
 SteamServerConnectFailure_t :: struct {
-    anon_enum_221 :: enum s32 {
+//     anon_enum_221 :: enum s32 {
         k_iCallback :: 102;
-    }
+//     }
     m_eResult:        EResult;
     m_bStillRetrying: bool;
 }
@@ -9492,9 +9492,9 @@ SteamServerConnectFailure_t :: struct {
 //			real-time services will be disabled until a matching SteamServersConnected_t has been posted
 //-----------------------------------------------------------------------------
 SteamServersDisconnected_t :: struct {
-    anon_enum_222 :: enum s32 {
+//     anon_enum_222 :: enum s32 {
         k_iCallback :: 103;
-    }
+//     }
     m_eResult: EResult;
 }
 
@@ -9505,9 +9505,9 @@ SteamServersDisconnected_t :: struct {
 //			This can usually occur if the user doesn't have rights to play on the game server.
 //-----------------------------------------------------------------------------
 ClientGameServerDeny_t :: struct {
-    anon_enum_223 :: enum s32 {
+//     anon_enum_223 :: enum s32 {
         k_iCallback :: 113;
-    }
+//     }
 
     m_uAppID:           uint32;
     m_unGameServerIP:   uint32;
@@ -9522,9 +9522,9 @@ ClientGameServerDeny_t :: struct {
 //			This usually occurs in the rare event the Steam client has some kind of fatal error.
 //-----------------------------------------------------------------------------
 IPCFailure_t :: struct {
-    anon_enum_224 :: enum s32 {
+//     anon_enum_224 :: enum s32 {
         k_iCallback :: 117;
-    }
+//     }
     EFailureType :: enum s32 {
         EFailureFlushedCallbackQueue :: 0;
         EFailurePipeFail             :: 1;
@@ -9540,9 +9540,9 @@ IPCFailure_t :: struct {
 // Purpose: Signaled whenever licenses change
 //-----------------------------------------------------------------------------
 LicensesUpdated_t :: struct {
-    anon_enum_225 :: enum s32 {
+//     anon_enum_225 :: enum s32 {
         k_iCallback :: 125;
-    }
+//     }
     __empty_struct_padding: u8; // C++ makes empty structs have length 1
 }
 
@@ -9550,9 +9550,9 @@ LicensesUpdated_t :: struct {
 // callback for BeginAuthSession
 //-----------------------------------------------------------------------------
 ValidateAuthTicketResponse_t :: struct {
-    anon_enum_226 :: enum s32 {
+//     anon_enum_226 :: enum s32 {
         k_iCallback :: 143;
-    }
+//     }
     m_SteamID:              CSteamID;
     m_eAuthSessionResponse: EAuthSessionResponse;
     m_OwnerSteamID:         CSteamID #align 4; // different from m_SteamID if borrowed
@@ -9562,9 +9562,9 @@ ValidateAuthTicketResponse_t :: struct {
 // Purpose: called when a user has responded to a microtransaction authorization request
 //-----------------------------------------------------------------------------
 MicroTxnAuthorizationResponse_t :: struct {
-    anon_enum_227 :: enum s32 {
+//     anon_enum_227 :: enum s32 {
         k_iCallback :: 152;
-    }
+//     }
 
     m_unAppID:     uint32; // AppID for this microtransaction
     m_ulOrderID:   uint64; // OrderID provided for the microtransaction
@@ -9575,9 +9575,9 @@ MicroTxnAuthorizationResponse_t :: struct {
 // Purpose: Result from RequestEncryptedAppTicket
 //-----------------------------------------------------------------------------
 EncryptedAppTicketResponse_t :: struct {
-    anon_enum_228 :: enum s32 {
+//     anon_enum_228 :: enum s32 {
         k_iCallback :: 154;
-    }
+//     }
 
     m_eResult: EResult;
 }
@@ -9586,9 +9586,9 @@ EncryptedAppTicketResponse_t :: struct {
 // callback for GetAuthSessionTicket
 //-----------------------------------------------------------------------------
 GetAuthSessionTicketResponse_t :: struct {
-    anon_enum_229 :: enum s32 {
+//     anon_enum_229 :: enum s32 {
         k_iCallback :: 163;
-    }
+//     }
     m_hAuthTicket: HAuthTicket;
     m_eResult:     EResult;
 }
@@ -9597,9 +9597,9 @@ GetAuthSessionTicketResponse_t :: struct {
 // Purpose: sent to your game in response to a steam://gamewebcallback/ command
 //-----------------------------------------------------------------------------
 GameWebCallback_t :: struct {
-    anon_enum_230 :: enum s32 {
+//     anon_enum_230 :: enum s32 {
         k_iCallback :: 164;
-    }
+//     }
     m_szURL: [256] u8;
 }
 
@@ -9607,9 +9607,9 @@ GameWebCallback_t :: struct {
 // Purpose: sent to your game in response to ISteamUser::RequestStoreAuthURL
 //-----------------------------------------------------------------------------
 StoreAuthURLResponse_t :: struct {
-    anon_enum_231 :: enum s32 {
+//     anon_enum_231 :: enum s32 {
         k_iCallback :: 165;
-    }
+//     }
     m_szURL: [512] u8;
 }
 
@@ -9617,9 +9617,9 @@ StoreAuthURLResponse_t :: struct {
 // Purpose: sent in response to ISteamUser::GetMarketEligibility
 //-----------------------------------------------------------------------------
 MarketEligibilityResponse_t :: struct {
-    anon_enum_232 :: enum s32 {
+//     anon_enum_232 :: enum s32 {
         k_iCallback :: 166;
-    }
+//     }
     m_bAllowed:                   bool;
     m_eNotAllowedReason:          EMarketNotAllowedReasonFlags;
     m_rtAllowedAtTime:            RTime32;
@@ -9637,9 +9637,9 @@ MarketEligibilityResponse_t :: struct {
 // It is also fired in response to calls to GetDurationControl().
 //-----------------------------------------------------------------------------
 DurationControl_t :: struct {
-    anon_enum_233 :: enum s32 {
+//     anon_enum_233 :: enum s32 {
         k_iCallback :: 167;
-    }
+//     }
 
     m_eResult:        EResult; // result of call (always k_EResultOK for asynchronous timer-based notifications)
     m_appid:          AppId_t; // appid generating playtime
@@ -9658,9 +9658,9 @@ DurationControl_t :: struct {
 // callback for GetTicketForWebApi
 //-----------------------------------------------------------------------------
 GetTicketForWebApiResponse_t :: struct {
-    anon_enum_234 :: enum s32 {
+//     anon_enum_234 :: enum s32 {
         k_iCallback :: 168;
-    }
+//     }
     m_hAuthTicket:         HAuthTicket;
     m_eResult:             EResult;
     m_cubTicket:           s32;
@@ -9669,19 +9669,19 @@ GetTicketForWebApiResponse_t :: struct {
 }
 
 // size limit on stat or achievement name (UTF-8 encoded)
-anon_enum_235 :: enum s32 {
+// anon_enum_235 :: enum s32 {
     k_cchStatNameMax :: 128;
-}
+// }
 
 // maximum number of bytes for a leaderboard name (UTF-8 encoded)
-anon_enum_236 :: enum s32 {
+// anon_enum_236 :: enum s32 {
     k_cchLeaderboardNameMax :: 128;
-}
+// }
 
 // maximum number of details int32's storable for a single leaderboard entry
-anon_enum_237 :: enum s32 {
+// anon_enum_237 :: enum s32 {
     k_cLeaderboardDetailsMax :: 64;
-}
+// }
 
 // handle to a single leaderboard
 SteamLeaderboard_t :: uint64;
@@ -9846,9 +9846,9 @@ ISteamUserStats_VTable :: struct #type_info_none {
 //			from the server
 //-----------------------------------------------------------------------------
 UserStatsReceived_t :: struct {
-    anon_enum_238 :: enum s32 {
+//     anon_enum_238 :: enum s32 {
         k_iCallback :: 1101;
-    }
+//     }
     m_nGameID:     uint64; // Game these stats are for
     m_eResult:     EResult; // Success / error fetching the stats
     m_steamIDUser: CSteamID #align 4; // The user for whom the stats are retrieved for
@@ -9858,9 +9858,9 @@ UserStatsReceived_t :: struct {
 // Purpose: result of a request to store the user stats for a game
 //-----------------------------------------------------------------------------
 UserStatsStored_t :: struct {
-    anon_enum_239 :: enum s32 {
+//     anon_enum_239 :: enum s32 {
         k_iCallback :: 1102;
-    }
+//     }
     m_nGameID: uint64; // Game these stats are for
     m_eResult: EResult; // success / error
 }
@@ -9871,9 +9871,9 @@ UserStatsStored_t :: struct {
 //			are zero, that means the achievement has been fully unlocked.
 //-----------------------------------------------------------------------------
 UserAchievementStored_t :: struct {
-    anon_enum_240 :: enum s32 {
+//     anon_enum_240 :: enum s32 {
         k_iCallback :: 1103;
-    }
+//     }
 
     m_nGameID:             uint64; // Game this is for
     m_bGroupAchievement:   bool; // if this is a "group" achievement
@@ -9887,9 +9887,9 @@ UserAchievementStored_t :: struct {
 //			use CCallResult<> to map this async result to a member function
 //-----------------------------------------------------------------------------
 LeaderboardFindResult_t :: struct {
-    anon_enum_241 :: enum s32 {
+//     anon_enum_241 :: enum s32 {
         k_iCallback :: 1104;
-    }
+//     }
     m_hSteamLeaderboard: SteamLeaderboard_t; // handle to the leaderboard serarched for, 0 if no leaderboard found
     m_bLeaderboardFound: uint8; // 0 if no leaderboard found
 }
@@ -9899,9 +9899,9 @@ LeaderboardFindResult_t :: struct {
 //			use CCallResult<> to map this async result to a member function
 //-----------------------------------------------------------------------------
 LeaderboardScoresDownloaded_t :: struct {
-    anon_enum_242 :: enum s32 {
+//     anon_enum_242 :: enum s32 {
         k_iCallback :: 1105;
-    }
+//     }
     m_hSteamLeaderboard:        SteamLeaderboard_t;
     m_hSteamLeaderboardEntries: SteamLeaderboardEntries_t; // the handle to pass into GetDownloadedLeaderboardEntries()
     m_cEntryCount:              s32; // the number of entries downloaded
@@ -9912,9 +9912,9 @@ LeaderboardScoresDownloaded_t :: struct {
 //			use CCallResult<> to map this async result to a member function
 //-----------------------------------------------------------------------------
 LeaderboardScoreUploaded_t :: struct {
-    anon_enum_243 :: enum s32 {
+//     anon_enum_243 :: enum s32 {
         k_iCallback :: 1106;
-    }
+//     }
     m_bSuccess:            uint8; // 1 if the call was successful
     m_hSteamLeaderboard:   SteamLeaderboard_t; // the leaderboard handle that was
     m_nScore:              int32; // the score that was attempted to set
@@ -9924,9 +9924,9 @@ LeaderboardScoreUploaded_t :: struct {
 }
 
 NumberOfCurrentPlayers_t :: struct {
-    anon_enum_244 :: enum s32 {
+//     anon_enum_244 :: enum s32 {
         k_iCallback :: 1107;
-    }
+//     }
     m_bSuccess: uint8; // 1 if the call was successful
     m_cPlayers: int32; // Number of players currently playing
 }
@@ -9936,9 +9936,9 @@ NumberOfCurrentPlayers_t :: struct {
 //  Call RequestUserStats again to access stats for this user
 //-----------------------------------------------------------------------------
 UserStatsUnloaded_t :: struct {
-    anon_enum_245 :: enum s32 {
+//     anon_enum_245 :: enum s32 {
         k_iCallback :: 1108;
-    }
+//     }
     m_steamIDUser: CSteamID; // User whose stats have been unloaded
 }
 
@@ -9946,9 +9946,9 @@ UserStatsUnloaded_t :: struct {
 // Purpose: Callback indicating that an achievement icon has been fetched
 //-----------------------------------------------------------------------------
 UserAchievementIconFetched_t :: struct {
-    anon_enum_246 :: enum s32 {
+//     anon_enum_246 :: enum s32 {
         k_iCallback :: 1109;
-    }
+//     }
 
     m_nGameID:             CGameID; // Game this is for
     m_rgchAchievementName: [128] u8; // name of the achievement
@@ -9960,9 +9960,9 @@ UserAchievementIconFetched_t :: struct {
 // Purpose: Callback indicating that global achievement percentages are fetched
 //-----------------------------------------------------------------------------
 GlobalAchievementPercentagesReady_t :: struct {
-    anon_enum_247 :: enum s32 {
+//     anon_enum_247 :: enum s32 {
         k_iCallback :: 1110;
-    }
+//     }
 
     m_nGameID: uint64; // Game this is for
     m_eResult: EResult; // Result of the operation
@@ -9972,9 +9972,9 @@ GlobalAchievementPercentagesReady_t :: struct {
 // Purpose: call result indicating UGC has been uploaded, returned as a result of SetLeaderboardUGC()
 //-----------------------------------------------------------------------------
 LeaderboardUGCSet_t :: struct {
-    anon_enum_248 :: enum s32 {
+//     anon_enum_248 :: enum s32 {
         k_iCallback :: 1111;
-    }
+//     }
     m_eResult:           EResult; // The result of the operation
     m_hSteamLeaderboard: SteamLeaderboard_t; // the leaderboard handle that was
 }
@@ -9983,9 +9983,9 @@ LeaderboardUGCSet_t :: struct {
 // Purpose: callback indicating that PS3 trophies have been installed
 //-----------------------------------------------------------------------------
 PS3TrophiesInstalled_t :: struct {
-    anon_enum_249 :: enum s32 {
+//     anon_enum_249 :: enum s32 {
         k_iCallback :: 1112;
-    }
+//     }
     m_nGameID:             uint64; // Game these stats are for
     m_eResult:             EResult; // The result of the operation
     m_ulRequiredDiskSpace: uint64; // If m_eResult is k_EResultDiskFull, will contain the amount of space needed to install trophies
@@ -9996,9 +9996,9 @@ PS3TrophiesInstalled_t :: struct {
 //	Returned as a result of RequestGlobalStats()
 //-----------------------------------------------------------------------------
 GlobalStatsReceived_t :: struct {
-    anon_enum_250 :: enum s32 {
+//     anon_enum_250 :: enum s32 {
         k_iCallback :: 1112;
-    }
+//     }
     m_nGameID: uint64; // Game global stats were requested for
     m_eResult: EResult; // The result of the request
 }
@@ -10150,9 +10150,9 @@ ISteamUtils_VTable :: struct #type_info_none {
 // Purpose: The country of the user changed
 //-----------------------------------------------------------------------------
 IPCountry_t :: struct {
-    anon_enum_251 :: enum s32 {
+//     anon_enum_251 :: enum s32 {
         k_iCallback :: 701;
-    }
+//     }
     __empty_struct_padding: u8; // C++ makes empty structs have length 1
 }
 
@@ -10160,9 +10160,9 @@ IPCountry_t :: struct {
 // Purpose: Fired when running on a handheld PC or laptop with less than 10 minutes of battery is left, fires then every minute
 //-----------------------------------------------------------------------------
 LowBatteryPower_t :: struct {
-    anon_enum_252 :: enum s32 {
+//     anon_enum_252 :: enum s32 {
         k_iCallback :: 702;
-    }
+//     }
     m_nMinutesBatteryLeft: uint8;
 }
 
@@ -10170,9 +10170,9 @@ LowBatteryPower_t :: struct {
 // Purpose: called when a SteamAsyncCall_t has completed (or failed)
 //-----------------------------------------------------------------------------
 SteamAPICallCompleted_t :: struct {
-    anon_enum_253 :: enum s32 {
+//     anon_enum_253 :: enum s32 {
         k_iCallback :: 703;
-    }
+//     }
     m_hAsyncCall: SteamAPICall_t;
     m_iCallback:  s32;
     m_cubParam:   uint32;
@@ -10182,9 +10182,9 @@ SteamAPICallCompleted_t :: struct {
 // called when Steam wants to shutdown
 //-----------------------------------------------------------------------------
 SteamShutdown_t :: struct {
-    anon_enum_254 :: enum s32 {
+//     anon_enum_254 :: enum s32 {
         k_iCallback :: 704;
-    }
+//     }
     __empty_struct_padding: u8; // C++ makes empty structs have length 1
 }
 
@@ -10209,9 +10209,9 @@ ECheckFileSignature :: enum s32 {
 // callback for CheckFileSignature
 //-----------------------------------------------------------------------------
 CheckFileSignature_t :: struct {
-    anon_enum_255 :: enum s32 {
+//     anon_enum_255 :: enum s32 {
         k_iCallback :: 705;
-    }
+//     }
     m_eCheckFileSignature: ECheckFileSignature;
 }
 
@@ -10219,9 +10219,9 @@ CheckFileSignature_t :: struct {
 // Full Screen gamepad text input has been closed
 //-----------------------------------------------------------------------------
 GamepadTextInputDismissed_t :: struct {
-    anon_enum_256 :: enum s32 {
+//     anon_enum_256 :: enum s32 {
         k_iCallback :: 714;
-    }
+//     }
     m_bSubmitted:      bool; // true if user entered & accepted text (Call ISteamUtils::GetEnteredGamepadTextInput() for text), false if canceled input
     m_unSubmittedText: uint32;
     m_unAppID:         AppId_t;
@@ -10229,9 +10229,9 @@ GamepadTextInputDismissed_t :: struct {
 
 // k_iSteamUtilsCallbacks + 15 through 35 are taken
 AppResumingFromSuspend_t :: struct {
-    anon_enum_257 :: enum s32 {
+//     anon_enum_257 :: enum s32 {
         k_iCallback :: 736;
-    }
+//     }
     __empty_struct_padding: u8; // C++ makes empty structs have length 1
 }
 
@@ -10239,9 +10239,9 @@ AppResumingFromSuspend_t :: struct {
 // The floating on-screen keyboard has been closed
 //-----------------------------------------------------------------------------
 FloatingGamepadTextInputDismissed_t :: struct {
-    anon_enum_258 :: enum s32 {
+//     anon_enum_258 :: enum s32 {
         k_iCallback :: 738;
-    }
+//     }
     __empty_struct_padding: u8; // C++ makes empty structs have length 1
 }
 
@@ -10249,9 +10249,9 @@ FloatingGamepadTextInputDismissed_t :: struct {
 // The text filtering dictionary has changed
 //-----------------------------------------------------------------------------
 FilterTextDictionaryChanged_t :: struct {
-    anon_enum_259 :: enum s32 {
+//     anon_enum_259 :: enum s32 {
         k_iCallback :: 739;
-    }
+//     }
     m_eLanguage: s32; // One of ELanguage, or k_LegallyRequiredFiltering
 }
 
@@ -10272,18 +10272,18 @@ ISteamVideo_VTable :: struct #type_info_none {
 
 
 GetVideoURLResult_t :: struct {
-    anon_enum_260 :: enum s32 {
+//     anon_enum_260 :: enum s32 {
         k_iCallback :: 4611;
-    }
+//     }
     m_eResult:      EResult;
     m_unVideoAppID: AppId_t;
     m_rgchURL:      [256] u8;
 }
 
 GetOPFSettingsResult_t :: struct {
-    anon_enum_261 :: enum s32 {
+//     anon_enum_261 :: enum s32 {
         k_iCallback :: 4624;
-    }
+//     }
     m_eResult:      EResult;
     m_unVideoAppID: AppId_t;
 }
@@ -11663,9 +11663,9 @@ ISteamNetworkingFakeUDPPort_VTable :: struct #type_info_none {
 /// ISteamNetworkingSoockets::BeginAsyncRequestFakeIP completes.
 /// See also ISteamNetworkingSockets::GetFakeIP
 SteamNetworkingFakeIPResult_t :: struct {
-    anon_enum_262 :: enum s32 {
+//     anon_enum_262 :: enum s32 {
         k_iCallback :: 1223;
-    }
+//     }
 
     /// Status/result of the allocation request.  Possible failure values are:
     /// - k_EResultBusy - you called GetFakeIP but the request has not completed.
@@ -11699,9 +11699,9 @@ SteamNetworkingFakeIPResult_t :: struct {
     ///
     /// (NOTE: At the time of this writing, the maximum number of ports you may
     /// request is 4.)
-    anon_enum_263 :: enum s32 {
+//     anon_enum_263 :: enum s32 {
         k_nMaxReturnPorts :: 8;
-    }
+//     }
     m_unPorts:  [8] uint16;
 }
 
@@ -11712,7 +11712,7 @@ SteamPS3Params_t :: struct {
     m_nAppId:                 uint32; // set to your game's appid
 
     m_rgchInstallationPath:   [1055] u8; // directory containing latest steam prx's and sdata. Can be read only (BDVD)
-    m_rgchSystemCache:        [1055] u8; // temp working cache, not persistent 
+    m_rgchSystemCache:        [1055] u8; // temp working cache, not persistent
     m_rgchGameData:           [1055] u8; // persistent game data path for storing user data
     m_rgchNpServiceID:        [32] u8;
     m_rgchNpCommunicationID:  [10] u8;

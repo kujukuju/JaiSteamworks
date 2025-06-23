@@ -16,7 +16,7 @@
 //-----------------------------------------------------------------------------
 // Purpose: Constructor -- note the syntax for setting up Steam API callback handlers
 //-----------------------------------------------------------------------------
-CSpaceWarServer::CSpaceWarServer( IGameEngine *pGameEngine ) 
+CSpaceWarServer::CSpaceWarServer( IGameEngine *pGameEngine )
 {
 	m_bConnectedToSteam = false;
 
@@ -167,8 +167,8 @@ void CSpaceWarServer::OnNetConnectionStatusChanged(SteamNetConnectionStatusChang
 	// Parse information to know what was changed
 
 	// Check if a client has connected
-	if (info.m_hListenSocket && 
-		eOldState == k_ESteamNetworkingConnectionState_None && 
+	if (info.m_hListenSocket &&
+		eOldState == k_ESteamNetworkingConnectionState_None &&
 		info.m_eState == k_ESteamNetworkingConnectionState_Connecting)
 	{
 		// Connection from a new client
@@ -360,7 +360,7 @@ void CSpaceWarServer::OnAuthCompleted( bool bAuthSuccessful, uint32 iPendingAuth
 	}
 
 	bool bAddedOk = false;
-	for( uint32 i = 0; i < MAX_PLAYERS_PER_SERVER; ++i ) 
+	for( uint32 i = 0; i < MAX_PLAYERS_PER_SERVER; ++i )
 	{
 		if ( !m_rgClientData[i].m_bActive )
 		{
@@ -387,7 +387,7 @@ void CSpaceWarServer::OnAuthCompleted( bool bAuthSuccessful, uint32 iPendingAuth
 	if ( bAddedOk )
 	{
 		uint32 uPlayers = 0;
-		for( uint32 i = 0; i < MAX_PLAYERS_PER_SERVER; ++i ) 
+		for( uint32 i = 0; i < MAX_PLAYERS_PER_SERVER; ++i )
 		{
 			if ( m_rgClientData[i].m_bActive )
 				++uPlayers;
@@ -468,7 +468,7 @@ void CSpaceWarServer::AddPlayerShip( uint32 uShipPosition )
 		m_rgpShips[uShipPosition]->SetVKBindingRight( 0x44 ); // D key
 		m_rgpShips[uShipPosition]->SetVKBindingForwardThrusters( 0x57 ); // W key
 		m_rgpShips[uShipPosition]->SetVKBindingReverseThrusters( 0x53 ); // S key
-		m_rgpShips[uShipPosition]->SetVKBindingFire( VK_SPACE ); 
+		m_rgpShips[uShipPosition]->SetVKBindingFire( VK_SPACE );
 	}
 }
 
@@ -511,12 +511,12 @@ void CSpaceWarServer::RemovePlayerFromServer( uint32 uShipPosition, EDisconnectR
 //-----------------------------------------------------------------------------
 void CSpaceWarServer::ResetPlayerShips()
 {
-	// Delete any currently active ships, but immediately recreate 
+	// Delete any currently active ships, but immediately recreate
 	// (which causes all ship state/position to reset)
 	for( uint32 i=0; i < MAX_PLAYERS_PER_SERVER; ++i )
 	{
 		if ( m_rgpShips[i] )
-		{		
+		{
 			delete m_rgpShips[i];
 			m_rgpShips[i] = NULL;
 			AddPlayerShip( i );
@@ -783,10 +783,10 @@ void CSpaceWarServer::SendUpdateDataToAllClients()
 	}
 
 	msg.AccessUpdateData()->SetPlayerWhoWon( m_uPlayerWhoWonGame );
-	
+
 	for( int i=0; i<MAX_PLAYERS_PER_SERVER; ++i )
 	{
-		if ( !m_rgClientData[i].m_bActive ) 
+		if ( !m_rgClientData[i].m_bActive )
 			continue;
 
 		BSendDataToClient( i, (char*)&msg, sizeof( msg ) );
@@ -820,7 +820,7 @@ void CSpaceWarServer::OnReceiveClientUpdateData( uint32 uShipIndex, ClientSpaceW
 
 
 //-----------------------------------------------------------------------------
-// Purpose: Checks various game objects for collisions and updates state 
+// Purpose: Checks various game objects for collisions and updates state
 //			appropriately if they have occurred
 //-----------------------------------------------------------------------------
 void CSpaceWarServer::CheckForCollisions()
@@ -855,7 +855,7 @@ void CSpaceWarServer::CheckForCollisions()
 			// Don't check against your own photons, or NULL pointers!
 			if ( j == i || !m_rgpShips[j] )
 				continue;
-			
+
 			rgbExplodingShips[i] |= m_rgpShips[i]->BCollidesWith( m_rgpShips[j] );
 			if ( m_rgpShips[j]->BCheckForPhotonsCollidingWith( m_rgpShips[i] ) )
 			{
@@ -892,7 +892,7 @@ void CSpaceWarServer::CheckForCollisions()
 				continue;
 
 			++uActiveShips;
-		
+
 			if ( m_rgpShips[i]->BIsExploding() )
 				++uShipsExploding;
 			else
@@ -1019,7 +1019,7 @@ void CSpaceWarServer::SendUpdatedServerDetailsToSteam()
 #endif
 
 	// game type is a special string you can use for your game to differentiate different game play types occurring on the same maps
-	// When users search for this parameter they do a sub-string search of this string 
+	// When users search for this parameter they do a sub-string search of this string
 	// (i.e if you report "abc" and a client requests "ab" they return your server)
 	//SteamGameServer()->SetGameType( "dm" );
 

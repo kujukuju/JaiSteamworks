@@ -163,7 +163,7 @@ readd_declarations_recusive :: (decl: *Declaration) {
     }
     table_set(*visited_decl_values, decl, true);
 
-    flags, found := table_find(*old_decl_values, decl);
+    found, flags := table_find_new(*old_decl_values, decl);
     if found {
         decl.decl_flags = flags;
     }

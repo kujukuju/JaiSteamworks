@@ -1,7 +1,7 @@
 //
 // This file was auto-generated using the following command:
 //
-// jai generate.jai
+// jai generate.jai ../
 //
 
 
@@ -42,13 +42,13 @@ ESteamIPType :: enum u32 {
 
 SteamIPAddress_t :: struct {
     union {
-        m_unIPv4:    uint32; // Host order
+        m_unIPv4:    uint32 #align 1; // Host order
         m_rgubIPv6:  [16] uint8; // Network order! Same as inaddr_in6.  (0011:2233:4455:6677:8899:aabb:ccdd:eeff)
 
-        m_ipv6Qword: [2] uint64; // big endian
+        m_ipv6Qword: [2] uint64 #align 1; // big endian
     }
 
-    m_eType: ESteamIPType;
+    m_eType: ESteamIPType #align 1;
 }
 
 // Steam universes.  Each universe is a self-contained Steam instance.
@@ -674,15 +674,18 @@ CSteamID :: struct {
     // 64 bits total
     SteamID_t :: union {
         SteamIDComponent_t :: struct {
-            m_unAccountID:       uint32; // unique account identifier
-            m_unAccountInstance: u32; // dynamic instance ID
-            #place m_unAccountInstance; /*bitfield 20*/ m_EAccountType:      u32; // type of account - can't show as EAccountType, due to signed / unsigned difference
-            #place m_unAccountInstance; /*bitfield 24*/ m_EUniverse:         EUniverse; // universe this account belongs to
+            __bitfield: [8] u8;
+            /*
+                m_unAccountID: uint32; /* 32 bits */ // unique account identifier
+                m_unAccountInstance: u32; /* 20 bits */ // dynamic instance ID
+                m_EAccountType: u32; /* 4 bits */ // type of account - can't show as EAccountType, due to signed / unsigned difference
+                m_EUniverse: EUniverse; /* 8 bits */ // universe this account belongs to;
+            */
         }
 
         m_comp:        SteamIDComponent_t;
 
-        m_unAll64Bits: uint64;
+        m_unAll64Bits: uint64 #align 1;
     }
 
     m_steamid: SteamID_t;
@@ -708,13 +711,16 @@ CGameID :: struct {
     // Internal stuff.  Use the accessors above if possible
     //
     GameID_t :: struct {
-        m_nAppID: u32;
-        #place m_nAppID; /*bitfield 24*/ m_nType:  u32;
-        m_nModID: u32;
+        __bitfield: [8] u8;
+        /*
+            m_nAppID: u32; /* 24 bits */
+            m_nType: u32; /* 8 bits */
+            m_nModID: u32; /* 32 bits */;
+        */
     }
 
     union {
-        m_ulGameID: uint64;
+        m_ulGameID: uint64 #align 1;
         m_gameID:   GameID_t;
     }
 }
@@ -776,6 +782,13 @@ ESteamIPv6ConnectivityState :: enum u32 {
     k_ESteamIPv6ConnectivityState_Bad     :: Bad;
 }
 
+ValvePackingSentinel_t :: struct {
+    m_u32: uint32;
+    m_u64: uint64 #align 4;
+    m_u16: uint16;
+    m_d:   float64 #align 4;
+}
+
 // handle to a communication pipe to the Steam client
 HSteamPipe :: int32;
 
@@ -823,6 +836,43 @@ CCallbackBase_VTable :: struct #type_info_none {
 }
 
 
+//-----------------------------------------------------------------------------
+// Purpose: templated base for callbacks - internal implementation detail
+//-----------------------------------------------------------------------------
+CCallbackImpl :: struct(sizeof_P: s32) {
+    #as using ccallbackbase: CCallbackBase;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: maps a steam async call result to a class member function
+//			template params: T = local class, P = parameter struct
+//-----------------------------------------------------------------------------
+CCallResult :: struct(T: Type, P: Type) {
+    #as using ccallbackbase: CCallbackBase;
+
+    m_hAPICall: SteamAPICall_t;
+    m_pObj:     *T;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: maps a steam callback to a class member function
+//			template params: T = local class, P = parameter struct,
+//			bGameserver = listen for gameserver callbacks instead of client callbacks
+//-----------------------------------------------------------------------------
+CCallback :: struct(T: Type, P: Type, bGameserver := false) {
+    #as using ccallbackimpl: CCallbackImpl(UnknownTemplateArgumentPlaceholder);
+
+    m_pObj: *T;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: subclass of CCallback which allows default-construction in
+//			an unregistered state; you must call Register manually
+//-----------------------------------------------------------------------------
+CCallbackManual :: struct(T: Type, P: Type, bGameServer := false) {
+    #as ccallback: CCallback(T, P, UnknownTemplateArgumentPlaceholder); // jai: no "using" to avoid name-clashes
+}
+
 // Internal functions used to locate/create interfaces
 SteamAPI_GetHSteamPipe :: () -> HSteamPipe #foreign libsteam_api;
 SteamAPI_GetHSteamUser :: () -> HSteamUser #foreign libsteam_api;
@@ -845,129 +895,144 @@ SteamAPI_UnregisterCallResult :: (pCallback: *CCallbackBase, hAPICall: SteamAPIC
 CallbackMsg_t :: struct {
     m_hSteamUser: HSteamUser; // Specific user to whom this callback applies.
     m_iCallback:  s32; // Callback identifier.  (Corresponds to the k_iCallback enum in the callback structure.)
-    m_pubParam:   *uint8; // Points to the callback structure
+    m_pubParam:   *uint8 #align 4; // Points to the callback structure
     m_cubParam:   s32; // Size of the data pointed to by m_pubParam
 }
+
+ISteamContentServer :: struct {}
+
+ISteamPS3OverlayRender :: struct {}
 
 //-----------------------------------------------------------------------------
 // Purpose: Base values for callback identifiers, each callback must
 //			have a unique ID.
 //-----------------------------------------------------------------------------
-anon_enum :: enum u32 {
+// anon_enum :: enum u32 {
     k_iSteamUserCallbacks :: 100;
-}
-anon_enum_1 :: enum u32 {
+// }
+// anon_enum_1 :: enum u32 {
     k_iSteamGameServerCallbacks :: 200;
-}
-anon_enum_2 :: enum u32 {
+// }
+// anon_enum_2 :: enum u32 {
     k_iSteamFriendsCallbacks :: 300;
-}
-anon_enum_3 :: enum u32 {
+// }
+// anon_enum_3 :: enum u32 {
     k_iSteamBillingCallbacks :: 400;
-}
-anon_enum_4 :: enum u32 {
+// }
+// anon_enum_4 :: enum u32 {
     k_iSteamMatchmakingCallbacks :: 500;
-}
-anon_enum_5 :: enum u32 {
+// }
+// anon_enum_5 :: enum u32 {
     k_iSteamContentServerCallbacks :: 600;
-}
-anon_enum_6 :: enum u32 {
+// }
+// anon_enum_6 :: enum u32 {
     k_iSteamUtilsCallbacks :: 700;
-}
-anon_enum_7 :: enum u32 {
+// }
+// anon_enum_7 :: enum u32 {
     k_iSteamAppsCallbacks :: 1000;
-}
-anon_enum_8 :: enum u32 {
+// }
+// anon_enum_8 :: enum u32 {
     k_iSteamUserStatsCallbacks :: 1100;
-}
-anon_enum_9 :: enum u32 {
+// }
+// anon_enum_9 :: enum u32 {
     k_iSteamNetworkingCallbacks :: 1200;
-}
-anon_enum_10 :: enum u32 {
+// }
+// anon_enum_10 :: enum u32 {
     k_iSteamNetworkingSocketsCallbacks :: 1220;
-}
-anon_enum_11 :: enum u32 {
+// }
+// anon_enum_11 :: enum u32 {
     k_iSteamNetworkingMessagesCallbacks :: 1250;
-}
-anon_enum_12 :: enum u32 {
+// }
+// anon_enum_12 :: enum u32 {
     k_iSteamNetworkingUtilsCallbacks :: 1280;
-}
-anon_enum_13 :: enum u32 {
+// }
+// anon_enum_13 :: enum u32 {
     k_iSteamRemoteStorageCallbacks :: 1300;
-}
-anon_enum_14 :: enum u32 {
+// }
+// anon_enum_14 :: enum u32 {
     k_iSteamGameServerItemsCallbacks :: 1500;
-}
-anon_enum_15 :: enum u32 {
+// }
+// anon_enum_15 :: enum u32 {
     k_iSteamGameCoordinatorCallbacks :: 1700;
-}
-anon_enum_16 :: enum u32 {
+// }
+// anon_enum_16 :: enum u32 {
     k_iSteamGameServerStatsCallbacks :: 1800;
-}
-anon_enum_17 :: enum u32 {
+// }
+// anon_enum_17 :: enum u32 {
     k_iSteam2AsyncCallbacks :: 1900;
-}
-anon_enum_18 :: enum u32 {
+// }
+// anon_enum_18 :: enum u32 {
     k_iSteamGameStatsCallbacks :: 2000;
-}
-anon_enum_19 :: enum u32 {
+// }
+// anon_enum_19 :: enum u32 {
     k_iSteamHTTPCallbacks :: 2100;
-}
-anon_enum_20 :: enum u32 {
+// }
+// anon_enum_20 :: enum u32 {
     k_iSteamScreenshotsCallbacks :: 2300;
-}
+// }
 
 // NOTE: 2500-2599 are reserved
-anon_enum_21 :: enum u32 {
+// anon_enum_21 :: enum u32 {
     k_iSteamStreamLauncherCallbacks :: 2600;
-}
-anon_enum_22 :: enum u32 {
+// }
+// anon_enum_22 :: enum u32 {
     k_iSteamControllerCallbacks :: 2800;
-}
-anon_enum_23 :: enum u32 {
+// }
+// anon_enum_23 :: enum u32 {
     k_iSteamUGCCallbacks :: 3400;
-}
-anon_enum_24 :: enum u32 {
+// }
+// anon_enum_24 :: enum u32 {
     k_iSteamStreamClientCallbacks :: 3500;
-}
-anon_enum_25 :: enum u32 {
+// }
+// anon_enum_25 :: enum u32 {
     k_iSteamMusicCallbacks :: 4000;
-}
-anon_enum_26 :: enum u32 {
+// }
+// anon_enum_26 :: enum u32 {
     k_iSteamMusicRemoteCallbacks :: 4100;
-}
-anon_enum_27 :: enum u32 {
+// }
+// anon_enum_27 :: enum u32 {
     k_iSteamGameNotificationCallbacks :: 4400;
-}
-anon_enum_28 :: enum u32 {
+// }
+// anon_enum_28 :: enum u32 {
     k_iSteamHTMLSurfaceCallbacks :: 4500;
-}
-anon_enum_29 :: enum u32 {
+// }
+// anon_enum_29 :: enum u32 {
     k_iSteamVideoCallbacks :: 4600;
-}
-anon_enum_30 :: enum u32 {
+// }
+// anon_enum_30 :: enum u32 {
     k_iSteamInventoryCallbacks :: 4700;
-}
-anon_enum_31 :: enum u32 {
+// }
+// anon_enum_31 :: enum u32 {
     k_ISteamParentalSettingsCallbacks :: 5000;
-}
-anon_enum_32 :: enum u32 {
+// }
+// anon_enum_32 :: enum u32 {
     k_iSteamGameSearchCallbacks :: 5200;
-}
-anon_enum_33 :: enum u32 {
+// }
+// anon_enum_33 :: enum u32 {
     k_iSteamPartiesCallbacks :: 5300;
-}
-anon_enum_34 :: enum u32 {
+// }
+// anon_enum_34 :: enum u32 {
     k_iSteamSTARCallbacks :: 5500;
-}
-anon_enum_35 :: enum u32 {
+// }
+// anon_enum_35 :: enum u32 {
     k_iSteamRemotePlayCallbacks :: 5700;
-}
-anon_enum_36 :: enum u32 {
+// }
+// anon_enum_36 :: enum u32 {
     k_iSteamChatCallbacks :: 5900;
-}
-anon_enum_37 :: enum u32 {
+// }
+// anon_enum_37 :: enum u32 {
     k_iSteamTimelineCallbacks :: 6000;
+// }
+
+CSteamGameServerAPIContext :: struct {
+    m_pSteamClient:               *ISteamClient;
+    m_pSteamGameServer:           *ISteamGameServer;
+    m_pSteamGameServerUtils:      *ISteamUtils;
+    m_pSteamGameServerNetworking: *ISteamNetworking;
+    m_pSteamGameServerStats:      *ISteamGameServerStats;
+    m_pSteamHTTP:                 *ISteamHTTP;
+    m_pSteamInventory:            *ISteamInventory;
+    m_pSteamUGC:                  *ISteamUGC;
 }
 
 //-----------------------------------------------------------------------------
@@ -1033,6 +1098,83 @@ ISteamApps_VTable :: struct #type_info_none {
     GetBetaInfo: *void;
 
     SetActiveBeta: *void;
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: posted after the user gains ownership of DLC & that DLC is installed
+//-----------------------------------------------------------------------------
+DlcInstalled_t :: struct {
+//     anon_enum_38 :: enum u32 {
+        k_iCallback :: 1005;
+//     }
+    m_nAppID: AppId_t; // AppID of the DLC
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: posted after the user gains executes a Steam URL with command line or query parameters
+// such as steam://run/<appid>//-commandline/?param1=value1&param2=value2&param3=value3 etc
+// while the game is already running.  The new params can be queried
+// with GetLaunchQueryParam and GetLaunchCommandLine
+//---------------------------------------------------------------------------------
+NewUrlLaunchParameters_t :: struct {
+//     anon_enum_39 :: enum u32 {
+        k_iCallback :: 1014;
+//     }
+    __empty_struct_padding: u8; // C++ makes empty structs have length 1
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: response to RequestAppProofOfPurchaseKey/RequestAllProofOfPurchaseKeys
+// for supporting third-party CD keys, or other proof-of-purchase systems.
+//-----------------------------------------------------------------------------
+AppProofOfPurchaseKeyResponse_t :: struct {
+//     anon_enum_40 :: enum u32 {
+        k_iCallback :: 1021;
+//     }
+    m_eResult:      EResult;
+    m_nAppID:       uint32;
+    m_cchKeyLength: uint32;
+    m_rgchKey:      [240] u8;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: response to GetFileDetails
+//-----------------------------------------------------------------------------
+FileDetailsResult_t :: struct {
+//     anon_enum_41 :: enum u32 {
+        k_iCallback :: 1023;
+//     }
+    m_eResult:    EResult;
+    m_ulFileSize: uint64 #align 4; // original file size in bytes
+    m_FileSHA:    [20] uint8; // original file SHA1 hash
+    m_unFlags:    uint32; //
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: called for games in Timed Trial mode
+//-----------------------------------------------------------------------------
+TimedTrialStatus_t :: struct {
+//     anon_enum_42 :: enum u32 {
+        k_iCallback :: 1030;
+//     }
+    m_unAppID:          AppId_t; // appID
+    m_bIsOffline:       bool; // if true, time allowed / played refers to offline time, not total time
+    m_unSecondsAllowed: uint32; // how many seconds the app can be played in total
+    m_unSecondsPlayed:  uint32; // how many seconds the app was already played
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: hand out a reasonable "future proof" view of an app ownership ticket
+// the raw (signed) buffer, and indices into that buffer where the appid and
+// steamid are located.  the sizes of the appid and steamid are implicit in
+// (each version of) the interface - currently uin32 appid and uint64 steamid
+//-----------------------------------------------------------------------------
+ISteamAppTicket :: struct {
+    vtable: *ISteamAppTicket_VTable;
+}
+ISteamAppTicket_VTable :: struct #type_info_none {
+    GetAppOwnershipTicketData: *void;
 }
 
 
@@ -2204,12 +2346,12 @@ InputAnalogActionHandle_t :: uint64;
 
 InputAnalogActionData_t :: struct {
     // Type of data coming from this action, this will match what got specified in the action set
-    eMode:   EInputSourceMode;
+    eMode:   EInputSourceMode #align 1;
 
     // The current state of this action; will be delta updates for mouse actions
-    x:       float;
+    x:       float #align 1;
     // The current state of this action; will be delta updates for mouse actions
-    y:       float;
+    y:       float #align 1;
 
     // Whether or not this action is currently available to be bound in the active action set
     bActive: bool;
@@ -2225,20 +2367,20 @@ InputDigitalActionData_t :: struct {
 
 InputMotionData_t :: struct {
     // Sensor-fused absolute rotation; will drift in heading toward average
-    rotQuatX:  float;
-    rotQuatY:  float;
-    rotQuatZ:  float;
-    rotQuatW:  float;
+    rotQuatX:  float #align 1;
+    rotQuatY:  float #align 1;
+    rotQuatZ:  float #align 1;
+    rotQuatW:  float #align 1;
 
     // Positional acceleration
-    posAccelX: float;
-    posAccelY: float;
-    posAccelZ: float;
+    posAccelX: float #align 1;
+    posAccelY: float #align 1;
+    posAccelZ: float #align 1;
 
     // Angular velocity
-    rotVelX:   float;
-    rotVelY:   float;
-    rotVelZ:   float;
+    rotVelX:   float #align 1;
+    rotVelY:   float #align 1;
+    rotVelZ:   float #align 1;
 }
 
 //-----------------------------------------------------------------------------
@@ -2246,15 +2388,15 @@ InputMotionData_t :: struct {
 // state changes
 //-----------------------------------------------------------------------------
 SteamInputActionEvent_t :: struct {
-    controllerHandle: InputHandle_t;
-    eEventType:       ESteamInputActionEventType;
+    controllerHandle: InputHandle_t #align 1;
+    eEventType:       ESteamInputActionEventType #align 1;
     AnalogAction_t :: struct {
-        actionHandle:     InputAnalogActionHandle_t;
+        actionHandle:     InputAnalogActionHandle_t #align 1;
         analogActionData: InputAnalogActionData_t;
     }
 
     DigitalAction_t :: struct {
-        actionHandle:      InputDigitalActionHandle_t;
+        actionHandle:      InputDigitalActionHandle_t #align 1;
         digitalActionData: InputDigitalActionData_t;
     }
 
@@ -2371,6 +2513,63 @@ ISteamInput_VTable :: struct #type_info_none {
     SetDualSenseTriggerEffect: *void;
 }
 
+
+//-----------------------------------------------------------------------------
+// Purpose: called when a new controller has been connected, will fire once
+// per controller if multiple new controllers connect in the same frame
+//-----------------------------------------------------------------------------
+SteamInputDeviceConnected_t :: struct {
+//     anon_enum_43 :: enum u32 {
+        k_iCallback :: 2801;
+//     }
+    m_ulConnectedDeviceHandle: InputHandle_t #align 4; // Handle for device
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: called when a new controller has been connected, will fire once
+// per controller if multiple new controllers connect in the same frame
+//-----------------------------------------------------------------------------
+SteamInputDeviceDisconnected_t :: struct {
+//     anon_enum_44 :: enum u32 {
+        k_iCallback :: 2802;
+//     }
+    m_ulDisconnectedDeviceHandle: InputHandle_t #align 4; // Handle for device
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: called when a controller configuration has been loaded, will fire once
+// per controller per focus change for Steam Input enabled controllers
+//-----------------------------------------------------------------------------
+SteamInputConfigurationLoaded_t :: struct {
+//     anon_enum_45 :: enum u32 {
+        k_iCallback :: 2803;
+//     }
+    m_unAppID:            AppId_t;
+    m_ulDeviceHandle:     InputHandle_t #align 4; // Handle for device
+    m_ulMappingCreator:   CSteamID; // May differ from local user when using
+
+    m_unMajorRevision:    uint32; // Binding revision from In-game Action File.
+
+    // Same value as queried by GetDeviceBindingRevision
+    m_unMinorRevision:    uint32;
+    m_bUsesSteamInputAPI: bool; // Does the configuration contain any Analog/Digital actions?
+    m_bUsesGamepadAPI:    bool; // Does the configuration contain any Xinput bindings?
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: called when controller gamepad slots change - on Linux/macOS these
+// slots are shared for all running apps.
+//-----------------------------------------------------------------------------
+SteamInputGamepadSlotChange_t :: struct {
+//     anon_enum_46 :: enum u32 {
+        k_iCallback :: 2804;
+//     }
+    m_unAppID:         AppId_t;
+    m_ulDeviceHandle:  InputHandle_t #align 4; // Handle for device
+    m_eDeviceType:     ESteamInputType; // Type of device
+    m_nOldGamepadSlot: s32; // Previous GamepadSlot - can be -1 controller doesn't uses gamepad bindings
+    m_nNewGamepadSlot: s32; // New Gamepad Slot - can be -1 controller doesn't uses gamepad bindings
+}
 
 // Note: Please do not use action origins as a way to identify controller types. There is no
 // guarantee that they will be added in a contiguous manner - use GetInputTypeForHandle instead
@@ -3406,15 +3605,15 @@ EUserRestriction :: enum u32 {
 }
 
 // size limits on Rich Presence data
-anon_enum_47 :: enum u32 {
+// anon_enum_47 :: enum u32 {
     k_cchMaxRichPresenceKeys :: 30;
-}
-anon_enum_48 :: enum u32 {
+// }
+// anon_enum_48 :: enum u32 {
     k_cchMaxRichPresenceKeyLength :: 64;
-}
-anon_enum_49 :: enum u32 {
+// }
+// anon_enum_49 :: enum u32 {
     k_cchMaxRichPresenceValueLength :: 256;
-}
+// }
 
 // These values are passed as parameters to the store
 EOverlayToStoreFlag :: enum u32 {
@@ -3630,6 +3829,18 @@ ISteamFriends_VTable :: struct #type_info_none {
 }
 
 
+//-----------------------------------------------------------------------------
+// Purpose: called when a friends' status changes
+//-----------------------------------------------------------------------------
+PersonaStateChange_t :: struct {
+//     anon_enum_50 :: enum u32 {
+        k_iCallback :: 304;
+//     }
+
+    m_ulSteamID:    uint64 #align 4; // steamID of the friend who changed
+    m_nChangeFlags: s32; // what's changed
+}
+
 // used in PersonaStateChange_t::m_nChangeFlags to describe what's changed about a user
 // these flags describe what the client has learned has changed recently, so on startup you'll see a name, avatar & relationship change for every friend
 EPersonaChange :: enum u32 {
@@ -3666,6 +3877,254 @@ EPersonaChange :: enum u32 {
     k_EPersonaChangeRichPresence        :: EPersonaChangeRichPresence;
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: posted when game overlay activates or deactivates
+//			the game can use this to be pause or resume single player games
+//-----------------------------------------------------------------------------
+GameOverlayActivated_t :: struct {
+//     anon_enum_51 :: enum u32 {
+        k_iCallback :: 331;
+//     }
+    m_bActive:        uint8; // true if it's just been activated, false otherwise
+    m_bUserInitiated: bool; // true if the user asked for the overlay to be activated/deactivated
+    m_nAppID:         AppId_t; // the appID of the game (should always be the current game)
+    m_dwOverlayPID:   uint32; // used internally
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: called when the user tries to join a different game server from their friends list
+//			game client should attempt to connect to specified server when this is received
+//-----------------------------------------------------------------------------
+GameServerChangeRequested_t :: struct {
+//     anon_enum_52 :: enum u32 {
+        k_iCallback :: 332;
+//     }
+    m_rgchServer:   [64] u8; // server address ("127.0.0.1:27015", "tf2.valvesoftware.com")
+    m_rgchPassword: [64] u8; // server password, if any
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: called when the user tries to join a lobby from their friends list
+//			game client should attempt to connect to specified lobby when this is received
+//-----------------------------------------------------------------------------
+GameLobbyJoinRequested_t :: struct {
+//     anon_enum_53 :: enum u32 {
+        k_iCallback :: 333;
+//     }
+    m_steamIDLobby:  CSteamID;
+
+    // The friend they did the join via (will be invalid if not directly via a friend)
+    //
+    // On PS3, the friend will be invalid if this was triggered by a PSN invite via the XMB, but
+    // the account type will be console user so you can tell at least that this was from a PSN friend
+    // rather than a Steam friend.
+    m_steamIDFriend: CSteamID;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: called when an avatar is loaded in from a previous GetLargeFriendAvatar() call
+//			if the image wasn't already available
+//-----------------------------------------------------------------------------
+AvatarImageLoaded_t :: struct {
+//     anon_enum_54 :: enum u32 {
+        k_iCallback :: 334;
+//     }
+    m_steamID: CSteamID; // steamid the avatar has been loaded for
+    m_iImage:  s32; // the image index of the now loaded image
+    m_iWide:   s32; // width of the loaded image
+    m_iTall:   s32; // height of the loaded image
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: marks the return of a request officer list call
+//-----------------------------------------------------------------------------
+ClanOfficerListResponse_t :: struct {
+//     anon_enum_55 :: enum u32 {
+        k_iCallback :: 335;
+//     }
+    m_steamIDClan: CSteamID;
+    m_cOfficers:   s32;
+    m_bSuccess:    uint8;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: callback indicating updated data about friends rich presence information
+//-----------------------------------------------------------------------------
+FriendRichPresenceUpdate_t :: struct {
+//     anon_enum_56 :: enum u32 {
+        k_iCallback :: 336;
+//     }
+    m_steamIDFriend: CSteamID; // friend who's rich presence has changed
+    m_nAppID:        AppId_t; // the appID of the game (should always be the current game)
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: called when the user tries to join a game from their friends list
+//			rich presence will have been set with the "connect" key which is set here
+//-----------------------------------------------------------------------------
+GameRichPresenceJoinRequested_t :: struct {
+//     anon_enum_57 :: enum u32 {
+        k_iCallback :: 337;
+//     }
+    m_steamIDFriend: CSteamID; // the friend they did the join via (will be invalid if not directly via a friend)
+    m_rgchConnect:   [256] u8;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: a chat message has been received for a clan chat the game has joined
+//-----------------------------------------------------------------------------
+GameConnectedClanChatMsg_t :: struct {
+//     anon_enum_58 :: enum u32 {
+        k_iCallback :: 338;
+//     }
+    m_steamIDClanChat: CSteamID;
+    m_steamIDUser:     CSteamID;
+    m_iMessageID:      s32;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: a user has joined a clan chat
+//-----------------------------------------------------------------------------
+GameConnectedChatJoin_t :: struct {
+//     anon_enum_59 :: enum u32 {
+        k_iCallback :: 339;
+//     }
+    m_steamIDClanChat: CSteamID;
+    m_steamIDUser:     CSteamID;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: a user has left the chat we're in
+//-----------------------------------------------------------------------------
+GameConnectedChatLeave_t :: struct {
+//     anon_enum_60 :: enum u32 {
+        k_iCallback :: 340;
+//     }
+    m_steamIDClanChat: CSteamID;
+    m_steamIDUser:     CSteamID;
+    m_bKicked:         bool; // true if admin kicked
+    m_bDropped:        bool; // true if Steam connection dropped
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: a DownloadClanActivityCounts() call has finished
+//-----------------------------------------------------------------------------
+DownloadClanActivityCountsResult_t :: struct {
+//     anon_enum_61 :: enum u32 {
+        k_iCallback :: 341;
+//     }
+    m_bSuccess: bool;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: a JoinClanChatRoom() call has finished
+//-----------------------------------------------------------------------------
+JoinClanChatRoomCompletionResult_t :: struct {
+//     anon_enum_62 :: enum u32 {
+        k_iCallback :: 342;
+//     }
+    m_steamIDClanChat:        CSteamID;
+    m_eChatRoomEnterResponse: EChatRoomEnterResponse;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: a chat message has been received from a user
+//-----------------------------------------------------------------------------
+GameConnectedFriendChatMsg_t :: struct {
+//     anon_enum_63 :: enum u32 {
+        k_iCallback :: 343;
+//     }
+    m_steamIDUser: CSteamID;
+    m_iMessageID:  s32;
+}
+
+FriendsGetFollowerCount_t :: struct {
+//     anon_enum_64 :: enum u32 {
+        k_iCallback :: 344;
+//     }
+    m_eResult: EResult;
+    m_steamID: CSteamID;
+    m_nCount:  s32;
+}
+
+FriendsIsFollowing_t :: struct {
+//     anon_enum_65 :: enum u32 {
+        k_iCallback :: 345;
+//     }
+    m_eResult:      EResult;
+    m_steamID:      CSteamID;
+    m_bIsFollowing: bool;
+}
+
+FriendsEnumerateFollowingList_t :: struct {
+//     anon_enum_66 :: enum u32 {
+        k_iCallback :: 346;
+//     }
+    m_eResult:           EResult;
+    m_rgSteamID:         [50] CSteamID;
+    m_nResultsReturned:  int32;
+    m_nTotalResultCount: int32;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: reports the result of an attempt to change the user's persona name
+//-----------------------------------------------------------------------------
+SetPersonaNameResponse_t :: struct {
+//     anon_enum_67 :: enum u32 {
+        k_iCallback :: 347;
+//     }
+
+    m_bSuccess:      bool; // true if name change succeeded completely.
+    m_bLocalSuccess: bool; // true if name change was retained locally.  (We might not have been able to communicate with Steam)
+    m_result:        EResult; // detailed result code
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Invoked when the status of unread messages changes
+//-----------------------------------------------------------------------------
+UnreadChatMessagesChanged_t :: struct {
+//     anon_enum_68 :: enum u32 {
+        k_iCallback :: 348;
+//     }
+    __empty_struct_padding: u8; // C++ makes empty structs have length 1
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Dispatched when an overlay browser instance is navigated to a protocol/scheme registered by RegisterProtocolInOverlayBrowser()
+//-----------------------------------------------------------------------------
+OverlayBrowserProtocolNavigation_t :: struct {
+//     anon_enum_69 :: enum u32 {
+        k_iCallback :: 349;
+//     }
+    rgchURI: [1024] u8;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: A user's equipped profile items have changed
+//-----------------------------------------------------------------------------
+EquippedProfileItemsChanged_t :: struct {
+//     anon_enum_70 :: enum u32 {
+        k_iCallback :: 350;
+//     }
+    m_steamID: CSteamID;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+EquippedProfileItems_t :: struct {
+//     anon_enum_71 :: enum u32 {
+        k_iCallback :: 351;
+//     }
+    m_eResult:                   EResult;
+    m_steamID:                   CSteamID;
+    m_bHasAnimatedAvatar:        bool;
+    m_bHasAvatarFrame:           bool;
+    m_bHasProfileModifier:       bool;
+    m_bHasProfileBackground:     bool;
+    m_bHasMiniProfileBackground: bool;
+}
+
 // list of possible return values from the ISteamGameCoordinator API
 EGCResults :: enum u32 {
     EGCResultOK             :: 0;
@@ -3679,6 +4138,38 @@ EGCResults :: enum u32 {
     k_EGCResultBufferTooSmall :: EGCResultBufferTooSmall;
     k_EGCResultNotLoggedOn    :: EGCResultNotLoggedOn;
     k_EGCResultInvalidMessage :: EGCResultInvalidMessage;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Functions for sending and receiving messages from the Game Coordinator
+//			for this application
+//-----------------------------------------------------------------------------
+ISteamGameCoordinator :: struct {
+    vtable: *ISteamGameCoordinator_VTable;
+}
+ISteamGameCoordinator_VTable :: struct #type_info_none {
+    SendMessage: *void;
+
+    IsMessageAvailable: *void;
+
+    RetrieveMessage: *void;
+}
+
+
+// callback notification - A new message is available for reading from the message queue
+GCMessageAvailable_t :: struct {
+//     anon_enum_72 :: enum u32 {
+        k_iCallback :: 1701;
+//     }
+    m_nMessageSize: uint32;
+}
+
+// callback notification - A message failed to make it to the GC. It may be down temporarily
+GCMessageFailed_t :: struct {
+//     anon_enum_73 :: enum u32 {
+        k_iCallback :: 1702;
+//     }
+    __empty_struct_padding: u8; // C++ makes empty structs have length 1
 }
 
 //-----------------------------------------------------------------------------
@@ -3775,6 +4266,110 @@ ISteamGameServer_VTable :: struct #type_info_none {
 }
 
 
+// client has been approved to connect to this game server
+GSClientApprove_t :: struct {
+//     anon_enum_74 :: enum u32 {
+        k_iCallback :: 201;
+//     }
+    m_SteamID:      CSteamID; // SteamID of approved player
+    m_OwnerSteamID: CSteamID; // SteamID of original owner for game license
+}
+
+// client has been denied to connection to this game server
+GSClientDeny_t :: struct {
+//     anon_enum_75 :: enum u32 {
+        k_iCallback :: 202;
+//     }
+    m_SteamID:          CSteamID;
+    m_eDenyReason:      EDenyReason;
+    m_rgchOptionalText: [128] u8;
+}
+
+// request the game server should kick the user
+GSClientKick_t :: struct {
+//     anon_enum_76 :: enum u32 {
+        k_iCallback :: 203;
+//     }
+    m_SteamID:     CSteamID;
+    m_eDenyReason: EDenyReason;
+}
+
+// client achievement info
+GSClientAchievementStatus_t :: struct {
+//     anon_enum_77 :: enum u32 {
+        k_iCallback :: 206;
+//     }
+    m_SteamID:        uint64 #align 4;
+    m_pchAchievement: [128] u8;
+    m_bUnlocked:      bool;
+}
+
+// received when the game server requests to be displayed as secure (VAC protected)
+// m_bSecure is true if the game server should display itself as secure to users, false otherwise
+GSPolicyResponse_t :: struct {
+//     anon_enum_78 :: enum u32 {
+        k_iCallback :: 115;
+//     }
+    m_bSecure: uint8;
+}
+
+// GS gameplay stats info
+GSGameplayStats_t :: struct {
+//     anon_enum_79 :: enum u32 {
+        k_iCallback :: 207;
+//     }
+    m_eResult:              EResult; // Result of the call
+    m_nRank:                int32; // Overall rank of the server (0-based)
+    m_unTotalConnects:      uint32; // Total number of clients who have ever connected to the server
+    m_unTotalMinutesPlayed: uint32; // Total number of minutes ever played on the server
+}
+
+// send as a reply to RequestUserGroupStatus()
+GSClientGroupStatus_t :: struct {
+//     anon_enum_80 :: enum u32 {
+        k_iCallback :: 208;
+//     }
+    m_SteamIDUser:  CSteamID;
+    m_SteamIDGroup: CSteamID;
+    m_bMember:      bool;
+    m_bOfficer:     bool;
+}
+
+// Sent as a reply to GetServerReputation()
+GSReputation_t :: struct {
+//     anon_enum_81 :: enum u32 {
+        k_iCallback :: 209;
+//     }
+    m_eResult:           EResult; // Result of the call;
+    m_unReputationScore: uint32; // The reputation score for the game server
+    m_bBanned:           bool; // True if the server is banned from the Steam
+
+    m_unBannedIP:        uint32; // The IP of the banned server
+    m_usBannedPort:      uint16; // The port of the banned server
+    m_ulBannedGameID:    uint64 #align 4; // The game ID the banned server is serving
+    m_unBanExpires:      uint32; // Time the ban expires, expressed in the Unix epoch (seconds since 1/1/1970)
+}
+
+// Sent as a reply to AssociateWithClan()
+AssociateWithClanResult_t :: struct {
+//     anon_enum_82 :: enum u32 {
+        k_iCallback :: 210;
+//     }
+    m_eResult: EResult; // Result of the call;
+}
+
+// Sent as a reply to ComputeNewPlayerCompatibility()
+ComputeNewPlayerCompatibilityResult_t :: struct {
+//     anon_enum_83 :: enum u32 {
+        k_iCallback :: 211;
+//     }
+    m_eResult:                           EResult; // Result of the call;
+    m_cPlayersThatDontLikeCandidate:     s32;
+    m_cPlayersThatCandidateDoesntLike:   s32;
+    m_cClanPlayersThatDontLikeCandidate: s32;
+    m_SteamIDCandidate:                  CSteamID;
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Functions for authenticating users via Steam to play on a game server
 //-----------------------------------------------------------------------------
@@ -3803,6 +4398,40 @@ ISteamGameServerStats_VTable :: struct #type_info_none {
 }
 
 
+//-----------------------------------------------------------------------------
+// Purpose: called when the latests stats and achievements have been received
+//			from the server
+//-----------------------------------------------------------------------------
+GSStatsReceived_t :: struct {
+//     anon_enum_84 :: enum u32 {
+        k_iCallback :: 1800;
+//     }
+    m_eResult:     EResult; // Success / error fetching the stats
+    m_steamIDUser: CSteamID; // The user for whom the stats are retrieved for
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: result of a request to store the user stats for a game
+//-----------------------------------------------------------------------------
+GSStatsStored_t :: struct {
+//     anon_enum_85 :: enum u32 {
+        k_iCallback :: 1801;
+//     }
+    m_eResult:     EResult; // success / error
+    m_steamIDUser: CSteamID; // The user for whom the stats were stored
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Callback indicating that a user's stats have been unloaded.
+//  Call RequestUserStats again to access stats for this user
+//-----------------------------------------------------------------------------
+GSStatsUnloaded_t :: struct {
+//     anon_enum_86 :: enum u32 {
+        k_iCallback :: 1108;
+//     }
+    m_steamIDUser: CSteamID; // User whose stats have been unloaded
+}
+
 HHTMLBrowser :: uint32;
 
 //-----------------------------------------------------------------------------
@@ -3810,8 +4439,6 @@ HHTMLBrowser :: uint32;
 //-----------------------------------------------------------------------------
 ISteamHTMLSurface :: struct {
     vtable: *ISteamHTMLSurface_VTable;
-    Destructor_Base :: (this: *ISteamHTMLSurface) -> void #cpp_method #foreign __UnknownLib "_ZN17ISteamHTMLSurfaceD2Ev";
-
     EHTMLMouseButton :: enum u32 {
         Left   :: 0;
         Right  :: 1;
@@ -3998,6 +4625,304 @@ ISteamHTMLSurface_VTable :: struct #type_info_none {
     FileLoadDialogResponse: *void;
 }
 
+
+//-----------------------------------------------------------------------------
+// Purpose: The browser is ready for use
+//-----------------------------------------------------------------------------
+HTML_BrowserReady_t :: struct {
+//     anon_enum_87 :: enum u32 {
+        k_iCallback :: 4501;
+//     }
+    unBrowserHandle: HHTMLBrowser; // this browser is now fully created and ready to navigate to pages
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: the browser has a pending paint
+//-----------------------------------------------------------------------------
+HTML_NeedsPaint_t :: struct {
+//     anon_enum_88 :: enum u32 {
+        k_iCallback :: 4502;
+//     }
+    unBrowserHandle: HHTMLBrowser; // the browser that needs the paint
+    pBGRA:           *u8 #align 4; // a pointer to the B8G8R8A8 data for this surface, valid until SteamAPI_RunCallbacks is next called
+    unWide:          uint32; // the total width of the pBGRA texture
+    unTall:          uint32; // the total height of the pBGRA texture
+    unUpdateX:       uint32; // the offset in X for the damage rect for this update
+    unUpdateY:       uint32; // the offset in Y for the damage rect for this update
+    unUpdateWide:    uint32; // the width of the damage rect for this update
+    unUpdateTall:    uint32; // the height of the damage rect for this update
+    unScrollX:       uint32; // the page scroll the browser was at when this texture was rendered
+    unScrollY:       uint32; // the page scroll the browser was at when this texture was rendered
+    flPageScale:     float; // the page scale factor on this page when rendered
+    unPageSerial:    uint32; // incremented on each new page load, you can use this to reject draws while navigating to new pages
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: The browser wanted to navigate to a new page
+//   NOTE - you MUST call AllowStartRequest in response to this callback
+//-----------------------------------------------------------------------------
+HTML_StartRequest_t :: struct {
+//     anon_enum_89 :: enum u32 {
+        k_iCallback :: 4503;
+//     }
+    unBrowserHandle: HHTMLBrowser; // the handle of the surface navigating
+    pchURL:          *u8 #align 4; // the url they wish to navigate to
+    pchTarget:       *u8 #align 4; // the html link target type  (i.e _blank, _self, _parent, _top )
+    pchPostData:     *u8 #align 4; // any posted data for the request
+    bIsRedirect:     bool; // true if this was a http/html redirect from the last load request
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: The browser has been requested to close due to user interaction (usually from a javascript window.close() call)
+//-----------------------------------------------------------------------------
+HTML_CloseBrowser_t :: struct {
+//     anon_enum_90 :: enum u32 {
+        k_iCallback :: 4504;
+//     }
+    unBrowserHandle: HHTMLBrowser; // the handle of the surface
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: the browser is navigating to a new url
+//-----------------------------------------------------------------------------
+HTML_URLChanged_t :: struct {
+//     anon_enum_91 :: enum u32 {
+        k_iCallback :: 4505;
+//     }
+    unBrowserHandle: HHTMLBrowser; // the handle of the surface navigating
+    pchURL:          *u8 #align 4; // the url they wish to navigate to
+    pchPostData:     *u8 #align 4; // any posted data for the request
+    bIsRedirect:     bool; // true if this was a http/html redirect from the last load request
+    pchPageTitle:    *u8 #align 4; // the title of the page
+    bNewNavigation:  bool; // true if this was from a fresh tab and not a click on an existing page
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: A page is finished loading
+//-----------------------------------------------------------------------------
+HTML_FinishedRequest_t :: struct {
+//     anon_enum_92 :: enum u32 {
+        k_iCallback :: 4506;
+//     }
+    unBrowserHandle: HHTMLBrowser; // the handle of the surface
+    pchURL:          *u8 #align 4; //
+    pchPageTitle:    *u8 #align 4; //
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: a request to load this url in a new tab
+//-----------------------------------------------------------------------------
+HTML_OpenLinkInNewTab_t :: struct {
+//     anon_enum_93 :: enum u32 {
+        k_iCallback :: 4507;
+//     }
+    unBrowserHandle: HHTMLBrowser; // the handle of the surface
+    pchURL:          *u8 #align 4; //
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: the page has a new title now
+//-----------------------------------------------------------------------------
+HTML_ChangedTitle_t :: struct {
+//     anon_enum_94 :: enum u32 {
+        k_iCallback :: 4508;
+//     }
+    unBrowserHandle: HHTMLBrowser; // the handle of the surface
+    pchTitle:        *u8 #align 4; //
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: results from a search
+//-----------------------------------------------------------------------------
+HTML_SearchResults_t :: struct {
+//     anon_enum_95 :: enum u32 {
+        k_iCallback :: 4509;
+//     }
+    unBrowserHandle: HHTMLBrowser; // the handle of the surface
+    unResults:       uint32; //
+    unCurrentMatch:  uint32; //
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: page history status changed on the ability to go backwards and forward
+//-----------------------------------------------------------------------------
+HTML_CanGoBackAndForward_t :: struct {
+//     anon_enum_96 :: enum u32 {
+        k_iCallback :: 4510;
+//     }
+    unBrowserHandle: HHTMLBrowser; // the handle of the surface
+    bCanGoBack:      bool; //
+    bCanGoForward:   bool; //
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: details on the visibility and size of the horizontal scrollbar
+//-----------------------------------------------------------------------------
+HTML_HorizontalScroll_t :: struct {
+//     anon_enum_97 :: enum u32 {
+        k_iCallback :: 4511;
+//     }
+    unBrowserHandle: HHTMLBrowser; // the handle of the surface
+    unScrollMax:     uint32; //
+    unScrollCurrent: uint32; //
+    flPageScale:     float; //
+    bVisible:        bool; //
+    unPageSize:      uint32; //
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: details on the visibility and size of the vertical scrollbar
+//-----------------------------------------------------------------------------
+HTML_VerticalScroll_t :: struct {
+//     anon_enum_98 :: enum u32 {
+        k_iCallback :: 4512;
+//     }
+    unBrowserHandle: HHTMLBrowser; // the handle of the surface
+    unScrollMax:     uint32; //
+    unScrollCurrent: uint32; //
+    flPageScale:     float; //
+    bVisible:        bool; //
+    unPageSize:      uint32; //
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: response to GetLinkAtPosition call
+//-----------------------------------------------------------------------------
+HTML_LinkAtPosition_t :: struct {
+//     anon_enum_99 :: enum u32 {
+        k_iCallback :: 4513;
+//     }
+    unBrowserHandle: HHTMLBrowser; // the handle of the surface
+    x:               uint32; // NOTE - Not currently set
+    y:               uint32; // NOTE - Not currently set
+    pchURL:          *u8 #align 4; //
+    bInput:          bool; //
+    bLiveLink:       bool; //
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: show a Javascript alert dialog, call JSDialogResponse
+//   when the user dismisses this dialog (or right away to ignore it)
+//-----------------------------------------------------------------------------
+HTML_JSAlert_t :: struct {
+//     anon_enum_100 :: enum u32 {
+        k_iCallback :: 4514;
+//     }
+    unBrowserHandle: HHTMLBrowser; // the handle of the surface
+    pchMessage:      *u8 #align 4; //
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: show a Javascript confirmation dialog, call JSDialogResponse
+//   when the user dismisses this dialog (or right away to ignore it)
+//-----------------------------------------------------------------------------
+HTML_JSConfirm_t :: struct {
+//     anon_enum_101 :: enum u32 {
+        k_iCallback :: 4515;
+//     }
+    unBrowserHandle: HHTMLBrowser; // the handle of the surface
+    pchMessage:      *u8 #align 4; //
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: when received show a file open dialog
+//   then call FileLoadDialogResponse with the file(s) the user selected.
+//-----------------------------------------------------------------------------
+HTML_FileOpenDialog_t :: struct {
+//     anon_enum_102 :: enum u32 {
+        k_iCallback :: 4516;
+//     }
+    unBrowserHandle: HHTMLBrowser; // the handle of the surface
+    pchTitle:        *u8 #align 4; //
+    pchInitialFile:  *u8 #align 4; //
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: a new html window is being created.
+//
+// IMPORTANT NOTE: at this time, the API does not allow you to acknowledge or
+// render the contents of this new window, so the new window is always destroyed
+// immediately. The URL and other parameters of the new window are passed here
+// to give your application the opportunity to call CreateBrowser and set up
+// a new browser in response to the attempted popup, if you wish to do so.
+//-----------------------------------------------------------------------------
+HTML_NewWindow_t :: struct {
+//     anon_enum_103 :: enum u32 {
+        k_iCallback :: 4521;
+//     }
+    unBrowserHandle:                  HHTMLBrowser; // the handle of the current surface
+    pchURL:                           *u8 #align 4; // the page to load
+    unX:                              uint32; // the x pos into the page to display the popup
+    unY:                              uint32; // the y pos into the page to display the popup
+    unWide:                           uint32; // the total width of the pBGRA texture
+    unTall:                           uint32; // the total height of the pBGRA texture
+    unNewWindow_BrowserHandle_IGNORE: HHTMLBrowser;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: change the cursor to display
+//-----------------------------------------------------------------------------
+HTML_SetCursor_t :: struct {
+//     anon_enum_104 :: enum u32 {
+        k_iCallback :: 4522;
+//     }
+    unBrowserHandle: HHTMLBrowser; // the handle of the surface
+    eMouseCursor:    uint32; // the EMouseCursor to display
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: informational message from the browser
+//-----------------------------------------------------------------------------
+HTML_StatusText_t :: struct {
+//     anon_enum_105 :: enum u32 {
+        k_iCallback :: 4523;
+//     }
+    unBrowserHandle: HHTMLBrowser; // the handle of the surface
+    pchMsg:          *u8 #align 4; // the EMouseCursor to display
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: show a tooltip
+//-----------------------------------------------------------------------------
+HTML_ShowToolTip_t :: struct {
+//     anon_enum_106 :: enum u32 {
+        k_iCallback :: 4524;
+//     }
+    unBrowserHandle: HHTMLBrowser; // the handle of the surface
+    pchMsg:          *u8 #align 4; // the EMouseCursor to display
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: update the text of an existing tooltip
+//-----------------------------------------------------------------------------
+HTML_UpdateToolTip_t :: struct {
+//     anon_enum_107 :: enum u32 {
+        k_iCallback :: 4525;
+//     }
+    unBrowserHandle: HHTMLBrowser; // the handle of the surface
+    pchMsg:          *u8 #align 4; // the EMouseCursor to display
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: hide the tooltip you are showing
+//-----------------------------------------------------------------------------
+HTML_HideToolTip_t :: struct {
+//     anon_enum_108 :: enum u32 {
+        k_iCallback :: 4526;
+//     }
+    unBrowserHandle: HHTMLBrowser; // the handle of the surface
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: The browser has restarted due to an internal failure, use this new handle value
+//-----------------------------------------------------------------------------
+HTML_BrowserRestarted_t :: struct {
+//     anon_enum_109 :: enum u32 {
+        k_iCallback :: 4527;
+//     }
+    unBrowserHandle:    HHTMLBrowser; // this is the new browser handle after the restart
+    unOldBrowserHandle: HHTMLBrowser; // the handle for the browser before the restart, if your handle was this then switch to using unBrowserHandle for API calls
+}
 
 // This enum is used in client API methods, do not re-number existing values.
 EHTTPMethod :: enum u32 {
@@ -4194,6 +5119,61 @@ ISteamHTTP_VTable :: struct #type_info_none {
 }
 
 
+HTTPRequestCompleted_t :: struct {
+//     anon_enum_110 :: enum u32 {
+        k_iCallback :: 2101;
+//     }
+
+    // Handle value for the request that has completed.
+    m_hRequest:           HTTPRequestHandle;
+
+    // Context value that the user defined on the request that this callback is associated with, 0 if
+    // no context value was set.
+    m_ulContextValue:     uint64 #align 4;
+
+    // This will be true if we actually got any sort of response from the server (even an error).
+    // It will be false if we failed due to an internal error or client side network failure.
+    m_bRequestSuccessful: bool;
+
+    // Will be the HTTP status code value returned by the server, k_EHTTPStatusCode200OK is the normal
+    // OK response, if you get something else you probably need to treat it as a failure.
+    m_eStatusCode:        EHTTPStatusCode;
+
+    m_unBodySize:         uint32; // Same as GetHTTPResponseBodySize()
+}
+
+HTTPRequestHeadersReceived_t :: struct {
+//     anon_enum_111 :: enum u32 {
+        k_iCallback :: 2102;
+//     }
+
+    // Handle value for the request that has received headers.
+    m_hRequest:       HTTPRequestHandle;
+
+    // Context value that the user defined on the request that this callback is associated with, 0 if
+    // no context value was set.
+    m_ulContextValue: uint64 #align 4;
+}
+
+HTTPRequestDataReceived_t :: struct {
+//     anon_enum_112 :: enum u32 {
+        k_iCallback :: 2103;
+//     }
+
+    // Handle value for the request that has received data.
+    m_hRequest:       HTTPRequestHandle;
+
+    // Context value that the user defined on the request that this callback is associated with, 0 if
+    // no context value was set.
+    m_ulContextValue: uint64 #align 4;
+
+    // Offset to provide to GetHTTPStreamingResponseBodyData to get this chunk of data
+    m_cOffset:        uint32;
+
+    // Size to provide to GetHTTPStreamingResponseBodyData to get this chunk of data
+    m_cBytesReceived: uint32;
+}
+
 // Every individual instance of an item has a globally-unique ItemInstanceID.
 // This ID is unique to the combination of (player, specific item instance)
 // and will not be transferred to another player or re-used for another item.
@@ -4218,7 +5198,7 @@ ESteamItemFlags :: enum u32 {
 }
 
 SteamItemDetails_t :: struct {
-    m_itemId:      SteamItemInstanceID_t;
+    m_itemId:      SteamItemInstanceID_t #align 4;
     m_iDefinition: SteamItemDef_t;
     m_unQuantity:  uint16;
     m_unFlags:     uint16; // see ESteamItemFlags
@@ -4312,6 +5292,72 @@ ISteamInventory_VTable :: struct #type_info_none {
 }
 
 
+// SteamInventoryResultReady_t callbacks are fired whenever asynchronous
+// results transition from "Pending" to "OK" or an error state. There will
+// always be exactly one callback per handle.
+SteamInventoryResultReady_t :: struct {
+//     anon_enum_113 :: enum u32 {
+        k_iCallback :: 4700;
+//     }
+    m_handle: SteamInventoryResult_t;
+    m_result: EResult;
+}
+
+// SteamInventoryFullUpdate_t callbacks are triggered when GetAllItems
+// successfully returns a result which is newer / fresher than the last
+// known result. (It will not trigger if the inventory hasn't changed,
+// or if results from two overlapping calls are reversed in flight and
+// the earlier result is already known to be stale/out-of-date.)
+// The normal ResultReady callback will still be triggered immediately
+// afterwards; this is an additional notification for your convenience.
+SteamInventoryFullUpdate_t :: struct {
+//     anon_enum_114 :: enum u32 {
+        k_iCallback :: 4701;
+//     }
+    m_handle: SteamInventoryResult_t;
+}
+
+// A SteamInventoryDefinitionUpdate_t callback is triggered whenever
+// item definitions have been updated, which could be in response to
+// LoadItemDefinitions() or any other async request which required
+// a definition update in order to process results from the server.
+SteamInventoryDefinitionUpdate_t :: struct {
+//     anon_enum_115 :: enum u32 {
+        k_iCallback :: 4702;
+//     }
+    __empty_struct_padding: u8; // C++ makes empty structs have length 1
+}
+
+// Returned
+SteamInventoryEligiblePromoItemDefIDs_t :: struct {
+//     anon_enum_116 :: enum u32 {
+        k_iCallback :: 4703;
+//     }
+    m_result:                   EResult;
+    m_steamID:                  CSteamID;
+    m_numEligiblePromoItemDefs: s32;
+    m_bCachedData:              bool; // indicates that the data was retrieved from the cache and not the server
+}
+
+// Triggered from StartPurchase call
+SteamInventoryStartPurchaseResult_t :: struct {
+//     anon_enum_117 :: enum u32 {
+        k_iCallback :: 4704;
+//     }
+    m_result:    EResult;
+    m_ulOrderID: uint64 #align 4;
+    m_ulTransID: uint64 #align 4;
+}
+
+// Triggered from RequestPrices
+SteamInventoryRequestPricesResult_t :: struct {
+//     anon_enum_118 :: enum u32 {
+        k_iCallback :: 4705;
+//     }
+    m_result:       EResult;
+    m_rgchCurrency: [4] u8;
+}
+
 /// Store key/value pair used in matchmaking queries.
 ///
 /// Actually, the name Key/Value is a bit misleading.  The "key" is better
@@ -4367,7 +5413,7 @@ gameserveritem_t :: struct {
     m_szGameTags:             [128] u8;
 
     /// steamID of the game server - invalid if it's doesn't have one (old server, or not connected to Steam)
-    m_steamID:                CSteamID #align 4;
+    m_steamID:                CSteamID;
 }
 
 // lobby type description
@@ -4756,6 +5802,360 @@ ISteamParties_VTable :: struct #type_info_none {
 
 
 //-----------------------------------------------------------------------------
+// Purpose: a server was added/removed from the favorites list, you should refresh now
+//-----------------------------------------------------------------------------
+FavoritesListChanged_t :: struct {
+//     anon_enum_119 :: enum u32 {
+        k_iCallback :: 502;
+//     }
+    m_nIP:         uint32; // an IP of 0 means reload the whole list, any other value means just one server
+    m_nQueryPort:  uint32;
+    m_nConnPort:   uint32;
+    m_nAppID:      uint32;
+    m_nFlags:      uint32;
+    m_bAdd:        bool; // true if this is adding the entry, otherwise it is a remove
+    m_unAccountId: AccountID_t;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Someone has invited you to join a Lobby
+//			normally you don't need to do anything with this, since
+//			the Steam UI will also display a '<user> has invited you to the lobby, join?' dialog
+//
+//			if the user outside a game chooses to join, your game will be launched with the parameter "+connect_lobby <64-bit lobby id>",
+//			or with the callback GameLobbyJoinRequested_t if they're already in-game
+//-----------------------------------------------------------------------------
+LobbyInvite_t :: struct {
+//     anon_enum_120 :: enum u32 {
+        k_iCallback :: 503;
+//     }
+
+    m_ulSteamIDUser:  uint64 #align 4; // Steam ID of the person making the invite
+    m_ulSteamIDLobby: uint64 #align 4; // Steam ID of the Lobby
+    m_ulGameID:       uint64 #align 4; // GameID of the Lobby
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Sent on entering a lobby, or on failing to enter
+//			m_EChatRoomEnterResponse will be set to k_EChatRoomEnterResponseSuccess on success,
+//			or a higher value on failure (see enum EChatRoomEnterResponse)
+//-----------------------------------------------------------------------------
+LobbyEnter_t :: struct {
+//     anon_enum_121 :: enum u32 {
+        k_iCallback :: 504;
+//     }
+
+    m_ulSteamIDLobby:         uint64 #align 4; // SteamID of the Lobby you have entered
+    m_rgfChatPermissions:     uint32; // Permissions of the current user
+    m_bLocked:                bool; // If true, then only invited users may join
+    m_EChatRoomEnterResponse: uint32; // EChatRoomEnterResponse
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: The lobby metadata has changed
+//			if m_ulSteamIDMember is the steamID of a lobby member, use GetLobbyMemberData() to access per-user details
+//			if m_ulSteamIDMember == m_ulSteamIDLobby, use GetLobbyData() to access lobby metadata
+//-----------------------------------------------------------------------------
+LobbyDataUpdate_t :: struct {
+//     anon_enum_122 :: enum u32 {
+        k_iCallback :: 505;
+//     }
+
+    m_ulSteamIDLobby:  uint64 #align 4; // steamID of the Lobby
+    m_ulSteamIDMember: uint64 #align 4; // steamID of the member whose data changed, or the room itself
+    m_bSuccess:        uint8; // true if we lobby data was successfully changed;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: The lobby chat room state has changed
+//			this is usually sent when a user has joined or left the lobby
+//-----------------------------------------------------------------------------
+LobbyChatUpdate_t :: struct {
+//     anon_enum_123 :: enum u32 {
+        k_iCallback :: 506;
+//     }
+
+    m_ulSteamIDLobby:           uint64 #align 4; // Lobby ID
+    m_ulSteamIDUserChanged:     uint64 #align 4; // user who's status in the lobby just changed - can be recipient
+    m_ulSteamIDMakingChange:    uint64 #align 4; // Chat member who made the change (different from SteamIDUserChange if kicking, muting, etc.)
+
+    m_rgfChatMemberStateChange: uint32; // bitfield of EChatMemberStateChange values
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: A chat message for this lobby has been sent
+//			use GetLobbyChatEntry( m_iChatID ) to retrieve the contents of this message
+//-----------------------------------------------------------------------------
+LobbyChatMsg_t :: struct {
+//     anon_enum_124 :: enum u32 {
+        k_iCallback :: 507;
+//     }
+
+    m_ulSteamIDLobby: uint64 #align 4; // the lobby id this is in
+    m_ulSteamIDUser:  uint64 #align 4; // steamID of the user who has sent this message
+    m_eChatEntryType: uint8; // type of message
+    m_iChatID:        uint32; // index of the chat entry to lookup
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: A game created a game for all the members of the lobby to join,
+//			as triggered by a SetLobbyGameServer()
+//			it's up to the individual clients to take action on this; the usual
+//			game behavior is to leave the lobby and connect to the specified game server
+//-----------------------------------------------------------------------------
+LobbyGameCreated_t :: struct {
+//     anon_enum_125 :: enum u32 {
+        k_iCallback :: 509;
+//     }
+
+    m_ulSteamIDLobby:      uint64 #align 4; // the lobby we were in
+    m_ulSteamIDGameServer: uint64 #align 4; // the new game server that has been created or found for the lobby members
+    m_unIP:                uint32; // IP & Port of the game server (if any)
+    m_usPort:              uint16;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Number of matching lobbies found
+//			iterate the returned lobbies with GetLobbyByIndex(), from values 0 to m_nLobbiesMatching-1
+//-----------------------------------------------------------------------------
+LobbyMatchList_t :: struct {
+//     anon_enum_126 :: enum u32 {
+        k_iCallback :: 510;
+//     }
+    m_nLobbiesMatching: uint32; // Number of lobbies that matched search criteria and we have SteamIDs for
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: posted if a user is forcefully removed from a lobby
+//			can occur if a user loses connection to Steam
+//-----------------------------------------------------------------------------
+LobbyKicked_t :: struct {
+//     anon_enum_127 :: enum u32 {
+        k_iCallback :: 512;
+//     }
+    m_ulSteamIDLobby:         uint64 #align 4; // Lobby
+    m_ulSteamIDAdmin:         uint64 #align 4; // User who kicked you - possibly the ID of the lobby itself
+    m_bKickedDueToDisconnect: uint8; // true if you were kicked from the lobby due to the user losing connection to Steam (currently always true)
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Result of our request to create a Lobby
+//			m_eResult == k_EResultOK on success
+//			at this point, the lobby has been joined and is ready for use
+//			a LobbyEnter_t callback will also be received (since the local user is joining their own lobby)
+//-----------------------------------------------------------------------------
+LobbyCreated_t :: struct {
+//     anon_enum_128 :: enum u32 {
+        k_iCallback :: 513;
+//     }
+
+    m_eResult:        EResult; // k_EResultOK - the lobby was successfully created
+
+    m_ulSteamIDLobby: uint64 #align 4; // chat room, zero if failed
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Result of CheckForPSNGameBootInvite
+//			m_eResult == k_EResultOK on success
+//			at this point, the local user may not have finishing joining this lobby;
+//			game code should wait until the subsequent LobbyEnter_t callback is received
+//-----------------------------------------------------------------------------
+PSNGameBootInviteResult_t :: struct {
+//     anon_enum_129 :: enum u32 {
+        k_iCallback :: 515;
+//     }
+
+    m_bGameBootInviteExists: bool;
+    m_steamIDLobby:          CSteamID; // Should be valid if m_bGameBootInviteExists == true
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Result of our request to create a Lobby
+//			m_eResult == k_EResultOK on success
+//			at this point, the lobby has been joined and is ready for use
+//			a LobbyEnter_t callback will also be received (since the local user is joining their own lobby)
+//-----------------------------------------------------------------------------
+FavoritesListAccountsUpdated_t :: struct {
+//     anon_enum_130 :: enum u32 {
+        k_iCallback :: 516;
+//     }
+
+    m_eResult: EResult;
+}
+
+//-----------------------------------------------------------------------------
+// Callbacks for ISteamGameSearch (which go through the regular Steam callback registration system)
+SearchForGameProgressCallback_t :: struct {
+//     anon_enum_131 :: enum u32 {
+        k_iCallback :: 5201;
+//     }
+
+    m_ullSearchID:               uint64 #align 4; // all future callbacks referencing this search will include this Search ID
+
+    m_eResult:                   EResult; // if search has started this result will be k_EResultOK, any other value indicates search has failed to start or has terminated
+    m_lobbyID:                   CSteamID; // lobby ID if lobby search, invalid steamID otherwise
+    m_steamIDEndedSearch:        CSteamID; // if search was terminated, steamID that terminated search
+
+    m_nSecondsRemainingEstimate: int32;
+    m_cPlayersSearching:         int32;
+}
+
+// notification to all players searching that a game has been found
+SearchForGameResultCallback_t :: struct {
+//     anon_enum_132 :: enum u32 {
+        k_iCallback :: 5202;
+//     }
+
+    m_ullSearchID:         uint64 #align 4;
+
+    m_eResult:             EResult; // if game/host was lost this will be an error value
+
+    // if m_bGameFound is true the following are non-zero
+    m_nCountPlayersInGame: int32;
+    m_nCountAcceptedGame:  int32;
+
+    // if m_steamIDHost is valid the host has started the game
+    m_steamIDHost:         CSteamID;
+    m_bFinalCallback:      bool;
+}
+
+// callback from RequestPlayersForGame when the matchmaking service has started or ended search
+// callback will also follow a call from CancelRequestPlayersForGame - m_bSearchInProgress will be false
+RequestPlayersForGameProgressCallback_t :: struct {
+//     anon_enum_133 :: enum u32 {
+        k_iCallback :: 5211;
+//     }
+
+    m_eResult:     EResult; // m_ullSearchID will be non-zero if this is k_EResultOK
+    m_ullSearchID: uint64 #align 4; // all future callbacks referencing this search will include this Search ID
+}
+
+// callback from RequestPlayersForGame
+// one of these will be sent per player
+// followed by additional callbacks when players accept or decline the game
+RequestPlayersForGameResultCallback_t :: struct {
+//     anon_enum_134 :: enum u32 {
+        k_iCallback :: 5212;
+//     }
+
+    m_eResult:                   EResult; // m_ullSearchID will be non-zero if this is k_EResultOK
+    m_ullSearchID:               uint64 #align 4;
+
+    m_SteamIDPlayerFound:        CSteamID; // player steamID
+    m_SteamIDLobby:              CSteamID; // if the player is in a lobby, the lobby ID
+    PlayerAcceptState_t :: enum u32 {
+        EStateUnknown        :: 0;
+        EStatePlayerAccepted :: 1;
+        EStatePlayerDeclined :: 2;
+
+        k_EStateUnknown        :: EStateUnknown;
+        k_EStatePlayerAccepted :: EStatePlayerAccepted;
+        k_EStatePlayerDeclined :: EStatePlayerDeclined;
+    }
+
+    m_ePlayerAcceptState:        PlayerAcceptState_t;
+    m_nPlayerIndex:              int32;
+    m_nTotalPlayersFound:        int32; // expect this many callbacks at minimum
+    m_nTotalPlayersAcceptedGame: int32;
+    m_nSuggestedTeamIndex:       int32;
+    m_ullUniqueGameID:           uint64 #align 4;
+}
+
+RequestPlayersForGameFinalResultCallback_t :: struct {
+//     anon_enum_135 :: enum u32 {
+        k_iCallback :: 5213;
+//     }
+
+    m_eResult:         EResult;
+    m_ullSearchID:     uint64 #align 4;
+    m_ullUniqueGameID: uint64 #align 4;
+}
+
+// this callback confirms that results were received by the matchmaking service for this player
+SubmitPlayerResultResultCallback_t :: struct {
+//     anon_enum_136 :: enum u32 {
+        k_iCallback :: 5214;
+//     }
+
+    m_eResult:       EResult;
+    ullUniqueGameID: uint64 #align 4;
+    steamIDPlayer:   CSteamID;
+}
+
+// this callback confirms that the game is recorded as complete on the matchmaking service
+// the next call to RequestPlayersForGame will generate a new unique game ID
+EndGameResultCallback_t :: struct {
+//     anon_enum_137 :: enum u32 {
+        k_iCallback :: 5215;
+//     }
+
+    m_eResult:       EResult;
+    ullUniqueGameID: uint64 #align 4;
+}
+
+// Steam has responded to the user request to join a party via the given Beacon ID.
+// If successful, the connect string contains game-specific instructions to connect
+// to the game with that party.
+JoinPartyCallback_t :: struct {
+//     anon_enum_138 :: enum u32 {
+        k_iCallback :: 5301;
+//     }
+
+    m_eResult:            EResult;
+    m_ulBeaconID:         PartyBeaconID_t #align 4;
+    m_SteamIDBeaconOwner: CSteamID;
+    m_rgchConnectString:  [256] u8;
+}
+
+// Response to CreateBeacon request. If successful, the beacon ID is provided.
+CreateBeaconCallback_t :: struct {
+//     anon_enum_139 :: enum u32 {
+        k_iCallback :: 5302;
+//     }
+
+    m_eResult:    EResult;
+    m_ulBeaconID: PartyBeaconID_t #align 4;
+}
+
+// Someone has used the beacon to join your party - they are in-flight now
+// and we've reserved one of the open slots for them.
+// You should confirm when they join your party by calling OnReservationCompleted().
+// Otherwise, Steam may timeout their reservation eventually.
+ReservationNotificationCallback_t :: struct {
+//     anon_enum_140 :: enum u32 {
+        k_iCallback :: 5303;
+//     }
+
+    m_ulBeaconID:    PartyBeaconID_t #align 4;
+    m_steamIDJoiner: CSteamID;
+}
+
+// Response to ChangeNumOpenSlots call
+ChangeNumOpenSlotsCallback_t :: struct {
+//     anon_enum_141 :: enum u32 {
+        k_iCallback :: 5304;
+//     }
+
+    m_eResult: EResult;
+}
+
+// The list of possible Party beacon locations has changed
+AvailableBeaconLocationsUpdated_t :: struct {
+//     anon_enum_142 :: enum u32 {
+        k_iCallback :: 5305;
+//     }
+    __empty_struct_padding: u8; // C++ makes empty structs have length 1
+}
+
+// The list of active beacons may have changed
+ActiveBeaconsUpdated_t :: struct {
+//     anon_enum_143 :: enum u32 {
+        k_iCallback :: 5306;
+//     }
+    __empty_struct_padding: u8; // C++ makes empty structs have length 1
+}
+
+//-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
 AudioPlayback_Status :: enum u32 {
@@ -4791,6 +6191,20 @@ ISteamMusic_VTable :: struct #type_info_none {
     GetVolume: *void;
 }
 
+
+PlaybackStatusHasChanged_t :: struct {
+//     anon_enum_144 :: enum u32 {
+        k_iCallback :: 4001;
+//     }
+    __empty_struct_padding: u8; // C++ makes empty structs have length 1
+}
+
+VolumeHasChanged_t :: struct {
+//     anon_enum_145 :: enum u32 {
+        k_iCallback :: 4002;
+//     }
+    m_flNewVolume: float;
+}
 
 ISteamMusicRemote :: struct {
     vtable: *ISteamMusicRemote_VTable;
@@ -4836,6 +6250,104 @@ ISteamMusicRemote_VTable :: struct #type_info_none {
     PlaylistDidChange: *void;
 }
 
+
+MusicPlayerRemoteWillActivate_t :: struct {
+//     anon_enum_146 :: enum u32 {
+        k_iCallback :: 4101;
+//     }
+    __empty_struct_padding: u8; // C++ makes empty structs have length 1
+}
+
+MusicPlayerRemoteWillDeactivate_t :: struct {
+//     anon_enum_147 :: enum u32 {
+        k_iCallback :: 4102;
+//     }
+    __empty_struct_padding: u8; // C++ makes empty structs have length 1
+}
+
+MusicPlayerRemoteToFront_t :: struct {
+//     anon_enum_148 :: enum u32 {
+        k_iCallback :: 4103;
+//     }
+    __empty_struct_padding: u8; // C++ makes empty structs have length 1
+}
+
+MusicPlayerWillQuit_t :: struct {
+//     anon_enum_149 :: enum u32 {
+        k_iCallback :: 4104;
+//     }
+    __empty_struct_padding: u8; // C++ makes empty structs have length 1
+}
+
+MusicPlayerWantsPlay_t :: struct {
+//     anon_enum_150 :: enum u32 {
+        k_iCallback :: 4105;
+//     }
+    __empty_struct_padding: u8; // C++ makes empty structs have length 1
+}
+
+MusicPlayerWantsPause_t :: struct {
+//     anon_enum_151 :: enum u32 {
+        k_iCallback :: 4106;
+//     }
+    __empty_struct_padding: u8; // C++ makes empty structs have length 1
+}
+
+MusicPlayerWantsPlayPrevious_t :: struct {
+//     anon_enum_152 :: enum u32 {
+        k_iCallback :: 4107;
+//     }
+    __empty_struct_padding: u8; // C++ makes empty structs have length 1
+}
+
+MusicPlayerWantsPlayNext_t :: struct {
+//     anon_enum_153 :: enum u32 {
+        k_iCallback :: 4108;
+//     }
+    __empty_struct_padding: u8; // C++ makes empty structs have length 1
+}
+
+MusicPlayerWantsShuffled_t :: struct {
+//     anon_enum_154 :: enum u32 {
+        k_iCallback :: 4109;
+//     }
+    m_bShuffled: bool;
+}
+
+MusicPlayerWantsLooped_t :: struct {
+//     anon_enum_155 :: enum u32 {
+        k_iCallback :: 4110;
+//     }
+    m_bLooped: bool;
+}
+
+MusicPlayerWantsVolume_t :: struct {
+//     anon_enum_156 :: enum u32 {
+        k_iCallback :: 4011;
+//     }
+    m_flNewVolume: float;
+}
+
+MusicPlayerSelectsQueueEntry_t :: struct {
+//     anon_enum_157 :: enum u32 {
+        k_iCallback :: 4012;
+//     }
+    nID: s32;
+}
+
+MusicPlayerSelectsPlaylistEntry_t :: struct {
+//     anon_enum_158 :: enum u32 {
+        k_iCallback :: 4013;
+//     }
+    nID: s32;
+}
+
+MusicPlayerWantsPlayingRepeatStatus_t :: struct {
+//     anon_enum_159 :: enum u32 {
+        k_iCallback :: 4114;
+//     }
+    m_nPlayingRepeatStatus: s32;
+}
 
 // list of possible errors returned by SendP2PPacket() API
 // these will be posted in the P2PSessionConnectFail_t callback
@@ -4886,7 +6398,7 @@ P2PSessionState_t :: struct {
     m_bUsingRelay:           uint8; // true if it's going through a relay server (TURN)
     m_nBytesQueuedForSend:   int32;
     m_nPacketsQueuedForSend: int32;
-    m_nRemoteIP:             uint32; // potential IP:Port of remote host. Could be TURN server. 
+    m_nRemoteIP:             uint32; // potential IP:Port of remote host. Could be TURN server.
     m_nRemotePort:           uint16; // Only exists for compatibility with older authentication api's
 }
 
@@ -4998,6 +6510,38 @@ ISteamNetworking_VTable :: struct #type_info_none {
     GetMaxPacketSize: *void;
 }
 
+
+// callback notification - a user wants to talk to us over the P2P channel via the SendP2PPacket() API
+// in response, a call to AcceptP2PPacketsFromUser() needs to be made, if you want to talk with them
+P2PSessionRequest_t :: struct {
+//     anon_enum_160 :: enum u32 {
+        k_iCallback :: 1202;
+//     }
+    m_steamIDRemote: CSteamID; // user who wants to talk to us
+}
+
+// callback notification - packets can't get through to the specified user via the SendP2PPacket() API
+// all packets queued packets unsent at this point will be dropped
+// further attempts to send will retry making the connection (but will be dropped if we fail again)
+P2PSessionConnectFail_t :: struct {
+//     anon_enum_161 :: enum u32 {
+        k_iCallback :: 1203;
+//     }
+    m_steamIDRemote:    CSteamID; // user we were sending packets to
+    m_eP2PSessionError: uint8; // EP2PSessionError indicating why we're having trouble
+}
+
+// callback notification - status of a socket has changed
+// used as part of the CreateListenSocket() / CreateP2PConnectionSocket()
+SocketStatusCallback_t :: struct {
+//     anon_enum_162 :: enum u32 {
+        k_iCallback :: 1201;
+//     }
+    m_hSocket:          SNetSocket_t; // the socket used to send/receive data to the remote host
+    m_hListenSocket:    SNetListenSocket_t; // this is the server socket that we were listening on; NULL if this was an outgoing connection
+    m_steamIDRemote:    CSteamID; // remote steamID we have connected to, if it has one
+    m_eSNetSocketState: s32; // socket state, ESNetSocketState
+}
 
 SteamDatagramRelayAuthTicket :: struct {}
 SteamDatagramHostedAddress :: struct {}
@@ -5129,15 +6673,15 @@ ESteamNetworkingFakeIPType :: enum u32 {
 SteamNetworkingIPAddr :: struct {
     // Max length of the buffer needed to hold IP formatted using ToString, including '\0'
     // ([0123:4567:89ab:cdef:0123:4567:89ab:cdef]:12345)
-    anon_enum_163 :: enum u32 {
+//     anon_enum_163 :: enum u32 {
         k_cchMaxString :: 48;
-    }
+//     }
 
     /// RFC4038, section 4.2
     IPv4MappedAddress :: struct {
-        m_8zeros: uint64;
-        m_0000:   uint16;
-        m_ffff:   uint16;
+        m_8zeros: uint64 #align 1;
+        m_0000:   uint16 #align 1;
+        m_ffff:   uint16 #align 1;
         m_ip:     [4] uint8; // NOTE: As bytes, i.e. network byte order
     }
 
@@ -5146,13 +6690,13 @@ SteamNetworkingIPAddr :: struct {
         m_ipv4: IPv4MappedAddress;
     }
 
-    m_port: uint16; // Host byte order
+    m_port: uint16 #align 1; // Host byte order
 }
 
 // Forward declare types
 SteamNetworkingIdentity :: struct {
     /// Type of identity.
-    m_eType:  ESteamNetworkingIdentityType;
+    m_eType:  ESteamNetworkingIdentityType #align 1;
 
     // Max sizes
     k_2 :: enum u32 {
@@ -5173,17 +6717,17 @@ SteamNetworkingIdentity :: struct {
     // Number of bytes that are relevant below.  This MUST ALWAYS be
     // set.  (Use the accessors!)  This is important to enable old code to work
     // with new identity types.
-    m_cbSize: s32;
+    m_cbSize: s32 #align 1;
     union {
-        m_steamID64:          uint64;
-        m_PSNID:              uint64;
-        m_stadiaID:           uint64;
+        m_steamID64:          uint64 #align 1;
+        m_PSNID:              uint64 #align 1;
+        m_stadiaID:           uint64 #align 1;
         m_szGenericString:    [32] u8;
         m_szXboxPairwiseID:   [33] u8;
         m_genericBytes:       [32] uint8;
         m_szUnknownRawString: [128] u8;
         m_ip:                 SteamNetworkingIPAddr;
-        m_reserved:           [32] uint32; // Pad structure to leave easy room for future expansion
+        m_reserved:           [32] uint32 #align 1; // Pad structure to leave easy room for future expansion
     }
 }
 
@@ -5369,7 +6913,7 @@ SteamNetConnectionInfo_t :: struct {
     m_identityRemote:          SteamNetworkingIdentity;
 
     /// Arbitrary user data set by the local application code
-    m_nUserData:               int64;
+    m_nUserData:               int64 #align 4;
 
     /// Handle to listen socket this was connected on, or k_HSteamListenSocket_Invalid if we initiated the connection
     m_hListenSocket:           HSteamListenSocket;
@@ -5485,7 +7029,7 @@ SteamNetConnectionRealTimeStatus_t :: struct {
     /// the value in SteamNetConnectionRealTimeLaneStatus_t.
     ///
     /// Nagle delay is ignored for the purposes of this calculation.
-    m_usecQueueTime:             SteamNetworkingMicroseconds;
+    m_usecQueueTime:             SteamNetworkingMicroseconds #align 4;
 
     // Internal stuff, room to change API easily
     reserved:                    [16] uint32;
@@ -5503,7 +7047,7 @@ SteamNetConnectionRealTimeLaneStatus_t :: struct {
     /// Lane-specific queue time.  This value takes into consideration lane priorities
     /// and weights, and how much data is queued in each lane, and attempts to predict
     /// how any data currently queued will be sent out.
-    m_usecQueueTime:         SteamNetworkingMicroseconds;
+    m_usecQueueTime:         SteamNetworkingMicroseconds #align 4;
 
     // Internal stuff, room to change API easily
     reserved:                [10] uint32;
@@ -5975,6 +7519,11 @@ ESteamNetworkingSocketsDebugOutputType :: enum u32 {
 /// Setup callback for debug output, and the desired verbosity you want.
 FSteamNetworkingSocketsDebugOutput :: #type (nType: ESteamNetworkingSocketsDebugOutputType, pszMsg: *u8) -> void #c_call;
 
+/// Utility class for printing a SteamNetworkingPOPID.
+SteamNetworkingPOPIDRender :: struct {
+    buf: [8] u8;
+}
+
 //-----------------------------------------------------------------------------
 /// The non-connection-oriented interface to send and receive messages
 /// (whether they be "clients" or "servers").
@@ -6021,9 +7570,9 @@ ISteamNetworkingMessages_VTable :: struct #type_info_none {
 
 /// Posted when a remote host is sending us a message, and we do not already have a session with them
 SteamNetworkingMessagesSessionRequest_t :: struct {
-    anon_enum_164 :: enum u32 {
+//     anon_enum_164 :: enum u32 {
         k_iCallback :: 1251;
-    }
+//     }
     m_identityRemote: SteamNetworkingIdentity; // user who wants to talk to us
 }
 
@@ -6039,14 +7588,14 @@ SteamNetworkingMessagesSessionRequest_t :: struct {
 /// way to detect that this is happening is that querying the session state may return
 /// none, connecting, and findingroute again.
 SteamNetworkingMessagesSessionFailed_t :: struct {
-    anon_enum_165 :: enum u32 {
+//     anon_enum_165 :: enum u32 {
         k_iCallback :: 1252;
-    }
+//     }
 
     /// Detailed info about the session that failed.
     /// SteamNetConnectionInfo_t::m_identityRemote indicates who this session
     /// was with.
-    m_info: SteamNetConnectionInfo_t;
+    m_info: SteamNetConnectionInfo_t #align 1;
 }
 
 ISteamNetworkingConnectionSignaling :: struct {}
@@ -6214,15 +7763,15 @@ ISteamNetworkingSockets_VTable :: struct #type_info_none {
 ///
 /// Also note that callbacks will be posted when connections are created and destroyed by your own API calls.
 SteamNetConnectionStatusChangedCallback_t :: struct {
-    anon_enum_166 :: enum u32 {
+//     anon_enum_166 :: enum u32 {
         k_iCallback :: 1221;
-    }
+//     }
 
     /// Connection handle
     m_hConn:     HSteamNetConnection;
 
     /// Full connection info
-    m_info:      SteamNetConnectionInfo_t #align 4;
+    m_info:      SteamNetConnectionInfo_t;
 
     /// Previous state.  (Current state is in m_info.m_eState)
     m_eOldState: ESteamNetworkingConnectionState;
@@ -6237,9 +7786,9 @@ SteamNetConnectionStatusChangedCallback_t :: struct {
 ///
 /// This callback is posted whenever the state of our readiness changes.
 SteamNetAuthenticationStatus_t :: struct {
-    anon_enum_167 :: enum u32 {
+//     anon_enum_167 :: enum u32 {
         k_iCallback :: 1222;
-    }
+//     }
 
     /// Status
     m_eAvail:   ESteamNetworkingAvailability;
@@ -6308,9 +7857,9 @@ ISteamNetworkingUtils_VTable :: struct #type_info_none {
 /// To do this we first need to fetch the network configuration,
 /// which describes what POPs are available.
 SteamRelayNetworkStatus_t :: struct {
-    anon_enum_168 :: enum u32 {
+//     anon_enum_168 :: enum u32 {
         k_iCallback :: 1281;
-    }
+//     }
 
     /// Summary status.  When this is "current", initialization has
     /// completed.  Anything else means you are not ready yet, or
@@ -6338,6 +7887,17 @@ SteamRelayNetworkStatus_t :: struct {
     /// Non-localized English language status.  For diagnostic/debugging
     /// purposes only.
     m_debugMsg:                   [256] u8;
+}
+
+/// Utility class for printing a SteamNetworkingIdentity.
+/// E.g. printf( "Identity is '%s'\n", SteamNetworkingIdentityRender( identity ).c_str() );
+SteamNetworkingIdentityRender :: struct {
+    buf: [128] u8;
+}
+
+/// Utility class for printing a SteamNetworkingIPAddrRender.
+SteamNetworkingIPAddrRender :: struct {
+    buf: [48] u8;
 }
 
 // Feature types for parental settings
@@ -6395,6 +7955,16 @@ ISteamParentalSettings_VTable :: struct #type_info_none {
 
 
 //-----------------------------------------------------------------------------
+// Purpose: Callback for querying UGC
+//-----------------------------------------------------------------------------
+SteamParentalSettingsChanged_t :: struct {
+//     anon_enum_169 :: enum u32 {
+        k_iCallback :: 5001;
+//     }
+    __empty_struct_padding: u8; // C++ makes empty structs have length 1
+}
+
+//-----------------------------------------------------------------------------
 // Purpose: The form factor of a device
 //-----------------------------------------------------------------------------
 ESteamDeviceFormFactor :: enum u32 {
@@ -6441,8 +8011,29 @@ ISteamRemotePlay_VTable :: struct #type_info_none {
 }
 
 
+SteamRemotePlaySessionConnected_t :: struct {
+//     anon_enum_170 :: enum u32 {
+        k_iCallback :: 5701;
+//     }
+    m_unSessionID: RemotePlaySessionID_t;
+}
+
+SteamRemotePlaySessionDisconnected_t :: struct {
+//     anon_enum_171 :: enum u32 {
+        k_iCallback :: 5702;
+//     }
+    m_unSessionID: RemotePlaySessionID_t;
+}
+
+SteamRemotePlayTogetherGuestInvite_t :: struct {
+//     anon_enum_172 :: enum u32 {
+        k_iCallback :: 5703;
+//     }
+    m_szConnectURL: [1024] u8;
+}
+
 SteamParamStringArray_t :: struct {
-    m_ppStrings:   **u8;
+    m_ppStrings:   **u8 #align 4;
     m_nNumStrings: int32;
 }
 
@@ -6726,6 +8317,320 @@ ISteamRemoteStorage_VTable :: struct #type_info_none {
 }
 
 
+//-----------------------------------------------------------------------------
+// Purpose: The result of a call to FileShare()
+//-----------------------------------------------------------------------------
+RemoteStorageFileShareResult_t :: struct {
+//     anon_enum_173 :: enum u32 {
+        k_iCallback :: 1307;
+//     }
+    m_eResult:      EResult; // The result of the operation
+    m_hFile:        UGCHandle_t #align 4; // The handle that can be shared with users and features
+    m_rgchFilename: [260] u8; // The name of the file that was shared
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: The result of a call to PublishFile()
+//-----------------------------------------------------------------------------
+RemoteStoragePublishFileResult_t :: struct {
+//     anon_enum_174 :: enum u32 {
+        k_iCallback :: 1309;
+//     }
+    m_eResult:                                  EResult; // The result of the operation.
+    m_nPublishedFileId:                         PublishedFileId_t #align 4;
+    m_bUserNeedsToAcceptWorkshopLegalAgreement: bool;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: The result of a call to DeletePublishedFile()
+//-----------------------------------------------------------------------------
+RemoteStorageDeletePublishedFileResult_t :: struct {
+//     anon_enum_175 :: enum u32 {
+        k_iCallback :: 1311;
+//     }
+    m_eResult:          EResult; // The result of the operation.
+    m_nPublishedFileId: PublishedFileId_t #align 4;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: The result of a call to EnumerateUserPublishedFiles()
+//-----------------------------------------------------------------------------
+RemoteStorageEnumerateUserPublishedFilesResult_t :: struct {
+//     anon_enum_176 :: enum u32 {
+        k_iCallback :: 1312;
+//     }
+    m_eResult:           EResult; // The result of the operation.
+    m_nResultsReturned:  int32;
+    m_nTotalResultCount: int32;
+    m_rgPublishedFileId: [50] PublishedFileId_t #align 4;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: The result of a call to SubscribePublishedFile()
+//-----------------------------------------------------------------------------
+RemoteStorageSubscribePublishedFileResult_t :: struct {
+//     anon_enum_177 :: enum u32 {
+        k_iCallback :: 1313;
+//     }
+    m_eResult:          EResult; // The result of the operation.
+    m_nPublishedFileId: PublishedFileId_t #align 4;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: The result of a call to EnumerateSubscribePublishedFiles()
+//-----------------------------------------------------------------------------
+RemoteStorageEnumerateUserSubscribedFilesResult_t :: struct {
+//     anon_enum_178 :: enum u32 {
+        k_iCallback :: 1314;
+//     }
+    m_eResult:           EResult; // The result of the operation.
+    m_nResultsReturned:  int32;
+    m_nTotalResultCount: int32;
+    m_rgPublishedFileId: [50] PublishedFileId_t #align 4;
+    m_rgRTimeSubscribed: [50] uint32;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: The result of a call to UnsubscribePublishedFile()
+//-----------------------------------------------------------------------------
+RemoteStorageUnsubscribePublishedFileResult_t :: struct {
+//     anon_enum_179 :: enum u32 {
+        k_iCallback :: 1315;
+//     }
+    m_eResult:          EResult; // The result of the operation.
+    m_nPublishedFileId: PublishedFileId_t #align 4;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: The result of a call to CommitPublishedFileUpdate()
+//-----------------------------------------------------------------------------
+RemoteStorageUpdatePublishedFileResult_t :: struct {
+//     anon_enum_180 :: enum u32 {
+        k_iCallback :: 1316;
+//     }
+    m_eResult:                                  EResult; // The result of the operation.
+    m_nPublishedFileId:                         PublishedFileId_t #align 4;
+    m_bUserNeedsToAcceptWorkshopLegalAgreement: bool;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: The result of a call to UGCDownload()
+//-----------------------------------------------------------------------------
+RemoteStorageDownloadUGCResult_t :: struct {
+//     anon_enum_181 :: enum u32 {
+        k_iCallback :: 1317;
+//     }
+    m_eResult:        EResult; // The result of the operation.
+    m_hFile:          UGCHandle_t #align 4; // The handle to the file that was attempted to be downloaded.
+    m_nAppID:         AppId_t; // ID of the app that created this file.
+    m_nSizeInBytes:   int32; // The size of the file that was downloaded, in bytes.
+    m_pchFileName:    [260] u8; // The name of the file that was downloaded.
+    m_ulSteamIDOwner: uint64 #align 4; // Steam ID of the user who created this content.
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: The result of a call to GetPublishedFileDetails()
+//-----------------------------------------------------------------------------
+RemoteStorageGetPublishedFileDetailsResult_t :: struct {
+//     anon_enum_182 :: enum u32 {
+        k_iCallback :: 1318;
+//     }
+    m_eResult:          EResult; // The result of the operation.
+    m_nPublishedFileId: PublishedFileId_t #align 4;
+    m_nCreatorAppID:    AppId_t; // ID of the app that created this file.
+    m_nConsumerAppID:   AppId_t; // ID of the app that will consume this file.
+    m_rgchTitle:        [129] u8; // title of document
+    m_rgchDescription:  [8000] u8; // description of document
+    m_hFile:            UGCHandle_t #align 4; // The handle of the primary file
+    m_hPreviewFile:     UGCHandle_t #align 4; // The handle of the preview file
+    m_ulSteamIDOwner:   uint64 #align 4; // Steam ID of the user who created this content.
+    m_rtimeCreated:     uint32; // time when the published file was created
+    m_rtimeUpdated:     uint32; // time when the published file was last updated
+    m_eVisibility:      ERemoteStoragePublishedFileVisibility;
+    m_bBanned:          bool;
+    m_rgchTags:         [1025] u8; // comma separated list of all tags associated with this file
+    m_bTagsTruncated:   bool; // whether the list of tags was too long to be returned in the provided buffer
+    m_pchFileName:      [260] u8; // The name of the primary file
+    m_nFileSize:        int32; // Size of the primary file
+    m_nPreviewFileSize: int32; // Size of the preview file
+    m_rgchURL:          [256] u8; // URL (for a video or a website)
+    m_eFileType:        EWorkshopFileType; // Type of the file
+    m_bAcceptedForUse:  bool; // developer has specifically flagged this item as accepted in the Workshop
+}
+
+RemoteStorageEnumerateWorkshopFilesResult_t :: struct {
+//     anon_enum_183 :: enum u32 {
+        k_iCallback :: 1319;
+//     }
+    m_eResult:           EResult;
+    m_nResultsReturned:  int32;
+    m_nTotalResultCount: int32;
+    m_rgPublishedFileId: [50] PublishedFileId_t #align 4;
+    m_rgScore:           [50] float;
+    m_nAppId:            AppId_t;
+    m_unStartIndex:      uint32;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: The result of GetPublishedItemVoteDetails
+//-----------------------------------------------------------------------------
+RemoteStorageGetPublishedItemVoteDetailsResult_t :: struct {
+//     anon_enum_184 :: enum u32 {
+        k_iCallback :: 1320;
+//     }
+    m_eResult:           EResult;
+    m_unPublishedFileId: PublishedFileId_t #align 4;
+    m_nVotesFor:         int32;
+    m_nVotesAgainst:     int32;
+    m_nReports:          int32;
+    m_fScore:            float;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: User subscribed to a file for the app (from within the app or on the web)
+//-----------------------------------------------------------------------------
+RemoteStoragePublishedFileSubscribed_t :: struct {
+//     anon_enum_185 :: enum u32 {
+        k_iCallback :: 1321;
+//     }
+    m_nPublishedFileId: PublishedFileId_t #align 4; // The published file id
+    m_nAppID:           AppId_t; // ID of the app that will consume this file.
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: User unsubscribed from a file for the app (from within the app or on the web)
+//-----------------------------------------------------------------------------
+RemoteStoragePublishedFileUnsubscribed_t :: struct {
+//     anon_enum_186 :: enum u32 {
+        k_iCallback :: 1322;
+//     }
+    m_nPublishedFileId: PublishedFileId_t #align 4; // The published file id
+    m_nAppID:           AppId_t; // ID of the app that will consume this file.
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Published file that a user owns was deleted (from within the app or the web)
+//-----------------------------------------------------------------------------
+RemoteStoragePublishedFileDeleted_t :: struct {
+//     anon_enum_187 :: enum u32 {
+        k_iCallback :: 1323;
+//     }
+    m_nPublishedFileId: PublishedFileId_t #align 4; // The published file id
+    m_nAppID:           AppId_t; // ID of the app that will consume this file.
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: The result of a call to UpdateUserPublishedItemVote()
+//-----------------------------------------------------------------------------
+RemoteStorageUpdateUserPublishedItemVoteResult_t :: struct {
+//     anon_enum_188 :: enum u32 {
+        k_iCallback :: 1324;
+//     }
+    m_eResult:          EResult; // The result of the operation.
+    m_nPublishedFileId: PublishedFileId_t #align 4; // The published file id
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: The result of a call to GetUserPublishedItemVoteDetails()
+//-----------------------------------------------------------------------------
+RemoteStorageUserVoteDetails_t :: struct {
+//     anon_enum_189 :: enum u32 {
+        k_iCallback :: 1325;
+//     }
+    m_eResult:          EResult; // The result of the operation.
+    m_nPublishedFileId: PublishedFileId_t #align 4; // The published file id
+    m_eVote:            EWorkshopVote; // what the user voted
+}
+
+RemoteStorageEnumerateUserSharedWorkshopFilesResult_t :: struct {
+//     anon_enum_190 :: enum u32 {
+        k_iCallback :: 1326;
+//     }
+    m_eResult:           EResult; // The result of the operation.
+    m_nResultsReturned:  int32;
+    m_nTotalResultCount: int32;
+    m_rgPublishedFileId: [50] PublishedFileId_t #align 4;
+}
+
+RemoteStorageSetUserPublishedFileActionResult_t :: struct {
+//     anon_enum_191 :: enum u32 {
+        k_iCallback :: 1327;
+//     }
+    m_eResult:          EResult; // The result of the operation.
+    m_nPublishedFileId: PublishedFileId_t #align 4; // The published file id
+    m_eAction:          EWorkshopFileAction; // the action that was attempted
+}
+
+RemoteStorageEnumeratePublishedFilesByUserActionResult_t :: struct {
+//     anon_enum_192 :: enum u32 {
+        k_iCallback :: 1328;
+//     }
+    m_eResult:           EResult; // The result of the operation.
+    m_eAction:           EWorkshopFileAction; // the action that was filtered on
+    m_nResultsReturned:  int32;
+    m_nTotalResultCount: int32;
+    m_rgPublishedFileId: [50] PublishedFileId_t #align 4;
+    m_rgRTimeUpdated:    [50] uint32;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Called periodically while a PublishWorkshopFile is in progress
+//-----------------------------------------------------------------------------
+RemoteStoragePublishFileProgress_t :: struct {
+//     anon_enum_193 :: enum u32 {
+        k_iCallback :: 1329;
+//     }
+    m_dPercentFile: float64 #align 4;
+    m_bPreview:     bool;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Called when the content for a published file is updated
+//-----------------------------------------------------------------------------
+RemoteStoragePublishedFileUpdated_t :: struct {
+//     anon_enum_194 :: enum u32 {
+        k_iCallback :: 1330;
+//     }
+    m_nPublishedFileId: PublishedFileId_t #align 4; // The published file id
+    m_nAppID:           AppId_t; // ID of the app that will consume this file.
+    m_ulUnused:         uint64 #align 4; // not used anymore
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Called when a FileWriteAsync completes
+//-----------------------------------------------------------------------------
+RemoteStorageFileWriteAsyncComplete_t :: struct {
+//     anon_enum_195 :: enum u32 {
+        k_iCallback :: 1331;
+//     }
+    m_eResult: EResult; // result
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Called when a FileReadAsync completes
+//-----------------------------------------------------------------------------
+RemoteStorageFileReadAsyncComplete_t :: struct {
+//     anon_enum_196 :: enum u32 {
+        k_iCallback :: 1332;
+//     }
+    m_hFileReadAsync: SteamAPICall_t #align 4; // call handle of the async read which was made
+    m_eResult:        EResult; // result
+    m_nOffset:        uint32; // offset in the file this read was at
+    m_cubRead:        uint32; // amount read - will the <= the amount requested
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: one or more files for this app have changed locally after syncing
+//			to remote session changes
+//			Note: only posted if this happens DURING the local app session
+//-----------------------------------------------------------------------------
+RemoteStorageLocalFileChange_t :: struct {
+//     anon_enum_197 :: enum u32 {
+        k_iCallback :: 1333;
+//     }
+    __empty_struct_padding: u8; // C++ makes empty structs have length 1
+}
+
 // Handle is valid for the lifetime of your process and no longer
 ScreenshotHandle :: uint32;
 
@@ -6771,6 +8676,30 @@ ISteamScreenshots_VTable :: struct #type_info_none {
     AddVRScreenshotToLibrary: *void;
 }
 
+
+//-----------------------------------------------------------------------------
+// Purpose: Screenshot successfully written or otherwise added to the library
+// and can now be tagged
+//-----------------------------------------------------------------------------
+ScreenshotReady_t :: struct {
+//     anon_enum_198 :: enum u32 {
+        k_iCallback :: 2301;
+//     }
+    m_hLocal:  ScreenshotHandle;
+    m_eResult: EResult;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Screenshot has been requested by the user.  Only sent if
+// HookScreenshots() has been called, in which case Steam will not take
+// the screenshot itself.
+//-----------------------------------------------------------------------------
+ScreenshotRequested_t :: struct {
+//     anon_enum_199 :: enum u32 {
+        k_iCallback :: 2302;
+//     }
+    __empty_struct_padding: u8; // C++ makes empty structs have length 1
+}
 
 // Controls the color of the timeline bar segments. The value names listed here map to a multiplayer game, where
 // the user starts a game (in menus), then joins a multiplayer session that first has a character selection lobby
@@ -7051,8 +8980,8 @@ EUGCContentDescriptorID :: enum u32 {
 
 // Details for a single published file/UGC
 SteamUGCDetails_t :: struct {
-    m_nPublishedFileId:     PublishedFileId_t;
-    m_eResult:              EResult; // The result of the operation.	
+    m_nPublishedFileId:     PublishedFileId_t #align 4;
+    m_eResult:              EResult; // The result of the operation.
     m_eFileType:            EWorkshopFileType; // Type of the file
     m_nCreatorAppID:        AppId_t; // ID of the app that created this file.
     m_nConsumerAppID:       AppId_t; // ID of the app that will consume this file.
@@ -7066,10 +8995,10 @@ SteamUGCDetails_t :: struct {
     m_bBanned:              bool; // whether the file was banned
     m_bAcceptedForUse:      bool; // developer has specifically flagged this item as accepted in the Workshop
     m_bTagsTruncated:       bool; // whether the list of tags was too long to be returned in the provided buffer
-    m_rgchTags:             [1025] u8; // comma separated list of all tags associated with this file	
+    m_rgchTags:             [1025] u8; // comma separated list of all tags associated with this file
 
-    m_hFile:                UGCHandle_t; // The handle of the primary file
-    m_hPreviewFile:         UGCHandle_t; // The handle of the preview file
+    m_hFile:                UGCHandle_t #align 4; // The handle of the primary file
+    m_hPreviewFile:         UGCHandle_t #align 4; // The handle of the preview file
     m_pchFileName:          [260] u8; // The cloud filename of the primary file
     m_nFileSize:            int32; // Size of the primary file (for legacy items which only support one file). This may not be accurate for non-legacy items which can be greater than 4gb in size.
     m_nPreviewFileSize:     int32; // Size of the preview file
@@ -7231,6 +9160,238 @@ ISteamUGC_VTable :: struct #type_info_none {
 
 
 //-----------------------------------------------------------------------------
+// Purpose: Callback for querying UGC
+//-----------------------------------------------------------------------------
+SteamUGCQueryCompleted_t :: struct {
+//     anon_enum_200 :: enum u32 {
+        k_iCallback :: 3401;
+//     }
+    m_handle:                 UGCQueryHandle_t #align 4;
+    m_eResult:                EResult;
+    m_unNumResultsReturned:   uint32;
+    m_unTotalMatchingResults: uint32;
+    m_bCachedData:            bool; // indicates whether this data was retrieved from the local on-disk cache
+    m_rgchNextCursor:         [256] u8; // If a paging cursor was used, then this will be the next cursor to get the next result set.
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Callback for requesting details on one piece of UGC
+//-----------------------------------------------------------------------------
+SteamUGCRequestUGCDetailsResult_t :: struct {
+//     anon_enum_201 :: enum u32 {
+        k_iCallback :: 3402;
+//     }
+    m_details:     SteamUGCDetails_t;
+    m_bCachedData: bool; // indicates whether this data was retrieved from the local on-disk cache
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: result for ISteamUGC::CreateItem()
+//-----------------------------------------------------------------------------
+CreateItemResult_t :: struct {
+//     anon_enum_202 :: enum u32 {
+        k_iCallback :: 3403;
+//     }
+    m_eResult:                                  EResult;
+    m_nPublishedFileId:                         PublishedFileId_t #align 4; // new item got this UGC PublishFileID
+    m_bUserNeedsToAcceptWorkshopLegalAgreement: bool;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: result for ISteamUGC::SubmitItemUpdate()
+//-----------------------------------------------------------------------------
+SubmitItemUpdateResult_t :: struct {
+//     anon_enum_203 :: enum u32 {
+        k_iCallback :: 3404;
+//     }
+    m_eResult:                                  EResult;
+    m_bUserNeedsToAcceptWorkshopLegalAgreement: bool;
+    m_nPublishedFileId:                         PublishedFileId_t #align 4;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: a Workshop item has been installed or updated
+//-----------------------------------------------------------------------------
+ItemInstalled_t :: struct {
+//     anon_enum_204 :: enum u32 {
+        k_iCallback :: 3405;
+//     }
+    m_unAppID:          AppId_t;
+    m_nPublishedFileId: PublishedFileId_t #align 4;
+    m_hLegacyContent:   UGCHandle_t #align 4;
+    m_unManifestID:     uint64 #align 4;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: result of DownloadItem(), existing item files can be accessed again
+//-----------------------------------------------------------------------------
+DownloadItemResult_t :: struct {
+//     anon_enum_205 :: enum u32 {
+        k_iCallback :: 3406;
+//     }
+    m_unAppID:          AppId_t;
+    m_nPublishedFileId: PublishedFileId_t #align 4;
+    m_eResult:          EResult;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: result of AddItemToFavorites() or RemoveItemFromFavorites()
+//-----------------------------------------------------------------------------
+UserFavoriteItemsListChanged_t :: struct {
+//     anon_enum_206 :: enum u32 {
+        k_iCallback :: 3407;
+//     }
+    m_nPublishedFileId: PublishedFileId_t #align 4;
+    m_eResult:          EResult;
+    m_bWasAddRequest:   bool;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: The result of a call to SetUserItemVote()
+//-----------------------------------------------------------------------------
+SetUserItemVoteResult_t :: struct {
+//     anon_enum_207 :: enum u32 {
+        k_iCallback :: 3408;
+//     }
+    m_nPublishedFileId: PublishedFileId_t #align 4;
+    m_eResult:          EResult;
+    m_bVoteUp:          bool;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: The result of a call to GetUserItemVote()
+//-----------------------------------------------------------------------------
+GetUserItemVoteResult_t :: struct {
+//     anon_enum_208 :: enum u32 {
+        k_iCallback :: 3409;
+//     }
+    m_nPublishedFileId: PublishedFileId_t #align 4;
+    m_eResult:          EResult;
+    m_bVotedUp:         bool;
+    m_bVotedDown:       bool;
+    m_bVoteSkipped:     bool;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: The result of a call to StartPlaytimeTracking()
+//-----------------------------------------------------------------------------
+StartPlaytimeTrackingResult_t :: struct {
+//     anon_enum_209 :: enum u32 {
+        k_iCallback :: 3410;
+//     }
+    m_eResult: EResult;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: The result of a call to StopPlaytimeTracking()
+//-----------------------------------------------------------------------------
+StopPlaytimeTrackingResult_t :: struct {
+//     anon_enum_210 :: enum u32 {
+        k_iCallback :: 3411;
+//     }
+    m_eResult: EResult;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: The result of a call to AddDependency
+//-----------------------------------------------------------------------------
+AddUGCDependencyResult_t :: struct {
+//     anon_enum_211 :: enum u32 {
+        k_iCallback :: 3412;
+//     }
+    m_eResult:               EResult;
+    m_nPublishedFileId:      PublishedFileId_t #align 4;
+    m_nChildPublishedFileId: PublishedFileId_t #align 4;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: The result of a call to RemoveDependency
+//-----------------------------------------------------------------------------
+RemoveUGCDependencyResult_t :: struct {
+//     anon_enum_212 :: enum u32 {
+        k_iCallback :: 3413;
+//     }
+    m_eResult:               EResult;
+    m_nPublishedFileId:      PublishedFileId_t #align 4;
+    m_nChildPublishedFileId: PublishedFileId_t #align 4;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: The result of a call to AddAppDependency
+//-----------------------------------------------------------------------------
+AddAppDependencyResult_t :: struct {
+//     anon_enum_213 :: enum u32 {
+        k_iCallback :: 3414;
+//     }
+    m_eResult:          EResult;
+    m_nPublishedFileId: PublishedFileId_t #align 4;
+    m_nAppID:           AppId_t;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: The result of a call to RemoveAppDependency
+//-----------------------------------------------------------------------------
+RemoveAppDependencyResult_t :: struct {
+//     anon_enum_214 :: enum u32 {
+        k_iCallback :: 3415;
+//     }
+    m_eResult:          EResult;
+    m_nPublishedFileId: PublishedFileId_t #align 4;
+    m_nAppID:           AppId_t;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: The result of a call to GetAppDependencies.  Callback may be called
+//			multiple times until all app dependencies have been returned.
+//-----------------------------------------------------------------------------
+GetAppDependenciesResult_t :: struct {
+//     anon_enum_215 :: enum u32 {
+        k_iCallback :: 3416;
+//     }
+    m_eResult:                  EResult;
+    m_nPublishedFileId:         PublishedFileId_t #align 4;
+    m_rgAppIDs:                 [32] AppId_t;
+    m_nNumAppDependencies:      uint32; // number returned in this struct
+    m_nTotalNumAppDependencies: uint32; // total found
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: The result of a call to DeleteItem
+//-----------------------------------------------------------------------------
+DeleteItemResult_t :: struct {
+//     anon_enum_216 :: enum u32 {
+        k_iCallback :: 3417;
+//     }
+    m_eResult:          EResult;
+    m_nPublishedFileId: PublishedFileId_t #align 4;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: signal that the list of subscribed items changed
+//-----------------------------------------------------------------------------
+UserSubscribedItemsListChanged_t :: struct {
+//     anon_enum_217 :: enum u32 {
+        k_iCallback :: 3418;
+//     }
+    m_nAppID: AppId_t;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Status of the user's acceptable/rejection of the app's specific Workshop EULA
+//-----------------------------------------------------------------------------
+WorkshopEULAStatus_t :: struct {
+//     anon_enum_218 :: enum u32 {
+        k_iCallback :: 3420;
+//     }
+    m_eResult:      EResult;
+    m_nAppID:       AppId_t;
+    m_unVersion:    uint32;
+    m_rtAction:     RTime32;
+    m_bAccepted:    bool;
+    m_bNeedsAction: bool;
+}
+
+//-----------------------------------------------------------------------------
 // Purpose: Functions for accessing and manipulating a steam account
 //			associated with one client instance
 //-----------------------------------------------------------------------------
@@ -7306,20 +9467,228 @@ ISteamUser_VTable :: struct #type_info_none {
 }
 
 
-// size limit on stat or achievement name (UTF-8 encoded)
-anon_enum_234 :: enum u32 {
-    k_cchStatNameMax :: 128;
+//-----------------------------------------------------------------------------
+// Purpose: Called when an authenticated connection to the Steam back-end has been established.
+//			This means the Steam client now has a working connection to the Steam servers.
+//			Usually this will have occurred before the game has launched, and should
+//			only be seen if the user has dropped connection due to a networking issue
+//			or a Steam server update.
+//-----------------------------------------------------------------------------
+SteamServersConnected_t :: struct {
+//     anon_enum_219 :: enum u32 {
+        k_iCallback :: 101;
+//     }
+    __empty_struct_padding: u8; // C++ makes empty structs have length 1
 }
+
+//-----------------------------------------------------------------------------
+// Purpose: called when a connection attempt has failed
+//			this will occur periodically if the Steam client is not connected,
+//			and has failed in it's retry to establish a connection
+//-----------------------------------------------------------------------------
+SteamServerConnectFailure_t :: struct {
+//     anon_enum_220 :: enum u32 {
+        k_iCallback :: 102;
+//     }
+    m_eResult:        EResult;
+    m_bStillRetrying: bool;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: called if the client has lost connection to the Steam servers
+//			real-time services will be disabled until a matching SteamServersConnected_t has been posted
+//-----------------------------------------------------------------------------
+SteamServersDisconnected_t :: struct {
+//     anon_enum_221 :: enum u32 {
+        k_iCallback :: 103;
+//     }
+    m_eResult: EResult;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Sent by the Steam server to the client telling it to disconnect from the specified game server,
+//			which it may be in the process of or already connected to.
+//			The game client should immediately disconnect upon receiving this message.
+//			This can usually occur if the user doesn't have rights to play on the game server.
+//-----------------------------------------------------------------------------
+ClientGameServerDeny_t :: struct {
+//     anon_enum_222 :: enum u32 {
+        k_iCallback :: 113;
+//     }
+
+    m_uAppID:           uint32;
+    m_unGameServerIP:   uint32;
+    m_usGameServerPort: uint16;
+    m_bSecure:          uint16;
+    m_uReason:          uint32;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: called when the callback system for this client is in an error state (and has flushed pending callbacks)
+//			When getting this message the client should disconnect from Steam, reset any stored Steam state and reconnect.
+//			This usually occurs in the rare event the Steam client has some kind of fatal error.
+//-----------------------------------------------------------------------------
+IPCFailure_t :: struct {
+//     anon_enum_223 :: enum u32 {
+        k_iCallback :: 117;
+//     }
+    EFailureType :: enum u32 {
+        EFailureFlushedCallbackQueue :: 0;
+        EFailurePipeFail             :: 1;
+
+        k_EFailureFlushedCallbackQueue :: EFailureFlushedCallbackQueue;
+        k_EFailurePipeFail             :: EFailurePipeFail;
+    }
+
+    m_eFailureType: uint8;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Signaled whenever licenses change
+//-----------------------------------------------------------------------------
+LicensesUpdated_t :: struct {
+//     anon_enum_224 :: enum u32 {
+        k_iCallback :: 125;
+//     }
+    __empty_struct_padding: u8; // C++ makes empty structs have length 1
+}
+
+//-----------------------------------------------------------------------------
+// callback for BeginAuthSession
+//-----------------------------------------------------------------------------
+ValidateAuthTicketResponse_t :: struct {
+//     anon_enum_225 :: enum u32 {
+        k_iCallback :: 143;
+//     }
+    m_SteamID:              CSteamID;
+    m_eAuthSessionResponse: EAuthSessionResponse;
+    m_OwnerSteamID:         CSteamID; // different from m_SteamID if borrowed
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: called when a user has responded to a microtransaction authorization request
+//-----------------------------------------------------------------------------
+MicroTxnAuthorizationResponse_t :: struct {
+//     anon_enum_226 :: enum u32 {
+        k_iCallback :: 152;
+//     }
+
+    m_unAppID:     uint32; // AppID for this microtransaction
+    m_ulOrderID:   uint64 #align 4; // OrderID provided for the microtransaction
+    m_bAuthorized: uint8; // if user authorized transaction
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Result from RequestEncryptedAppTicket
+//-----------------------------------------------------------------------------
+EncryptedAppTicketResponse_t :: struct {
+//     anon_enum_227 :: enum u32 {
+        k_iCallback :: 154;
+//     }
+
+    m_eResult: EResult;
+}
+
+//-----------------------------------------------------------------------------
+// callback for GetAuthSessionTicket
+//-----------------------------------------------------------------------------
+GetAuthSessionTicketResponse_t :: struct {
+//     anon_enum_228 :: enum u32 {
+        k_iCallback :: 163;
+//     }
+    m_hAuthTicket: HAuthTicket;
+    m_eResult:     EResult;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: sent to your game in response to a steam://gamewebcallback/ command
+//-----------------------------------------------------------------------------
+GameWebCallback_t :: struct {
+//     anon_enum_229 :: enum u32 {
+        k_iCallback :: 164;
+//     }
+    m_szURL: [256] u8;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: sent to your game in response to ISteamUser::RequestStoreAuthURL
+//-----------------------------------------------------------------------------
+StoreAuthURLResponse_t :: struct {
+//     anon_enum_230 :: enum u32 {
+        k_iCallback :: 165;
+//     }
+    m_szURL: [512] u8;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: sent in response to ISteamUser::GetMarketEligibility
+//-----------------------------------------------------------------------------
+MarketEligibilityResponse_t :: struct {
+//     anon_enum_231 :: enum u32 {
+        k_iCallback :: 166;
+//     }
+    m_bAllowed:                   bool;
+    m_eNotAllowedReason:          EMarketNotAllowedReasonFlags;
+    m_rtAllowedAtTime:            RTime32;
+
+    m_cdaySteamGuardRequiredDays: s32; // The number of days any user is required to have had Steam Guard before they can use the market
+    m_cdayNewDeviceCooldown:      s32; // The number of days after initial device authorization a user must wait before using the market on that device
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: sent for games with enabled anti indulgence / duration control, for
+// enabled users. Lets the game know whether the user can keep playing or
+// whether the game should exit, and returns info about remaining gameplay time.
+//
+// This callback is fired asynchronously in response to timers triggering.
+// It is also fired in response to calls to GetDurationControl().
+//-----------------------------------------------------------------------------
+DurationControl_t :: struct {
+//     anon_enum_232 :: enum u32 {
+        k_iCallback :: 167;
+//     }
+
+    m_eResult:        EResult; // result of call (always k_EResultOK for asynchronous timer-based notifications)
+    m_appid:          AppId_t; // appid generating playtime
+
+    m_bApplicable:    bool; // is duration control applicable to user + game combination
+    m_csecsLast5h:    int32; // playtime since most recent 5 hour gap in playtime, only counting up to regulatory limit of playtime, in seconds
+
+    m_progress:       EDurationControlProgress; // recommended progress (either everything is fine, or please exit game)
+    m_notification:   EDurationControlNotification; // notification to show, if any (always k_EDurationControlNotification_None for API calls)
+
+    m_csecsToday:     int32; // playtime on current calendar day
+    m_csecsRemaining: int32; // playtime remaining until the user hits a regulatory limit
+}
+
+//-----------------------------------------------------------------------------
+// callback for GetTicketForWebApi
+//-----------------------------------------------------------------------------
+GetTicketForWebApiResponse_t :: struct {
+//     anon_enum_233 :: enum u32 {
+        k_iCallback :: 168;
+//     }
+    m_hAuthTicket:         HAuthTicket;
+    m_eResult:             EResult;
+    m_cubTicket:           s32;
+    k_nCubTicketMaxLength: s32 : 2560;
+    m_rgubTicket:          [2560] uint8;
+}
+
+// size limit on stat or achievement name (UTF-8 encoded)
+// anon_enum_234 :: enum u32 {
+    k_cchStatNameMax :: 128;
+// }
 
 // maximum number of bytes for a leaderboard name (UTF-8 encoded)
-anon_enum_235 :: enum u32 {
+// anon_enum_235 :: enum u32 {
     k_cchLeaderboardNameMax :: 128;
-}
+// }
 
 // maximum number of details int32's storable for a single leaderboard entry
-anon_enum_236 :: enum u32 {
+// anon_enum_236 :: enum u32 {
     k_cLeaderboardDetailsMax :: 64;
-}
+// }
 
 // handle to a single leaderboard
 SteamLeaderboard_t :: uint64;
@@ -7479,6 +9848,168 @@ ISteamUserStats_VTable :: struct #type_info_none {
 }
 
 
+//-----------------------------------------------------------------------------
+// Purpose: called when the latests stats and achievements have been received
+//			from the server
+//-----------------------------------------------------------------------------
+UserStatsReceived_t :: struct {
+//     anon_enum_237 :: enum u32 {
+        k_iCallback :: 1101;
+//     }
+    m_nGameID:     uint64 #align 4; // Game these stats are for
+    m_eResult:     EResult; // Success / error fetching the stats
+    m_steamIDUser: CSteamID; // The user for whom the stats are retrieved for
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: result of a request to store the user stats for a game
+//-----------------------------------------------------------------------------
+UserStatsStored_t :: struct {
+//     anon_enum_238 :: enum u32 {
+        k_iCallback :: 1102;
+//     }
+    m_nGameID: uint64 #align 4; // Game these stats are for
+    m_eResult: EResult; // success / error
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: result of a request to store the achievements for a game, or an
+//			"indicate progress" call. If both m_nCurProgress and m_nMaxProgress
+//			are zero, that means the achievement has been fully unlocked.
+//-----------------------------------------------------------------------------
+UserAchievementStored_t :: struct {
+//     anon_enum_239 :: enum u32 {
+        k_iCallback :: 1103;
+//     }
+
+    m_nGameID:             uint64 #align 4; // Game this is for
+    m_bGroupAchievement:   bool; // if this is a "group" achievement
+    m_rgchAchievementName: [128] u8; // name of the achievement
+    m_nCurProgress:        uint32; // current progress towards the achievement
+    m_nMaxProgress:        uint32; // "out of" this many
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: call result for finding a leaderboard, returned as a result of FindOrCreateLeaderboard() or FindLeaderboard()
+//			use CCallResult<> to map this async result to a member function
+//-----------------------------------------------------------------------------
+LeaderboardFindResult_t :: struct {
+//     anon_enum_240 :: enum u32 {
+        k_iCallback :: 1104;
+//     }
+    m_hSteamLeaderboard: SteamLeaderboard_t #align 4; // handle to the leaderboard serarched for, 0 if no leaderboard found
+    m_bLeaderboardFound: uint8; // 0 if no leaderboard found
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: call result indicating scores for a leaderboard have been downloaded and are ready to be retrieved, returned as a result of DownloadLeaderboardEntries()
+//			use CCallResult<> to map this async result to a member function
+//-----------------------------------------------------------------------------
+LeaderboardScoresDownloaded_t :: struct {
+//     anon_enum_241 :: enum u32 {
+        k_iCallback :: 1105;
+//     }
+    m_hSteamLeaderboard:        SteamLeaderboard_t #align 4;
+    m_hSteamLeaderboardEntries: SteamLeaderboardEntries_t #align 4; // the handle to pass into GetDownloadedLeaderboardEntries()
+    m_cEntryCount:              s32; // the number of entries downloaded
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: call result indicating scores has been uploaded, returned as a result of UploadLeaderboardScore()
+//			use CCallResult<> to map this async result to a member function
+//-----------------------------------------------------------------------------
+LeaderboardScoreUploaded_t :: struct {
+//     anon_enum_242 :: enum u32 {
+        k_iCallback :: 1106;
+//     }
+    m_bSuccess:            uint8; // 1 if the call was successful
+    m_hSteamLeaderboard:   SteamLeaderboard_t #align 4; // the leaderboard handle that was
+    m_nScore:              int32; // the score that was attempted to set
+    m_bScoreChanged:       uint8; // true if the score in the leaderboard change, false if the existing score was better
+    m_nGlobalRankNew:      s32; // the new global rank of the user in this leaderboard
+    m_nGlobalRankPrevious: s32; // the previous global rank of the user in this leaderboard; 0 if the user had no existing entry in the leaderboard
+}
+
+NumberOfCurrentPlayers_t :: struct {
+//     anon_enum_243 :: enum u32 {
+        k_iCallback :: 1107;
+//     }
+    m_bSuccess: uint8; // 1 if the call was successful
+    m_cPlayers: int32; // Number of players currently playing
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Callback indicating that a user's stats have been unloaded.
+//  Call RequestUserStats again to access stats for this user
+//-----------------------------------------------------------------------------
+UserStatsUnloaded_t :: struct {
+//     anon_enum_244 :: enum u32 {
+        k_iCallback :: 1108;
+//     }
+    m_steamIDUser: CSteamID; // User whose stats have been unloaded
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Callback indicating that an achievement icon has been fetched
+//-----------------------------------------------------------------------------
+UserAchievementIconFetched_t :: struct {
+//     anon_enum_245 :: enum u32 {
+        k_iCallback :: 1109;
+//     }
+
+    m_nGameID:             CGameID; // Game this is for
+    m_rgchAchievementName: [128] u8; // name of the achievement
+    m_bAchieved:           bool; // Is the icon for the achieved or not achieved version?
+    m_nIconHandle:         s32; // Handle to the image, which can be used in SteamUtils()->GetImageRGBA(), 0 means no image is set for the achievement
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Callback indicating that global achievement percentages are fetched
+//-----------------------------------------------------------------------------
+GlobalAchievementPercentagesReady_t :: struct {
+//     anon_enum_246 :: enum u32 {
+        k_iCallback :: 1110;
+//     }
+
+    m_nGameID: uint64 #align 4; // Game this is for
+    m_eResult: EResult; // Result of the operation
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: call result indicating UGC has been uploaded, returned as a result of SetLeaderboardUGC()
+//-----------------------------------------------------------------------------
+LeaderboardUGCSet_t :: struct {
+//     anon_enum_247 :: enum u32 {
+        k_iCallback :: 1111;
+//     }
+    m_eResult:           EResult; // The result of the operation
+    m_hSteamLeaderboard: SteamLeaderboard_t #align 4; // the leaderboard handle that was
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: callback indicating that PS3 trophies have been installed
+//-----------------------------------------------------------------------------
+PS3TrophiesInstalled_t :: struct {
+//     anon_enum_248 :: enum u32 {
+        k_iCallback :: 1112;
+//     }
+    m_nGameID:             uint64 #align 4; // Game these stats are for
+    m_eResult:             EResult; // The result of the operation
+    m_ulRequiredDiskSpace: uint64 #align 4; // If m_eResult is k_EResultDiskFull, will contain the amount of space needed to install trophies
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: callback indicating global stats have been received.
+//	Returned as a result of RequestGlobalStats()
+//-----------------------------------------------------------------------------
+GlobalStatsReceived_t :: struct {
+//     anon_enum_249 :: enum u32 {
+        k_iCallback :: 1112;
+//     }
+    m_nGameID: uint64 #align 4; // Game global stats were requested for
+    m_eResult: EResult; // The result of the request
+}
+
 // Steam API call failure results
 ESteamAPICallFailure :: enum s32 {
     ESteamAPICallFailureNone               :: -1;
@@ -7623,6 +10154,48 @@ ISteamUtils_VTable :: struct #type_info_none {
 
 
 //-----------------------------------------------------------------------------
+// Purpose: The country of the user changed
+//-----------------------------------------------------------------------------
+IPCountry_t :: struct {
+//     anon_enum_251 :: enum u32 {
+        k_iCallback :: 701;
+//     }
+    __empty_struct_padding: u8; // C++ makes empty structs have length 1
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Fired when running on a handheld PC or laptop with less than 10 minutes of battery is left, fires then every minute
+//-----------------------------------------------------------------------------
+LowBatteryPower_t :: struct {
+//     anon_enum_252 :: enum u32 {
+        k_iCallback :: 702;
+//     }
+    m_nMinutesBatteryLeft: uint8;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: called when a SteamAsyncCall_t has completed (or failed)
+//-----------------------------------------------------------------------------
+SteamAPICallCompleted_t :: struct {
+//     anon_enum_253 :: enum u32 {
+        k_iCallback :: 703;
+//     }
+    m_hAsyncCall: SteamAPICall_t #align 4;
+    m_iCallback:  s32;
+    m_cubParam:   uint32;
+}
+
+//-----------------------------------------------------------------------------
+// called when Steam wants to shutdown
+//-----------------------------------------------------------------------------
+SteamShutdown_t :: struct {
+//     anon_enum_254 :: enum u32 {
+        k_iCallback :: 704;
+//     }
+    __empty_struct_padding: u8; // C++ makes empty structs have length 1
+}
+
+//-----------------------------------------------------------------------------
 // results for CheckFileSignature
 //-----------------------------------------------------------------------------
 ECheckFileSignature :: enum u32 {
@@ -7640,6 +10213,56 @@ ECheckFileSignature :: enum u32 {
 }
 
 //-----------------------------------------------------------------------------
+// callback for CheckFileSignature
+//-----------------------------------------------------------------------------
+CheckFileSignature_t :: struct {
+//     anon_enum_255 :: enum u32 {
+        k_iCallback :: 705;
+//     }
+    m_eCheckFileSignature: ECheckFileSignature;
+}
+
+//-----------------------------------------------------------------------------
+// Full Screen gamepad text input has been closed
+//-----------------------------------------------------------------------------
+GamepadTextInputDismissed_t :: struct {
+//     anon_enum_256 :: enum u32 {
+        k_iCallback :: 714;
+//     }
+    m_bSubmitted:      bool; // true if user entered & accepted text (Call ISteamUtils::GetEnteredGamepadTextInput() for text), false if canceled input
+    m_unSubmittedText: uint32;
+    m_unAppID:         AppId_t;
+}
+
+// k_iSteamUtilsCallbacks + 15 through 35 are taken
+AppResumingFromSuspend_t :: struct {
+//     anon_enum_257 :: enum u32 {
+        k_iCallback :: 736;
+//     }
+    __empty_struct_padding: u8; // C++ makes empty structs have length 1
+}
+
+//-----------------------------------------------------------------------------
+// The floating on-screen keyboard has been closed
+//-----------------------------------------------------------------------------
+FloatingGamepadTextInputDismissed_t :: struct {
+//     anon_enum_258 :: enum u32 {
+        k_iCallback :: 738;
+//     }
+    __empty_struct_padding: u8; // C++ makes empty structs have length 1
+}
+
+//-----------------------------------------------------------------------------
+// The text filtering dictionary has changed
+//-----------------------------------------------------------------------------
+FilterTextDictionaryChanged_t :: struct {
+//     anon_enum_259 :: enum u32 {
+        k_iCallback :: 739;
+//     }
+    m_eLanguage: s32; // One of ELanguage, or k_LegallyRequiredFiltering
+}
+
+//-----------------------------------------------------------------------------
 // Purpose: Steam Video API
 //-----------------------------------------------------------------------------
 ISteamVideo :: struct {
@@ -7654,6 +10277,23 @@ ISteamVideo_VTable :: struct #type_info_none {
     GetOPFStringForApp: *void;
 }
 
+
+GetVideoURLResult_t :: struct {
+//     anon_enum_260 :: enum u32 {
+        k_iCallback :: 4611;
+//     }
+    m_eResult:      EResult;
+    m_unVideoAppID: AppId_t;
+    m_rgchURL:      [256] u8;
+}
+
+GetOPFSettingsResult_t :: struct {
+//     anon_enum_261 :: enum u32 {
+        k_iCallback :: 4624;
+//     }
+    m_eResult:      EResult;
+    m_unVideoAppID: AppId_t;
+}
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------//
 //	Steam API setup & shutdown
@@ -9030,9 +11670,9 @@ ISteamNetworkingFakeUDPPort_VTable :: struct #type_info_none {
 /// ISteamNetworkingSoockets::BeginAsyncRequestFakeIP completes.
 /// See also ISteamNetworkingSockets::GetFakeIP
 SteamNetworkingFakeIPResult_t :: struct {
-    anon_enum_261 :: enum u32 {
+//     anon_enum_261 :: enum u32 {
         k_iCallback :: 1223;
-    }
+//     }
 
     /// Status/result of the allocation request.  Possible failure values are:
     /// - k_EResultBusy - you called GetFakeIP but the request has not completed.
@@ -9066,10 +11706,90 @@ SteamNetworkingFakeIPResult_t :: struct {
     ///
     /// (NOTE: At the time of this writing, the maximum number of ports you may
     /// request is 4.)
-    anon_enum_262 :: enum u32 {
+//     anon_enum_262 :: enum u32 {
         k_nMaxReturnPorts :: 8;
-    }
+//     }
     m_unPorts:  [8] uint16;
+}
+
+SteamPS3Params_t :: struct {
+    m_unVersion:              uint32; // set to STEAM_PS3_CURRENT_PARAMS_VER
+
+    pReserved:                *void;
+    m_nAppId:                 uint32; // set to your game's appid
+
+    m_rgchInstallationPath:   [1055] u8; // directory containing latest steam prx's and sdata. Can be read only (BDVD)
+    m_rgchSystemCache:        [1055] u8; // temp working cache, not persistent
+    m_rgchGameData:           [1055] u8; // persistent game data path for storing user data
+    m_rgchNpServiceID:        [32] u8;
+    m_rgchNpCommunicationID:  [10] u8;
+    m_rgchNpCommunicationSig: [160] u8;
+
+    // Language should be one of the following. must be zero terminated
+    // danish
+    // dutch
+    // english
+    // finnish
+    // french
+    // german
+    // italian
+    // korean
+    // norwegian
+    // polish
+    // portuguese
+    // russian
+    // schinese
+    // spanish
+    // swedish
+    // tchinese
+    m_rgchSteamLanguage:      [64] u8;
+
+    // region codes are "SCEA", "SCEE", "SCEJ". must be zero terminated
+    m_rgchRegionCode:         [16] u8;
+
+    // Should be SYS_TTYP3 through SYS_TTYP10, if it's 0 then Steam won't spawn a
+    // thread to read console input at all.  Using this let's you use Steam console commands
+    // like: profile_on, profile_off, profile_dump, mem_stats, mem_validate.
+    m_cSteamInputTTY:         u32;
+
+    Ps3netInit_t :: struct {
+        m_bNeedInit:   bool;
+        m_pMemory:     *void;
+        m_nMemorySize: s32;
+        m_flags:       s32;
+    }
+
+    m_sysNetInitInfo:         Ps3netInit_t;
+
+    Ps3jpgInit_t :: struct {
+        m_bNeedInit: bool;
+    }
+
+    m_sysJpgInitInfo:         Ps3jpgInit_t;
+
+    Ps3pngInit_t :: struct {
+        m_bNeedInit: bool;
+    }
+
+    m_sysPngInitInfo:         Ps3pngInit_t;
+
+    Ps3sysutilUserInfo_t :: struct {
+        m_bNeedInit: bool;
+    }
+
+    m_sysSysUtilUserInfo:     Ps3sysutilUserInfo_t;
+
+    m_bIncludeNewsPage:       bool;
+}
+
+SteamPS3Memory_t :: struct {
+    m_bSingleAllocation: bool; // If true, Steam will request one 6MB allocation and use the returned memory for all future allocations
+
+    // required function pointers
+    m_pfMalloc:          #type (unknown0: u64) -> *void #c_call;
+    m_pfRealloc:         #type (unknown0: *void, unknown1: u64) -> *void #c_call;
+    m_pfFree:            #type (unknown0: *void) -> void #c_call;
+    m_pUsable_size:      #type (unknown0: *void) -> u64 #c_call;
 }
 
 #scope_file
@@ -9078,265 +11798,1800 @@ SteamNetworkingFakeIPResult_t :: struct {
 
 libsteam_api :: #library "bin/linux/libsteam_api";
 
+// user32 :: #system_library,link_always "user32";
+// gdi32 :: #system_library,link_always "gdi32";
+// shell32 :: #system_library,link_always "shell32";
+
 #run {
     {
-        instance: SteamIPAddress_t;
-        assert(((cast(*void)(*instance.m_eType)) - cast(*void)(*instance)) == 16, "SteamIPAddress_t.m_eType has unexpected offset % instead of 16", ((cast(*void)(*instance.m_eType)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamIPAddress_t.m_eType)) == 4, "SteamIPAddress_t.m_eType has unexpected size % instead of 4", size_of(type_of(SteamIPAddress_t.m_eType)));
+        info := type_info(SteamIPAddress_t);
+        for info.members {
+            if it.name == {
+                case "m_eType";
+                    assert(it.offset_in_bytes == 16, "SteamIPAddress_t.m_eType has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamIPAddress_t.m_eType has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
         assert(size_of(SteamIPAddress_t) == 20, "SteamIPAddress_t has size % instead of 20", size_of(SteamIPAddress_t));
     }
 
     {
-        instance: CSteamID.SteamID_t.SteamIDComponent_t;
-        // Bitfields are currently not correctly aligned
-        // assert(((cast(*void)(*instance.m_unAccountID)) - cast(*void)(*instance)) == 0, "CSteamID.SteamID_t.SteamIDComponent_t.m_unAccountID has unexpected offset % instead of 0", ((cast(*void)(*instance.m_unAccountID)) - cast(*void)(*instance)));
-        assert(size_of(type_of(CSteamID.SteamID_t.SteamIDComponent_t.m_unAccountID)) == 4, "CSteamID.SteamID_t.SteamIDComponent_t.m_unAccountID has unexpected size % instead of 4", size_of(type_of(CSteamID.SteamID_t.SteamIDComponent_t.m_unAccountID)));
-        // Bitfields are currently not correctly aligned
-        // assert(((cast(*void)(*instance.m_unAccountInstance)) - cast(*void)(*instance)) == 4, "CSteamID.SteamID_t.SteamIDComponent_t.m_unAccountInstance has unexpected offset % instead of 4", ((cast(*void)(*instance.m_unAccountInstance)) - cast(*void)(*instance)));
-        assert(size_of(type_of(CSteamID.SteamID_t.SteamIDComponent_t.m_unAccountInstance)) == 4, "CSteamID.SteamID_t.SteamIDComponent_t.m_unAccountInstance has unexpected size % instead of 4", size_of(type_of(CSteamID.SteamID_t.SteamIDComponent_t.m_unAccountInstance)));
-        // Bitfields are currently not correctly aligned
-        // assert(((cast(*void)(*instance.m_EAccountType)) - cast(*void)(*instance)) == 6, "CSteamID.SteamID_t.SteamIDComponent_t.m_EAccountType has unexpected offset % instead of 6", ((cast(*void)(*instance.m_EAccountType)) - cast(*void)(*instance)));
-        assert(size_of(type_of(CSteamID.SteamID_t.SteamIDComponent_t.m_EAccountType)) == 4, "CSteamID.SteamID_t.SteamIDComponent_t.m_EAccountType has unexpected size % instead of 4", size_of(type_of(CSteamID.SteamID_t.SteamIDComponent_t.m_EAccountType)));
-        // Bitfields are currently not correctly aligned
-        // assert(((cast(*void)(*instance.m_EUniverse)) - cast(*void)(*instance)) == 7, "CSteamID.SteamID_t.SteamIDComponent_t.m_EUniverse has unexpected offset % instead of 7", ((cast(*void)(*instance.m_EUniverse)) - cast(*void)(*instance)));
-        assert(size_of(type_of(CSteamID.SteamID_t.SteamIDComponent_t.m_EUniverse)) == 4, "CSteamID.SteamID_t.SteamIDComponent_t.m_EUniverse has unexpected size % instead of 4", size_of(type_of(CSteamID.SteamID_t.SteamIDComponent_t.m_EUniverse)));
+        info := type_info(CSteamID.SteamID_t.SteamIDComponent_t);
+        for info.members {
+            if it.name == {
+                case "__bitfield";
+                    assert(it.offset_in_bytes == 0, "CSteamID.SteamID_t.SteamIDComponent_t.__bitfield has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "CSteamID.SteamID_t.SteamIDComponent_t.__bitfield has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
         assert(size_of(CSteamID.SteamID_t.SteamIDComponent_t) == 8, "CSteamID.SteamID_t.SteamIDComponent_t has size % instead of 8", size_of(CSteamID.SteamID_t.SteamIDComponent_t));
     }
 
     {
-        instance: CSteamID.SteamID_t;
-        assert(((cast(*void)(*instance.m_comp)) - cast(*void)(*instance)) == 0, "CSteamID.SteamID_t.m_comp has unexpected offset % instead of 0", ((cast(*void)(*instance.m_comp)) - cast(*void)(*instance)));
-        assert(size_of(type_of(CSteamID.SteamID_t.m_comp)) == 8, "CSteamID.SteamID_t.m_comp has unexpected size % instead of 8", size_of(type_of(CSteamID.SteamID_t.m_comp)));
-        assert(((cast(*void)(*instance.m_unAll64Bits)) - cast(*void)(*instance)) == 0, "CSteamID.SteamID_t.m_unAll64Bits has unexpected offset % instead of 0", ((cast(*void)(*instance.m_unAll64Bits)) - cast(*void)(*instance)));
-        assert(size_of(type_of(CSteamID.SteamID_t.m_unAll64Bits)) == 8, "CSteamID.SteamID_t.m_unAll64Bits has unexpected size % instead of 8", size_of(type_of(CSteamID.SteamID_t.m_unAll64Bits)));
+        info := type_info(CSteamID.SteamID_t);
+        for info.members {
+            if it.name == {
+                case "m_comp";
+                    assert(it.offset_in_bytes == 0, "CSteamID.SteamID_t.m_comp has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "CSteamID.SteamID_t.m_comp has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_unAll64Bits";
+                    assert(it.offset_in_bytes == 0, "CSteamID.SteamID_t.m_unAll64Bits has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "CSteamID.SteamID_t.m_unAll64Bits has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
         assert(size_of(CSteamID.SteamID_t) == 8, "CSteamID.SteamID_t has size % instead of 8", size_of(CSteamID.SteamID_t));
     }
 
     {
-        instance: CSteamID;
-        assert(((cast(*void)(*instance.m_steamid)) - cast(*void)(*instance)) == 0, "CSteamID.m_steamid has unexpected offset % instead of 0", ((cast(*void)(*instance.m_steamid)) - cast(*void)(*instance)));
-        assert(size_of(type_of(CSteamID.m_steamid)) == 8, "CSteamID.m_steamid has unexpected size % instead of 8", size_of(type_of(CSteamID.m_steamid)));
+        info := type_info(CSteamID);
+        for info.members {
+            if it.name == {
+                case "m_steamid";
+                    assert(it.offset_in_bytes == 0, "CSteamID.m_steamid has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "CSteamID.m_steamid has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
         assert(size_of(CSteamID) == 8, "CSteamID has size % instead of 8", size_of(CSteamID));
     }
 
     {
-        instance: CGameID.GameID_t;
-        // Bitfields are currently not correctly aligned
-        // assert(((cast(*void)(*instance.m_nAppID)) - cast(*void)(*instance)) == 0, "CGameID.GameID_t.m_nAppID has unexpected offset % instead of 0", ((cast(*void)(*instance.m_nAppID)) - cast(*void)(*instance)));
-        assert(size_of(type_of(CGameID.GameID_t.m_nAppID)) == 4, "CGameID.GameID_t.m_nAppID has unexpected size % instead of 4", size_of(type_of(CGameID.GameID_t.m_nAppID)));
-        // Bitfields are currently not correctly aligned
-        // assert(((cast(*void)(*instance.m_nType)) - cast(*void)(*instance)) == 3, "CGameID.GameID_t.m_nType has unexpected offset % instead of 3", ((cast(*void)(*instance.m_nType)) - cast(*void)(*instance)));
-        assert(size_of(type_of(CGameID.GameID_t.m_nType)) == 4, "CGameID.GameID_t.m_nType has unexpected size % instead of 4", size_of(type_of(CGameID.GameID_t.m_nType)));
-        // Bitfields are currently not correctly aligned
-        // assert(((cast(*void)(*instance.m_nModID)) - cast(*void)(*instance)) == 4, "CGameID.GameID_t.m_nModID has unexpected offset % instead of 4", ((cast(*void)(*instance.m_nModID)) - cast(*void)(*instance)));
-        assert(size_of(type_of(CGameID.GameID_t.m_nModID)) == 4, "CGameID.GameID_t.m_nModID has unexpected size % instead of 4", size_of(type_of(CGameID.GameID_t.m_nModID)));
+        info := type_info(CGameID.GameID_t);
+        for info.members {
+            if it.name == {
+                case "__bitfield";
+                    assert(it.offset_in_bytes == 0, "CGameID.GameID_t.__bitfield has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "CGameID.GameID_t.__bitfield has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
         assert(size_of(CGameID.GameID_t) == 8, "CGameID.GameID_t has size % instead of 8", size_of(CGameID.GameID_t));
     }
 
     assert(size_of(CGameID) == 8, "CGameID has size % instead of 8", size_of(CGameID));
 
     {
-        instance: CCallbackBase;
-        assert(((cast(*void)(*instance.m_nCallbackFlags)) - cast(*void)(*instance)) == 8, "CCallbackBase.m_nCallbackFlags has unexpected offset % instead of 8", ((cast(*void)(*instance.m_nCallbackFlags)) - cast(*void)(*instance)));
-        assert(size_of(type_of(CCallbackBase.m_nCallbackFlags)) == 1, "CCallbackBase.m_nCallbackFlags has unexpected size % instead of 1", size_of(type_of(CCallbackBase.m_nCallbackFlags)));
-        assert(((cast(*void)(*instance.m_iCallback)) - cast(*void)(*instance)) == 12, "CCallbackBase.m_iCallback has unexpected offset % instead of 12", ((cast(*void)(*instance.m_iCallback)) - cast(*void)(*instance)));
-        assert(size_of(type_of(CCallbackBase.m_iCallback)) == 4, "CCallbackBase.m_iCallback has unexpected size % instead of 4", size_of(type_of(CCallbackBase.m_iCallback)));
+        info := type_info(ValvePackingSentinel_t);
+        for info.members {
+            if it.name == {
+                case "m_u32";
+                    assert(it.offset_in_bytes == 0, "ValvePackingSentinel_t.m_u32 has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "ValvePackingSentinel_t.m_u32 has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_u64";
+                    assert(it.offset_in_bytes == 4, "ValvePackingSentinel_t.m_u64 has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "ValvePackingSentinel_t.m_u64 has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_u16";
+                    assert(it.offset_in_bytes == 12, "ValvePackingSentinel_t.m_u16 has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 2, "ValvePackingSentinel_t.m_u16 has unexpected size % instead of 2", it.type.runtime_size);
+                case "m_d";
+                    assert(it.offset_in_bytes == 16, "ValvePackingSentinel_t.m_d has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "ValvePackingSentinel_t.m_d has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(ValvePackingSentinel_t) == 24, "ValvePackingSentinel_t has size % instead of 24", size_of(ValvePackingSentinel_t));
+    }
+
+    {
+        info := type_info(CCallbackBase);
+        for info.members {
+            if it.name == {
+                case "m_nCallbackFlags";
+                    assert(it.offset_in_bytes == 8, "CCallbackBase.m_nCallbackFlags has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "CCallbackBase.m_nCallbackFlags has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_iCallback";
+                    assert(it.offset_in_bytes == 12, "CCallbackBase.m_iCallback has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "CCallbackBase.m_iCallback has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
         assert(size_of(CCallbackBase) == 16, "CCallbackBase has size % instead of 16", size_of(CCallbackBase));
     }
 
     {
-        instance: CallbackMsg_t;
-        assert(((cast(*void)(*instance.m_hSteamUser)) - cast(*void)(*instance)) == 0, "CallbackMsg_t.m_hSteamUser has unexpected offset % instead of 0", ((cast(*void)(*instance.m_hSteamUser)) - cast(*void)(*instance)));
-        assert(size_of(type_of(CallbackMsg_t.m_hSteamUser)) == 4, "CallbackMsg_t.m_hSteamUser has unexpected size % instead of 4", size_of(type_of(CallbackMsg_t.m_hSteamUser)));
-        assert(((cast(*void)(*instance.m_iCallback)) - cast(*void)(*instance)) == 4, "CallbackMsg_t.m_iCallback has unexpected offset % instead of 4", ((cast(*void)(*instance.m_iCallback)) - cast(*void)(*instance)));
-        assert(size_of(type_of(CallbackMsg_t.m_iCallback)) == 4, "CallbackMsg_t.m_iCallback has unexpected size % instead of 4", size_of(type_of(CallbackMsg_t.m_iCallback)));
-        assert(((cast(*void)(*instance.m_pubParam)) - cast(*void)(*instance)) == 8, "CallbackMsg_t.m_pubParam has unexpected offset % instead of 8", ((cast(*void)(*instance.m_pubParam)) - cast(*void)(*instance)));
-        assert(size_of(type_of(CallbackMsg_t.m_pubParam)) == 8, "CallbackMsg_t.m_pubParam has unexpected size % instead of 8", size_of(type_of(CallbackMsg_t.m_pubParam)));
-        assert(((cast(*void)(*instance.m_cubParam)) - cast(*void)(*instance)) == 16, "CallbackMsg_t.m_cubParam has unexpected offset % instead of 16", ((cast(*void)(*instance.m_cubParam)) - cast(*void)(*instance)));
-        assert(size_of(type_of(CallbackMsg_t.m_cubParam)) == 4, "CallbackMsg_t.m_cubParam has unexpected size % instead of 4", size_of(type_of(CallbackMsg_t.m_cubParam)));
+        info := type_info(CallbackMsg_t);
+        for info.members {
+            if it.name == {
+                case "m_hSteamUser";
+                    assert(it.offset_in_bytes == 0, "CallbackMsg_t.m_hSteamUser has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "CallbackMsg_t.m_hSteamUser has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_iCallback";
+                    assert(it.offset_in_bytes == 4, "CallbackMsg_t.m_iCallback has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "CallbackMsg_t.m_iCallback has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_pubParam";
+                    assert(it.offset_in_bytes == 8, "CallbackMsg_t.m_pubParam has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "CallbackMsg_t.m_pubParam has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_cubParam";
+                    assert(it.offset_in_bytes == 16, "CallbackMsg_t.m_cubParam has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "CallbackMsg_t.m_cubParam has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
         assert(size_of(CallbackMsg_t) == 20, "CallbackMsg_t has size % instead of 20", size_of(CallbackMsg_t));
+    }
+
+    {
+        info := type_info(CSteamGameServerAPIContext);
+        for info.members {
+            if it.name == {
+                case "m_pSteamClient";
+                    assert(it.offset_in_bytes == 0, "CSteamGameServerAPIContext.m_pSteamClient has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "CSteamGameServerAPIContext.m_pSteamClient has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_pSteamGameServer";
+                    assert(it.offset_in_bytes == 8, "CSteamGameServerAPIContext.m_pSteamGameServer has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "CSteamGameServerAPIContext.m_pSteamGameServer has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_pSteamGameServerUtils";
+                    assert(it.offset_in_bytes == 16, "CSteamGameServerAPIContext.m_pSteamGameServerUtils has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "CSteamGameServerAPIContext.m_pSteamGameServerUtils has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_pSteamGameServerNetworking";
+                    assert(it.offset_in_bytes == 24, "CSteamGameServerAPIContext.m_pSteamGameServerNetworking has unexpected offset % instead of 24", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "CSteamGameServerAPIContext.m_pSteamGameServerNetworking has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_pSteamGameServerStats";
+                    assert(it.offset_in_bytes == 32, "CSteamGameServerAPIContext.m_pSteamGameServerStats has unexpected offset % instead of 32", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "CSteamGameServerAPIContext.m_pSteamGameServerStats has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_pSteamHTTP";
+                    assert(it.offset_in_bytes == 40, "CSteamGameServerAPIContext.m_pSteamHTTP has unexpected offset % instead of 40", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "CSteamGameServerAPIContext.m_pSteamHTTP has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_pSteamInventory";
+                    assert(it.offset_in_bytes == 48, "CSteamGameServerAPIContext.m_pSteamInventory has unexpected offset % instead of 48", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "CSteamGameServerAPIContext.m_pSteamInventory has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_pSteamUGC";
+                    assert(it.offset_in_bytes == 56, "CSteamGameServerAPIContext.m_pSteamUGC has unexpected offset % instead of 56", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "CSteamGameServerAPIContext.m_pSteamUGC has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(CSteamGameServerAPIContext) == 64, "CSteamGameServerAPIContext has size % instead of 64", size_of(CSteamGameServerAPIContext));
     }
 
     assert(size_of(ISteamApps) == 8, "ISteamApps has size % instead of 8", size_of(ISteamApps));
 
+    {
+        info := type_info(DlcInstalled_t);
+        for info.members {
+            if it.name == {
+                case "m_nAppID";
+                    assert(it.offset_in_bytes == 0, "DlcInstalled_t.m_nAppID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "DlcInstalled_t.m_nAppID has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(DlcInstalled_t) == 4, "DlcInstalled_t has size % instead of 4", size_of(DlcInstalled_t));
+    }
+
+    assert(size_of(NewUrlLaunchParameters_t) == 1, "NewUrlLaunchParameters_t has size % instead of 1", size_of(NewUrlLaunchParameters_t));
+
+    {
+        info := type_info(AppProofOfPurchaseKeyResponse_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "AppProofOfPurchaseKeyResponse_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "AppProofOfPurchaseKeyResponse_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nAppID";
+                    assert(it.offset_in_bytes == 4, "AppProofOfPurchaseKeyResponse_t.m_nAppID has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "AppProofOfPurchaseKeyResponse_t.m_nAppID has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_cchKeyLength";
+                    assert(it.offset_in_bytes == 8, "AppProofOfPurchaseKeyResponse_t.m_cchKeyLength has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "AppProofOfPurchaseKeyResponse_t.m_cchKeyLength has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_rgchKey";
+                    assert(it.offset_in_bytes == 12, "AppProofOfPurchaseKeyResponse_t.m_rgchKey has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 240, "AppProofOfPurchaseKeyResponse_t.m_rgchKey has unexpected size % instead of 240", it.type.runtime_size);
+            }
+        }
+        assert(size_of(AppProofOfPurchaseKeyResponse_t) == 252, "AppProofOfPurchaseKeyResponse_t has size % instead of 252", size_of(AppProofOfPurchaseKeyResponse_t));
+    }
+
+    {
+        info := type_info(FileDetailsResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "FileDetailsResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "FileDetailsResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_ulFileSize";
+                    assert(it.offset_in_bytes == 4, "FileDetailsResult_t.m_ulFileSize has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "FileDetailsResult_t.m_ulFileSize has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_FileSHA";
+                    assert(it.offset_in_bytes == 12, "FileDetailsResult_t.m_FileSHA has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 20, "FileDetailsResult_t.m_FileSHA has unexpected size % instead of 20", it.type.runtime_size);
+                case "m_unFlags";
+                    assert(it.offset_in_bytes == 32, "FileDetailsResult_t.m_unFlags has unexpected offset % instead of 32", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "FileDetailsResult_t.m_unFlags has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(FileDetailsResult_t) == 36, "FileDetailsResult_t has size % instead of 36", size_of(FileDetailsResult_t));
+    }
+
+    {
+        info := type_info(TimedTrialStatus_t);
+        for info.members {
+            if it.name == {
+                case "m_unAppID";
+                    assert(it.offset_in_bytes == 0, "TimedTrialStatus_t.m_unAppID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "TimedTrialStatus_t.m_unAppID has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_bIsOffline";
+                    assert(it.offset_in_bytes == 4, "TimedTrialStatus_t.m_bIsOffline has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "TimedTrialStatus_t.m_bIsOffline has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_unSecondsAllowed";
+                    assert(it.offset_in_bytes == 8, "TimedTrialStatus_t.m_unSecondsAllowed has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "TimedTrialStatus_t.m_unSecondsAllowed has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_unSecondsPlayed";
+                    assert(it.offset_in_bytes == 12, "TimedTrialStatus_t.m_unSecondsPlayed has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "TimedTrialStatus_t.m_unSecondsPlayed has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(TimedTrialStatus_t) == 16, "TimedTrialStatus_t has size % instead of 16", size_of(TimedTrialStatus_t));
+    }
+
+    assert(size_of(ISteamAppTicket) == 8, "ISteamAppTicket has size % instead of 8", size_of(ISteamAppTicket));
+
     assert(size_of(ISteamClient) == 8, "ISteamClient has size % instead of 8", size_of(ISteamClient));
 
     {
-        instance: InputAnalogActionData_t;
-        assert(((cast(*void)(*instance.eMode)) - cast(*void)(*instance)) == 0, "InputAnalogActionData_t.eMode has unexpected offset % instead of 0", ((cast(*void)(*instance.eMode)) - cast(*void)(*instance)));
-        assert(size_of(type_of(InputAnalogActionData_t.eMode)) == 4, "InputAnalogActionData_t.eMode has unexpected size % instead of 4", size_of(type_of(InputAnalogActionData_t.eMode)));
-        assert(((cast(*void)(*instance.x)) - cast(*void)(*instance)) == 4, "InputAnalogActionData_t.x has unexpected offset % instead of 4", ((cast(*void)(*instance.x)) - cast(*void)(*instance)));
-        assert(size_of(type_of(InputAnalogActionData_t.x)) == 4, "InputAnalogActionData_t.x has unexpected size % instead of 4", size_of(type_of(InputAnalogActionData_t.x)));
-        assert(((cast(*void)(*instance.y)) - cast(*void)(*instance)) == 8, "InputAnalogActionData_t.y has unexpected offset % instead of 8", ((cast(*void)(*instance.y)) - cast(*void)(*instance)));
-        assert(size_of(type_of(InputAnalogActionData_t.y)) == 4, "InputAnalogActionData_t.y has unexpected size % instead of 4", size_of(type_of(InputAnalogActionData_t.y)));
-        assert(((cast(*void)(*instance.bActive)) - cast(*void)(*instance)) == 12, "InputAnalogActionData_t.bActive has unexpected offset % instead of 12", ((cast(*void)(*instance.bActive)) - cast(*void)(*instance)));
-        assert(size_of(type_of(InputAnalogActionData_t.bActive)) == 1, "InputAnalogActionData_t.bActive has unexpected size % instead of 1", size_of(type_of(InputAnalogActionData_t.bActive)));
+        info := type_info(InputAnalogActionData_t);
+        for info.members {
+            if it.name == {
+                case "eMode";
+                    assert(it.offset_in_bytes == 0, "InputAnalogActionData_t.eMode has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "InputAnalogActionData_t.eMode has unexpected size % instead of 4", it.type.runtime_size);
+                case "x";
+                    assert(it.offset_in_bytes == 4, "InputAnalogActionData_t.x has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "InputAnalogActionData_t.x has unexpected size % instead of 4", it.type.runtime_size);
+                case "y";
+                    assert(it.offset_in_bytes == 8, "InputAnalogActionData_t.y has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "InputAnalogActionData_t.y has unexpected size % instead of 4", it.type.runtime_size);
+                case "bActive";
+                    assert(it.offset_in_bytes == 12, "InputAnalogActionData_t.bActive has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "InputAnalogActionData_t.bActive has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
         assert(size_of(InputAnalogActionData_t) == 13, "InputAnalogActionData_t has size % instead of 13", size_of(InputAnalogActionData_t));
     }
 
     {
-        instance: InputDigitalActionData_t;
-        assert(((cast(*void)(*instance.bState)) - cast(*void)(*instance)) == 0, "InputDigitalActionData_t.bState has unexpected offset % instead of 0", ((cast(*void)(*instance.bState)) - cast(*void)(*instance)));
-        assert(size_of(type_of(InputDigitalActionData_t.bState)) == 1, "InputDigitalActionData_t.bState has unexpected size % instead of 1", size_of(type_of(InputDigitalActionData_t.bState)));
-        assert(((cast(*void)(*instance.bActive)) - cast(*void)(*instance)) == 1, "InputDigitalActionData_t.bActive has unexpected offset % instead of 1", ((cast(*void)(*instance.bActive)) - cast(*void)(*instance)));
-        assert(size_of(type_of(InputDigitalActionData_t.bActive)) == 1, "InputDigitalActionData_t.bActive has unexpected size % instead of 1", size_of(type_of(InputDigitalActionData_t.bActive)));
+        info := type_info(InputDigitalActionData_t);
+        for info.members {
+            if it.name == {
+                case "bState";
+                    assert(it.offset_in_bytes == 0, "InputDigitalActionData_t.bState has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "InputDigitalActionData_t.bState has unexpected size % instead of 1", it.type.runtime_size);
+                case "bActive";
+                    assert(it.offset_in_bytes == 1, "InputDigitalActionData_t.bActive has unexpected offset % instead of 1", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "InputDigitalActionData_t.bActive has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
         assert(size_of(InputDigitalActionData_t) == 2, "InputDigitalActionData_t has size % instead of 2", size_of(InputDigitalActionData_t));
     }
 
     {
-        instance: InputMotionData_t;
-        assert(((cast(*void)(*instance.rotQuatX)) - cast(*void)(*instance)) == 0, "InputMotionData_t.rotQuatX has unexpected offset % instead of 0", ((cast(*void)(*instance.rotQuatX)) - cast(*void)(*instance)));
-        assert(size_of(type_of(InputMotionData_t.rotQuatX)) == 4, "InputMotionData_t.rotQuatX has unexpected size % instead of 4", size_of(type_of(InputMotionData_t.rotQuatX)));
-        assert(((cast(*void)(*instance.rotQuatY)) - cast(*void)(*instance)) == 4, "InputMotionData_t.rotQuatY has unexpected offset % instead of 4", ((cast(*void)(*instance.rotQuatY)) - cast(*void)(*instance)));
-        assert(size_of(type_of(InputMotionData_t.rotQuatY)) == 4, "InputMotionData_t.rotQuatY has unexpected size % instead of 4", size_of(type_of(InputMotionData_t.rotQuatY)));
-        assert(((cast(*void)(*instance.rotQuatZ)) - cast(*void)(*instance)) == 8, "InputMotionData_t.rotQuatZ has unexpected offset % instead of 8", ((cast(*void)(*instance.rotQuatZ)) - cast(*void)(*instance)));
-        assert(size_of(type_of(InputMotionData_t.rotQuatZ)) == 4, "InputMotionData_t.rotQuatZ has unexpected size % instead of 4", size_of(type_of(InputMotionData_t.rotQuatZ)));
-        assert(((cast(*void)(*instance.rotQuatW)) - cast(*void)(*instance)) == 12, "InputMotionData_t.rotQuatW has unexpected offset % instead of 12", ((cast(*void)(*instance.rotQuatW)) - cast(*void)(*instance)));
-        assert(size_of(type_of(InputMotionData_t.rotQuatW)) == 4, "InputMotionData_t.rotQuatW has unexpected size % instead of 4", size_of(type_of(InputMotionData_t.rotQuatW)));
-        assert(((cast(*void)(*instance.posAccelX)) - cast(*void)(*instance)) == 16, "InputMotionData_t.posAccelX has unexpected offset % instead of 16", ((cast(*void)(*instance.posAccelX)) - cast(*void)(*instance)));
-        assert(size_of(type_of(InputMotionData_t.posAccelX)) == 4, "InputMotionData_t.posAccelX has unexpected size % instead of 4", size_of(type_of(InputMotionData_t.posAccelX)));
-        assert(((cast(*void)(*instance.posAccelY)) - cast(*void)(*instance)) == 20, "InputMotionData_t.posAccelY has unexpected offset % instead of 20", ((cast(*void)(*instance.posAccelY)) - cast(*void)(*instance)));
-        assert(size_of(type_of(InputMotionData_t.posAccelY)) == 4, "InputMotionData_t.posAccelY has unexpected size % instead of 4", size_of(type_of(InputMotionData_t.posAccelY)));
-        assert(((cast(*void)(*instance.posAccelZ)) - cast(*void)(*instance)) == 24, "InputMotionData_t.posAccelZ has unexpected offset % instead of 24", ((cast(*void)(*instance.posAccelZ)) - cast(*void)(*instance)));
-        assert(size_of(type_of(InputMotionData_t.posAccelZ)) == 4, "InputMotionData_t.posAccelZ has unexpected size % instead of 4", size_of(type_of(InputMotionData_t.posAccelZ)));
-        assert(((cast(*void)(*instance.rotVelX)) - cast(*void)(*instance)) == 28, "InputMotionData_t.rotVelX has unexpected offset % instead of 28", ((cast(*void)(*instance.rotVelX)) - cast(*void)(*instance)));
-        assert(size_of(type_of(InputMotionData_t.rotVelX)) == 4, "InputMotionData_t.rotVelX has unexpected size % instead of 4", size_of(type_of(InputMotionData_t.rotVelX)));
-        assert(((cast(*void)(*instance.rotVelY)) - cast(*void)(*instance)) == 32, "InputMotionData_t.rotVelY has unexpected offset % instead of 32", ((cast(*void)(*instance.rotVelY)) - cast(*void)(*instance)));
-        assert(size_of(type_of(InputMotionData_t.rotVelY)) == 4, "InputMotionData_t.rotVelY has unexpected size % instead of 4", size_of(type_of(InputMotionData_t.rotVelY)));
-        assert(((cast(*void)(*instance.rotVelZ)) - cast(*void)(*instance)) == 36, "InputMotionData_t.rotVelZ has unexpected offset % instead of 36", ((cast(*void)(*instance.rotVelZ)) - cast(*void)(*instance)));
-        assert(size_of(type_of(InputMotionData_t.rotVelZ)) == 4, "InputMotionData_t.rotVelZ has unexpected size % instead of 4", size_of(type_of(InputMotionData_t.rotVelZ)));
+        info := type_info(InputMotionData_t);
+        for info.members {
+            if it.name == {
+                case "rotQuatX";
+                    assert(it.offset_in_bytes == 0, "InputMotionData_t.rotQuatX has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "InputMotionData_t.rotQuatX has unexpected size % instead of 4", it.type.runtime_size);
+                case "rotQuatY";
+                    assert(it.offset_in_bytes == 4, "InputMotionData_t.rotQuatY has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "InputMotionData_t.rotQuatY has unexpected size % instead of 4", it.type.runtime_size);
+                case "rotQuatZ";
+                    assert(it.offset_in_bytes == 8, "InputMotionData_t.rotQuatZ has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "InputMotionData_t.rotQuatZ has unexpected size % instead of 4", it.type.runtime_size);
+                case "rotQuatW";
+                    assert(it.offset_in_bytes == 12, "InputMotionData_t.rotQuatW has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "InputMotionData_t.rotQuatW has unexpected size % instead of 4", it.type.runtime_size);
+                case "posAccelX";
+                    assert(it.offset_in_bytes == 16, "InputMotionData_t.posAccelX has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "InputMotionData_t.posAccelX has unexpected size % instead of 4", it.type.runtime_size);
+                case "posAccelY";
+                    assert(it.offset_in_bytes == 20, "InputMotionData_t.posAccelY has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "InputMotionData_t.posAccelY has unexpected size % instead of 4", it.type.runtime_size);
+                case "posAccelZ";
+                    assert(it.offset_in_bytes == 24, "InputMotionData_t.posAccelZ has unexpected offset % instead of 24", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "InputMotionData_t.posAccelZ has unexpected size % instead of 4", it.type.runtime_size);
+                case "rotVelX";
+                    assert(it.offset_in_bytes == 28, "InputMotionData_t.rotVelX has unexpected offset % instead of 28", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "InputMotionData_t.rotVelX has unexpected size % instead of 4", it.type.runtime_size);
+                case "rotVelY";
+                    assert(it.offset_in_bytes == 32, "InputMotionData_t.rotVelY has unexpected offset % instead of 32", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "InputMotionData_t.rotVelY has unexpected size % instead of 4", it.type.runtime_size);
+                case "rotVelZ";
+                    assert(it.offset_in_bytes == 36, "InputMotionData_t.rotVelZ has unexpected offset % instead of 36", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "InputMotionData_t.rotVelZ has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
         assert(size_of(InputMotionData_t) == 40, "InputMotionData_t has size % instead of 40", size_of(InputMotionData_t));
     }
 
     {
-        instance: SteamInputActionEvent_t.AnalogAction_t;
-        assert(((cast(*void)(*instance.actionHandle)) - cast(*void)(*instance)) == 0, "SteamInputActionEvent_t.AnalogAction_t.actionHandle has unexpected offset % instead of 0", ((cast(*void)(*instance.actionHandle)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamInputActionEvent_t.AnalogAction_t.actionHandle)) == 8, "SteamInputActionEvent_t.AnalogAction_t.actionHandle has unexpected size % instead of 8", size_of(type_of(SteamInputActionEvent_t.AnalogAction_t.actionHandle)));
-        assert(((cast(*void)(*instance.analogActionData)) - cast(*void)(*instance)) == 8, "SteamInputActionEvent_t.AnalogAction_t.analogActionData has unexpected offset % instead of 8", ((cast(*void)(*instance.analogActionData)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamInputActionEvent_t.AnalogAction_t.analogActionData)) == 13, "SteamInputActionEvent_t.AnalogAction_t.analogActionData has unexpected size % instead of 13", size_of(type_of(SteamInputActionEvent_t.AnalogAction_t.analogActionData)));
+        info := type_info(SteamInputActionEvent_t.AnalogAction_t);
+        for info.members {
+            if it.name == {
+                case "actionHandle";
+                    assert(it.offset_in_bytes == 0, "SteamInputActionEvent_t.AnalogAction_t.actionHandle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamInputActionEvent_t.AnalogAction_t.actionHandle has unexpected size % instead of 8", it.type.runtime_size);
+                case "analogActionData";
+                    assert(it.offset_in_bytes == 8, "SteamInputActionEvent_t.AnalogAction_t.analogActionData has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 13, "SteamInputActionEvent_t.AnalogAction_t.analogActionData has unexpected size % instead of 13", it.type.runtime_size);
+            }
+        }
         assert(size_of(SteamInputActionEvent_t.AnalogAction_t) == 21, "SteamInputActionEvent_t.AnalogAction_t has size % instead of 21", size_of(SteamInputActionEvent_t.AnalogAction_t));
     }
 
     {
-        instance: SteamInputActionEvent_t.DigitalAction_t;
-        assert(((cast(*void)(*instance.actionHandle)) - cast(*void)(*instance)) == 0, "SteamInputActionEvent_t.DigitalAction_t.actionHandle has unexpected offset % instead of 0", ((cast(*void)(*instance.actionHandle)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamInputActionEvent_t.DigitalAction_t.actionHandle)) == 8, "SteamInputActionEvent_t.DigitalAction_t.actionHandle has unexpected size % instead of 8", size_of(type_of(SteamInputActionEvent_t.DigitalAction_t.actionHandle)));
-        assert(((cast(*void)(*instance.digitalActionData)) - cast(*void)(*instance)) == 8, "SteamInputActionEvent_t.DigitalAction_t.digitalActionData has unexpected offset % instead of 8", ((cast(*void)(*instance.digitalActionData)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamInputActionEvent_t.DigitalAction_t.digitalActionData)) == 2, "SteamInputActionEvent_t.DigitalAction_t.digitalActionData has unexpected size % instead of 2", size_of(type_of(SteamInputActionEvent_t.DigitalAction_t.digitalActionData)));
+        info := type_info(SteamInputActionEvent_t.DigitalAction_t);
+        for info.members {
+            if it.name == {
+                case "actionHandle";
+                    assert(it.offset_in_bytes == 0, "SteamInputActionEvent_t.DigitalAction_t.actionHandle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamInputActionEvent_t.DigitalAction_t.actionHandle has unexpected size % instead of 8", it.type.runtime_size);
+                case "digitalActionData";
+                    assert(it.offset_in_bytes == 8, "SteamInputActionEvent_t.DigitalAction_t.digitalActionData has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 2, "SteamInputActionEvent_t.DigitalAction_t.digitalActionData has unexpected size % instead of 2", it.type.runtime_size);
+            }
+        }
         assert(size_of(SteamInputActionEvent_t.DigitalAction_t) == 10, "SteamInputActionEvent_t.DigitalAction_t has size % instead of 10", size_of(SteamInputActionEvent_t.DigitalAction_t));
     }
 
     {
-        instance: SteamInputActionEvent_t;
-        assert(((cast(*void)(*instance.controllerHandle)) - cast(*void)(*instance)) == 0, "SteamInputActionEvent_t.controllerHandle has unexpected offset % instead of 0", ((cast(*void)(*instance.controllerHandle)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamInputActionEvent_t.controllerHandle)) == 8, "SteamInputActionEvent_t.controllerHandle has unexpected size % instead of 8", size_of(type_of(SteamInputActionEvent_t.controllerHandle)));
-        assert(((cast(*void)(*instance.eEventType)) - cast(*void)(*instance)) == 8, "SteamInputActionEvent_t.eEventType has unexpected offset % instead of 8", ((cast(*void)(*instance.eEventType)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamInputActionEvent_t.eEventType)) == 4, "SteamInputActionEvent_t.eEventType has unexpected size % instead of 4", size_of(type_of(SteamInputActionEvent_t.eEventType)));
+        info := type_info(SteamInputActionEvent_t);
+        for info.members {
+            if it.name == {
+                case "controllerHandle";
+                    assert(it.offset_in_bytes == 0, "SteamInputActionEvent_t.controllerHandle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamInputActionEvent_t.controllerHandle has unexpected size % instead of 8", it.type.runtime_size);
+                case "eEventType";
+                    assert(it.offset_in_bytes == 8, "SteamInputActionEvent_t.eEventType has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamInputActionEvent_t.eEventType has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
         assert(size_of(SteamInputActionEvent_t) == 33, "SteamInputActionEvent_t has size % instead of 33", size_of(SteamInputActionEvent_t));
     }
 
     assert(size_of(ISteamInput) == 8, "ISteamInput has size % instead of 8", size_of(ISteamInput));
 
+    {
+        info := type_info(SteamInputDeviceConnected_t);
+        for info.members {
+            if it.name == {
+                case "m_ulConnectedDeviceHandle";
+                    assert(it.offset_in_bytes == 0, "SteamInputDeviceConnected_t.m_ulConnectedDeviceHandle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamInputDeviceConnected_t.m_ulConnectedDeviceHandle has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SteamInputDeviceConnected_t) == 8, "SteamInputDeviceConnected_t has size % instead of 8", size_of(SteamInputDeviceConnected_t));
+    }
+
+    {
+        info := type_info(SteamInputDeviceDisconnected_t);
+        for info.members {
+            if it.name == {
+                case "m_ulDisconnectedDeviceHandle";
+                    assert(it.offset_in_bytes == 0, "SteamInputDeviceDisconnected_t.m_ulDisconnectedDeviceHandle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamInputDeviceDisconnected_t.m_ulDisconnectedDeviceHandle has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SteamInputDeviceDisconnected_t) == 8, "SteamInputDeviceDisconnected_t has size % instead of 8", size_of(SteamInputDeviceDisconnected_t));
+    }
+
+    {
+        info := type_info(SteamInputConfigurationLoaded_t);
+        for info.members {
+            if it.name == {
+                case "m_unAppID";
+                    assert(it.offset_in_bytes == 0, "SteamInputConfigurationLoaded_t.m_unAppID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamInputConfigurationLoaded_t.m_unAppID has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_ulDeviceHandle";
+                    assert(it.offset_in_bytes == 4, "SteamInputConfigurationLoaded_t.m_ulDeviceHandle has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamInputConfigurationLoaded_t.m_ulDeviceHandle has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_ulMappingCreator";
+                    assert(it.offset_in_bytes == 12, "SteamInputConfigurationLoaded_t.m_ulMappingCreator has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamInputConfigurationLoaded_t.m_ulMappingCreator has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_unMajorRevision";
+                    assert(it.offset_in_bytes == 20, "SteamInputConfigurationLoaded_t.m_unMajorRevision has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamInputConfigurationLoaded_t.m_unMajorRevision has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_unMinorRevision";
+                    assert(it.offset_in_bytes == 24, "SteamInputConfigurationLoaded_t.m_unMinorRevision has unexpected offset % instead of 24", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamInputConfigurationLoaded_t.m_unMinorRevision has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_bUsesSteamInputAPI";
+                    assert(it.offset_in_bytes == 28, "SteamInputConfigurationLoaded_t.m_bUsesSteamInputAPI has unexpected offset % instead of 28", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "SteamInputConfigurationLoaded_t.m_bUsesSteamInputAPI has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_bUsesGamepadAPI";
+                    assert(it.offset_in_bytes == 29, "SteamInputConfigurationLoaded_t.m_bUsesGamepadAPI has unexpected offset % instead of 29", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "SteamInputConfigurationLoaded_t.m_bUsesGamepadAPI has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SteamInputConfigurationLoaded_t) == 32, "SteamInputConfigurationLoaded_t has size % instead of 32", size_of(SteamInputConfigurationLoaded_t));
+    }
+
+    {
+        info := type_info(SteamInputGamepadSlotChange_t);
+        for info.members {
+            if it.name == {
+                case "m_unAppID";
+                    assert(it.offset_in_bytes == 0, "SteamInputGamepadSlotChange_t.m_unAppID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamInputGamepadSlotChange_t.m_unAppID has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_ulDeviceHandle";
+                    assert(it.offset_in_bytes == 4, "SteamInputGamepadSlotChange_t.m_ulDeviceHandle has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamInputGamepadSlotChange_t.m_ulDeviceHandle has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_eDeviceType";
+                    assert(it.offset_in_bytes == 12, "SteamInputGamepadSlotChange_t.m_eDeviceType has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamInputGamepadSlotChange_t.m_eDeviceType has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nOldGamepadSlot";
+                    assert(it.offset_in_bytes == 16, "SteamInputGamepadSlotChange_t.m_nOldGamepadSlot has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamInputGamepadSlotChange_t.m_nOldGamepadSlot has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nNewGamepadSlot";
+                    assert(it.offset_in_bytes == 20, "SteamInputGamepadSlotChange_t.m_nNewGamepadSlot has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamInputGamepadSlotChange_t.m_nNewGamepadSlot has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SteamInputGamepadSlotChange_t) == 24, "SteamInputGamepadSlotChange_t has size % instead of 24", size_of(SteamInputGamepadSlotChange_t));
+    }
+
     assert(size_of(ISteamController) == 8, "ISteamController has size % instead of 8", size_of(ISteamController));
 
     {
-        instance: FriendGameInfo_t;
-        assert(((cast(*void)(*instance.m_gameID)) - cast(*void)(*instance)) == 0, "FriendGameInfo_t.m_gameID has unexpected offset % instead of 0", ((cast(*void)(*instance.m_gameID)) - cast(*void)(*instance)));
-        assert(size_of(type_of(FriendGameInfo_t.m_gameID)) == 8, "FriendGameInfo_t.m_gameID has unexpected size % instead of 8", size_of(type_of(FriendGameInfo_t.m_gameID)));
-        assert(((cast(*void)(*instance.m_unGameIP)) - cast(*void)(*instance)) == 8, "FriendGameInfo_t.m_unGameIP has unexpected offset % instead of 8", ((cast(*void)(*instance.m_unGameIP)) - cast(*void)(*instance)));
-        assert(size_of(type_of(FriendGameInfo_t.m_unGameIP)) == 4, "FriendGameInfo_t.m_unGameIP has unexpected size % instead of 4", size_of(type_of(FriendGameInfo_t.m_unGameIP)));
-        assert(((cast(*void)(*instance.m_usGamePort)) - cast(*void)(*instance)) == 12, "FriendGameInfo_t.m_usGamePort has unexpected offset % instead of 12", ((cast(*void)(*instance.m_usGamePort)) - cast(*void)(*instance)));
-        assert(size_of(type_of(FriendGameInfo_t.m_usGamePort)) == 2, "FriendGameInfo_t.m_usGamePort has unexpected size % instead of 2", size_of(type_of(FriendGameInfo_t.m_usGamePort)));
-        assert(((cast(*void)(*instance.m_usQueryPort)) - cast(*void)(*instance)) == 14, "FriendGameInfo_t.m_usQueryPort has unexpected offset % instead of 14", ((cast(*void)(*instance.m_usQueryPort)) - cast(*void)(*instance)));
-        assert(size_of(type_of(FriendGameInfo_t.m_usQueryPort)) == 2, "FriendGameInfo_t.m_usQueryPort has unexpected size % instead of 2", size_of(type_of(FriendGameInfo_t.m_usQueryPort)));
-        assert(((cast(*void)(*instance.m_steamIDLobby)) - cast(*void)(*instance)) == 16, "FriendGameInfo_t.m_steamIDLobby has unexpected offset % instead of 16", ((cast(*void)(*instance.m_steamIDLobby)) - cast(*void)(*instance)));
-        assert(size_of(type_of(FriendGameInfo_t.m_steamIDLobby)) == 8, "FriendGameInfo_t.m_steamIDLobby has unexpected size % instead of 8", size_of(type_of(FriendGameInfo_t.m_steamIDLobby)));
+        info := type_info(FriendGameInfo_t);
+        for info.members {
+            if it.name == {
+                case "m_gameID";
+                    assert(it.offset_in_bytes == 0, "FriendGameInfo_t.m_gameID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "FriendGameInfo_t.m_gameID has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_unGameIP";
+                    assert(it.offset_in_bytes == 8, "FriendGameInfo_t.m_unGameIP has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "FriendGameInfo_t.m_unGameIP has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_usGamePort";
+                    assert(it.offset_in_bytes == 12, "FriendGameInfo_t.m_usGamePort has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 2, "FriendGameInfo_t.m_usGamePort has unexpected size % instead of 2", it.type.runtime_size);
+                case "m_usQueryPort";
+                    assert(it.offset_in_bytes == 14, "FriendGameInfo_t.m_usQueryPort has unexpected offset % instead of 14", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 2, "FriendGameInfo_t.m_usQueryPort has unexpected size % instead of 2", it.type.runtime_size);
+                case "m_steamIDLobby";
+                    assert(it.offset_in_bytes == 16, "FriendGameInfo_t.m_steamIDLobby has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "FriendGameInfo_t.m_steamIDLobby has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
         assert(size_of(FriendGameInfo_t) == 24, "FriendGameInfo_t has size % instead of 24", size_of(FriendGameInfo_t));
     }
 
     assert(size_of(ISteamFriends) == 8, "ISteamFriends has size % instead of 8", size_of(ISteamFriends));
 
+    {
+        info := type_info(PersonaStateChange_t);
+        for info.members {
+            if it.name == {
+                case "m_ulSteamID";
+                    assert(it.offset_in_bytes == 0, "PersonaStateChange_t.m_ulSteamID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "PersonaStateChange_t.m_ulSteamID has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_nChangeFlags";
+                    assert(it.offset_in_bytes == 8, "PersonaStateChange_t.m_nChangeFlags has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "PersonaStateChange_t.m_nChangeFlags has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(PersonaStateChange_t) == 12, "PersonaStateChange_t has size % instead of 12", size_of(PersonaStateChange_t));
+    }
+
+    {
+        info := type_info(GameOverlayActivated_t);
+        for info.members {
+            if it.name == {
+                case "m_bActive";
+                    assert(it.offset_in_bytes == 0, "GameOverlayActivated_t.m_bActive has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "GameOverlayActivated_t.m_bActive has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_bUserInitiated";
+                    assert(it.offset_in_bytes == 1, "GameOverlayActivated_t.m_bUserInitiated has unexpected offset % instead of 1", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "GameOverlayActivated_t.m_bUserInitiated has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_nAppID";
+                    assert(it.offset_in_bytes == 4, "GameOverlayActivated_t.m_nAppID has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GameOverlayActivated_t.m_nAppID has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_dwOverlayPID";
+                    assert(it.offset_in_bytes == 8, "GameOverlayActivated_t.m_dwOverlayPID has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GameOverlayActivated_t.m_dwOverlayPID has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(GameOverlayActivated_t) == 12, "GameOverlayActivated_t has size % instead of 12", size_of(GameOverlayActivated_t));
+    }
+
+    {
+        info := type_info(GameServerChangeRequested_t);
+        for info.members {
+            if it.name == {
+                case "m_rgchServer";
+                    assert(it.offset_in_bytes == 0, "GameServerChangeRequested_t.m_rgchServer has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 64, "GameServerChangeRequested_t.m_rgchServer has unexpected size % instead of 64", it.type.runtime_size);
+                case "m_rgchPassword";
+                    assert(it.offset_in_bytes == 64, "GameServerChangeRequested_t.m_rgchPassword has unexpected offset % instead of 64", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 64, "GameServerChangeRequested_t.m_rgchPassword has unexpected size % instead of 64", it.type.runtime_size);
+            }
+        }
+        assert(size_of(GameServerChangeRequested_t) == 128, "GameServerChangeRequested_t has size % instead of 128", size_of(GameServerChangeRequested_t));
+    }
+
+    {
+        info := type_info(GameLobbyJoinRequested_t);
+        for info.members {
+            if it.name == {
+                case "m_steamIDLobby";
+                    assert(it.offset_in_bytes == 0, "GameLobbyJoinRequested_t.m_steamIDLobby has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "GameLobbyJoinRequested_t.m_steamIDLobby has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_steamIDFriend";
+                    assert(it.offset_in_bytes == 8, "GameLobbyJoinRequested_t.m_steamIDFriend has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "GameLobbyJoinRequested_t.m_steamIDFriend has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(GameLobbyJoinRequested_t) == 16, "GameLobbyJoinRequested_t has size % instead of 16", size_of(GameLobbyJoinRequested_t));
+    }
+
+    {
+        info := type_info(AvatarImageLoaded_t);
+        for info.members {
+            if it.name == {
+                case "m_steamID";
+                    assert(it.offset_in_bytes == 0, "AvatarImageLoaded_t.m_steamID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "AvatarImageLoaded_t.m_steamID has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_iImage";
+                    assert(it.offset_in_bytes == 8, "AvatarImageLoaded_t.m_iImage has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "AvatarImageLoaded_t.m_iImage has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_iWide";
+                    assert(it.offset_in_bytes == 12, "AvatarImageLoaded_t.m_iWide has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "AvatarImageLoaded_t.m_iWide has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_iTall";
+                    assert(it.offset_in_bytes == 16, "AvatarImageLoaded_t.m_iTall has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "AvatarImageLoaded_t.m_iTall has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(AvatarImageLoaded_t) == 20, "AvatarImageLoaded_t has size % instead of 20", size_of(AvatarImageLoaded_t));
+    }
+
+    {
+        info := type_info(ClanOfficerListResponse_t);
+        for info.members {
+            if it.name == {
+                case "m_steamIDClan";
+                    assert(it.offset_in_bytes == 0, "ClanOfficerListResponse_t.m_steamIDClan has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "ClanOfficerListResponse_t.m_steamIDClan has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_cOfficers";
+                    assert(it.offset_in_bytes == 8, "ClanOfficerListResponse_t.m_cOfficers has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "ClanOfficerListResponse_t.m_cOfficers has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_bSuccess";
+                    assert(it.offset_in_bytes == 12, "ClanOfficerListResponse_t.m_bSuccess has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "ClanOfficerListResponse_t.m_bSuccess has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(ClanOfficerListResponse_t) == 16, "ClanOfficerListResponse_t has size % instead of 16", size_of(ClanOfficerListResponse_t));
+    }
+
+    {
+        info := type_info(FriendRichPresenceUpdate_t);
+        for info.members {
+            if it.name == {
+                case "m_steamIDFriend";
+                    assert(it.offset_in_bytes == 0, "FriendRichPresenceUpdate_t.m_steamIDFriend has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "FriendRichPresenceUpdate_t.m_steamIDFriend has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_nAppID";
+                    assert(it.offset_in_bytes == 8, "FriendRichPresenceUpdate_t.m_nAppID has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "FriendRichPresenceUpdate_t.m_nAppID has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(FriendRichPresenceUpdate_t) == 12, "FriendRichPresenceUpdate_t has size % instead of 12", size_of(FriendRichPresenceUpdate_t));
+    }
+
+    {
+        info := type_info(GameRichPresenceJoinRequested_t);
+        for info.members {
+            if it.name == {
+                case "m_steamIDFriend";
+                    assert(it.offset_in_bytes == 0, "GameRichPresenceJoinRequested_t.m_steamIDFriend has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "GameRichPresenceJoinRequested_t.m_steamIDFriend has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_rgchConnect";
+                    assert(it.offset_in_bytes == 8, "GameRichPresenceJoinRequested_t.m_rgchConnect has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 256, "GameRichPresenceJoinRequested_t.m_rgchConnect has unexpected size % instead of 256", it.type.runtime_size);
+            }
+        }
+        assert(size_of(GameRichPresenceJoinRequested_t) == 264, "GameRichPresenceJoinRequested_t has size % instead of 264", size_of(GameRichPresenceJoinRequested_t));
+    }
+
+    {
+        info := type_info(GameConnectedClanChatMsg_t);
+        for info.members {
+            if it.name == {
+                case "m_steamIDClanChat";
+                    assert(it.offset_in_bytes == 0, "GameConnectedClanChatMsg_t.m_steamIDClanChat has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "GameConnectedClanChatMsg_t.m_steamIDClanChat has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_steamIDUser";
+                    assert(it.offset_in_bytes == 8, "GameConnectedClanChatMsg_t.m_steamIDUser has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "GameConnectedClanChatMsg_t.m_steamIDUser has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_iMessageID";
+                    assert(it.offset_in_bytes == 16, "GameConnectedClanChatMsg_t.m_iMessageID has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GameConnectedClanChatMsg_t.m_iMessageID has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(GameConnectedClanChatMsg_t) == 20, "GameConnectedClanChatMsg_t has size % instead of 20", size_of(GameConnectedClanChatMsg_t));
+    }
+
+    {
+        info := type_info(GameConnectedChatJoin_t);
+        for info.members {
+            if it.name == {
+                case "m_steamIDClanChat";
+                    assert(it.offset_in_bytes == 0, "GameConnectedChatJoin_t.m_steamIDClanChat has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "GameConnectedChatJoin_t.m_steamIDClanChat has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_steamIDUser";
+                    assert(it.offset_in_bytes == 8, "GameConnectedChatJoin_t.m_steamIDUser has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "GameConnectedChatJoin_t.m_steamIDUser has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(GameConnectedChatJoin_t) == 16, "GameConnectedChatJoin_t has size % instead of 16", size_of(GameConnectedChatJoin_t));
+    }
+
+    {
+        info := type_info(GameConnectedChatLeave_t);
+        for info.members {
+            if it.name == {
+                case "m_steamIDClanChat";
+                    assert(it.offset_in_bytes == 0, "GameConnectedChatLeave_t.m_steamIDClanChat has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "GameConnectedChatLeave_t.m_steamIDClanChat has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_steamIDUser";
+                    assert(it.offset_in_bytes == 8, "GameConnectedChatLeave_t.m_steamIDUser has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "GameConnectedChatLeave_t.m_steamIDUser has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_bKicked";
+                    assert(it.offset_in_bytes == 16, "GameConnectedChatLeave_t.m_bKicked has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "GameConnectedChatLeave_t.m_bKicked has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_bDropped";
+                    assert(it.offset_in_bytes == 17, "GameConnectedChatLeave_t.m_bDropped has unexpected offset % instead of 17", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "GameConnectedChatLeave_t.m_bDropped has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(GameConnectedChatLeave_t) == 18, "GameConnectedChatLeave_t has size % instead of 18", size_of(GameConnectedChatLeave_t));
+    }
+
+    {
+        info := type_info(DownloadClanActivityCountsResult_t);
+        for info.members {
+            if it.name == {
+                case "m_bSuccess";
+                    assert(it.offset_in_bytes == 0, "DownloadClanActivityCountsResult_t.m_bSuccess has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "DownloadClanActivityCountsResult_t.m_bSuccess has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(DownloadClanActivityCountsResult_t) == 1, "DownloadClanActivityCountsResult_t has size % instead of 1", size_of(DownloadClanActivityCountsResult_t));
+    }
+
+    {
+        info := type_info(JoinClanChatRoomCompletionResult_t);
+        for info.members {
+            if it.name == {
+                case "m_steamIDClanChat";
+                    assert(it.offset_in_bytes == 0, "JoinClanChatRoomCompletionResult_t.m_steamIDClanChat has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "JoinClanChatRoomCompletionResult_t.m_steamIDClanChat has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_eChatRoomEnterResponse";
+                    assert(it.offset_in_bytes == 8, "JoinClanChatRoomCompletionResult_t.m_eChatRoomEnterResponse has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "JoinClanChatRoomCompletionResult_t.m_eChatRoomEnterResponse has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(JoinClanChatRoomCompletionResult_t) == 12, "JoinClanChatRoomCompletionResult_t has size % instead of 12", size_of(JoinClanChatRoomCompletionResult_t));
+    }
+
+    {
+        info := type_info(GameConnectedFriendChatMsg_t);
+        for info.members {
+            if it.name == {
+                case "m_steamIDUser";
+                    assert(it.offset_in_bytes == 0, "GameConnectedFriendChatMsg_t.m_steamIDUser has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "GameConnectedFriendChatMsg_t.m_steamIDUser has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_iMessageID";
+                    assert(it.offset_in_bytes == 8, "GameConnectedFriendChatMsg_t.m_iMessageID has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GameConnectedFriendChatMsg_t.m_iMessageID has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(GameConnectedFriendChatMsg_t) == 12, "GameConnectedFriendChatMsg_t has size % instead of 12", size_of(GameConnectedFriendChatMsg_t));
+    }
+
+    {
+        info := type_info(FriendsGetFollowerCount_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "FriendsGetFollowerCount_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "FriendsGetFollowerCount_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_steamID";
+                    assert(it.offset_in_bytes == 4, "FriendsGetFollowerCount_t.m_steamID has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "FriendsGetFollowerCount_t.m_steamID has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_nCount";
+                    assert(it.offset_in_bytes == 12, "FriendsGetFollowerCount_t.m_nCount has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "FriendsGetFollowerCount_t.m_nCount has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(FriendsGetFollowerCount_t) == 16, "FriendsGetFollowerCount_t has size % instead of 16", size_of(FriendsGetFollowerCount_t));
+    }
+
+    {
+        info := type_info(FriendsIsFollowing_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "FriendsIsFollowing_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "FriendsIsFollowing_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_steamID";
+                    assert(it.offset_in_bytes == 4, "FriendsIsFollowing_t.m_steamID has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "FriendsIsFollowing_t.m_steamID has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_bIsFollowing";
+                    assert(it.offset_in_bytes == 12, "FriendsIsFollowing_t.m_bIsFollowing has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "FriendsIsFollowing_t.m_bIsFollowing has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(FriendsIsFollowing_t) == 16, "FriendsIsFollowing_t has size % instead of 16", size_of(FriendsIsFollowing_t));
+    }
+
+    {
+        info := type_info(FriendsEnumerateFollowingList_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "FriendsEnumerateFollowingList_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "FriendsEnumerateFollowingList_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_rgSteamID";
+                    assert(it.offset_in_bytes == 4, "FriendsEnumerateFollowingList_t.m_rgSteamID has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 400, "FriendsEnumerateFollowingList_t.m_rgSteamID has unexpected size % instead of 400", it.type.runtime_size);
+                case "m_nResultsReturned";
+                    assert(it.offset_in_bytes == 404, "FriendsEnumerateFollowingList_t.m_nResultsReturned has unexpected offset % instead of 404", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "FriendsEnumerateFollowingList_t.m_nResultsReturned has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nTotalResultCount";
+                    assert(it.offset_in_bytes == 408, "FriendsEnumerateFollowingList_t.m_nTotalResultCount has unexpected offset % instead of 408", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "FriendsEnumerateFollowingList_t.m_nTotalResultCount has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(FriendsEnumerateFollowingList_t) == 412, "FriendsEnumerateFollowingList_t has size % instead of 412", size_of(FriendsEnumerateFollowingList_t));
+    }
+
+    {
+        info := type_info(SetPersonaNameResponse_t);
+        for info.members {
+            if it.name == {
+                case "m_bSuccess";
+                    assert(it.offset_in_bytes == 0, "SetPersonaNameResponse_t.m_bSuccess has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "SetPersonaNameResponse_t.m_bSuccess has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_bLocalSuccess";
+                    assert(it.offset_in_bytes == 1, "SetPersonaNameResponse_t.m_bLocalSuccess has unexpected offset % instead of 1", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "SetPersonaNameResponse_t.m_bLocalSuccess has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_result";
+                    assert(it.offset_in_bytes == 4, "SetPersonaNameResponse_t.m_result has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SetPersonaNameResponse_t.m_result has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SetPersonaNameResponse_t) == 8, "SetPersonaNameResponse_t has size % instead of 8", size_of(SetPersonaNameResponse_t));
+    }
+
+    assert(size_of(UnreadChatMessagesChanged_t) == 1, "UnreadChatMessagesChanged_t has size % instead of 1", size_of(UnreadChatMessagesChanged_t));
+
+    {
+        info := type_info(OverlayBrowserProtocolNavigation_t);
+        for info.members {
+            if it.name == {
+                case "rgchURI";
+                    assert(it.offset_in_bytes == 0, "OverlayBrowserProtocolNavigation_t.rgchURI has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1024, "OverlayBrowserProtocolNavigation_t.rgchURI has unexpected size % instead of 1024", it.type.runtime_size);
+            }
+        }
+        assert(size_of(OverlayBrowserProtocolNavigation_t) == 1024, "OverlayBrowserProtocolNavigation_t has size % instead of 1024", size_of(OverlayBrowserProtocolNavigation_t));
+    }
+
+    {
+        info := type_info(EquippedProfileItemsChanged_t);
+        for info.members {
+            if it.name == {
+                case "m_steamID";
+                    assert(it.offset_in_bytes == 0, "EquippedProfileItemsChanged_t.m_steamID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "EquippedProfileItemsChanged_t.m_steamID has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(EquippedProfileItemsChanged_t) == 8, "EquippedProfileItemsChanged_t has size % instead of 8", size_of(EquippedProfileItemsChanged_t));
+    }
+
+    {
+        info := type_info(EquippedProfileItems_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "EquippedProfileItems_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "EquippedProfileItems_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_steamID";
+                    assert(it.offset_in_bytes == 4, "EquippedProfileItems_t.m_steamID has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "EquippedProfileItems_t.m_steamID has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_bHasAnimatedAvatar";
+                    assert(it.offset_in_bytes == 12, "EquippedProfileItems_t.m_bHasAnimatedAvatar has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "EquippedProfileItems_t.m_bHasAnimatedAvatar has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_bHasAvatarFrame";
+                    assert(it.offset_in_bytes == 13, "EquippedProfileItems_t.m_bHasAvatarFrame has unexpected offset % instead of 13", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "EquippedProfileItems_t.m_bHasAvatarFrame has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_bHasProfileModifier";
+                    assert(it.offset_in_bytes == 14, "EquippedProfileItems_t.m_bHasProfileModifier has unexpected offset % instead of 14", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "EquippedProfileItems_t.m_bHasProfileModifier has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_bHasProfileBackground";
+                    assert(it.offset_in_bytes == 15, "EquippedProfileItems_t.m_bHasProfileBackground has unexpected offset % instead of 15", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "EquippedProfileItems_t.m_bHasProfileBackground has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_bHasMiniProfileBackground";
+                    assert(it.offset_in_bytes == 16, "EquippedProfileItems_t.m_bHasMiniProfileBackground has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "EquippedProfileItems_t.m_bHasMiniProfileBackground has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(EquippedProfileItems_t) == 20, "EquippedProfileItems_t has size % instead of 20", size_of(EquippedProfileItems_t));
+    }
+
+    assert(size_of(ISteamGameCoordinator) == 8, "ISteamGameCoordinator has size % instead of 8", size_of(ISteamGameCoordinator));
+
+    {
+        info := type_info(GCMessageAvailable_t);
+        for info.members {
+            if it.name == {
+                case "m_nMessageSize";
+                    assert(it.offset_in_bytes == 0, "GCMessageAvailable_t.m_nMessageSize has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GCMessageAvailable_t.m_nMessageSize has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(GCMessageAvailable_t) == 4, "GCMessageAvailable_t has size % instead of 4", size_of(GCMessageAvailable_t));
+    }
+
+    assert(size_of(GCMessageFailed_t) == 1, "GCMessageFailed_t has size % instead of 1", size_of(GCMessageFailed_t));
+
     assert(size_of(ISteamGameServer) == 8, "ISteamGameServer has size % instead of 8", size_of(ISteamGameServer));
+
+    {
+        info := type_info(GSClientApprove_t);
+        for info.members {
+            if it.name == {
+                case "m_SteamID";
+                    assert(it.offset_in_bytes == 0, "GSClientApprove_t.m_SteamID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "GSClientApprove_t.m_SteamID has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_OwnerSteamID";
+                    assert(it.offset_in_bytes == 8, "GSClientApprove_t.m_OwnerSteamID has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "GSClientApprove_t.m_OwnerSteamID has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(GSClientApprove_t) == 16, "GSClientApprove_t has size % instead of 16", size_of(GSClientApprove_t));
+    }
+
+    {
+        info := type_info(GSClientDeny_t);
+        for info.members {
+            if it.name == {
+                case "m_SteamID";
+                    assert(it.offset_in_bytes == 0, "GSClientDeny_t.m_SteamID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "GSClientDeny_t.m_SteamID has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_eDenyReason";
+                    assert(it.offset_in_bytes == 8, "GSClientDeny_t.m_eDenyReason has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GSClientDeny_t.m_eDenyReason has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_rgchOptionalText";
+                    assert(it.offset_in_bytes == 12, "GSClientDeny_t.m_rgchOptionalText has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 128, "GSClientDeny_t.m_rgchOptionalText has unexpected size % instead of 128", it.type.runtime_size);
+            }
+        }
+        assert(size_of(GSClientDeny_t) == 140, "GSClientDeny_t has size % instead of 140", size_of(GSClientDeny_t));
+    }
+
+    {
+        info := type_info(GSClientKick_t);
+        for info.members {
+            if it.name == {
+                case "m_SteamID";
+                    assert(it.offset_in_bytes == 0, "GSClientKick_t.m_SteamID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "GSClientKick_t.m_SteamID has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_eDenyReason";
+                    assert(it.offset_in_bytes == 8, "GSClientKick_t.m_eDenyReason has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GSClientKick_t.m_eDenyReason has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(GSClientKick_t) == 12, "GSClientKick_t has size % instead of 12", size_of(GSClientKick_t));
+    }
+
+    {
+        info := type_info(GSClientAchievementStatus_t);
+        for info.members {
+            if it.name == {
+                case "m_SteamID";
+                    assert(it.offset_in_bytes == 0, "GSClientAchievementStatus_t.m_SteamID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "GSClientAchievementStatus_t.m_SteamID has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_pchAchievement";
+                    assert(it.offset_in_bytes == 8, "GSClientAchievementStatus_t.m_pchAchievement has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 128, "GSClientAchievementStatus_t.m_pchAchievement has unexpected size % instead of 128", it.type.runtime_size);
+                case "m_bUnlocked";
+                    assert(it.offset_in_bytes == 136, "GSClientAchievementStatus_t.m_bUnlocked has unexpected offset % instead of 136", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "GSClientAchievementStatus_t.m_bUnlocked has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(GSClientAchievementStatus_t) == 140, "GSClientAchievementStatus_t has size % instead of 140", size_of(GSClientAchievementStatus_t));
+    }
+
+    {
+        info := type_info(GSPolicyResponse_t);
+        for info.members {
+            if it.name == {
+                case "m_bSecure";
+                    assert(it.offset_in_bytes == 0, "GSPolicyResponse_t.m_bSecure has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "GSPolicyResponse_t.m_bSecure has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(GSPolicyResponse_t) == 1, "GSPolicyResponse_t has size % instead of 1", size_of(GSPolicyResponse_t));
+    }
+
+    {
+        info := type_info(GSGameplayStats_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "GSGameplayStats_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GSGameplayStats_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nRank";
+                    assert(it.offset_in_bytes == 4, "GSGameplayStats_t.m_nRank has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GSGameplayStats_t.m_nRank has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_unTotalConnects";
+                    assert(it.offset_in_bytes == 8, "GSGameplayStats_t.m_unTotalConnects has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GSGameplayStats_t.m_unTotalConnects has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_unTotalMinutesPlayed";
+                    assert(it.offset_in_bytes == 12, "GSGameplayStats_t.m_unTotalMinutesPlayed has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GSGameplayStats_t.m_unTotalMinutesPlayed has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(GSGameplayStats_t) == 16, "GSGameplayStats_t has size % instead of 16", size_of(GSGameplayStats_t));
+    }
+
+    {
+        info := type_info(GSClientGroupStatus_t);
+        for info.members {
+            if it.name == {
+                case "m_SteamIDUser";
+                    assert(it.offset_in_bytes == 0, "GSClientGroupStatus_t.m_SteamIDUser has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "GSClientGroupStatus_t.m_SteamIDUser has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_SteamIDGroup";
+                    assert(it.offset_in_bytes == 8, "GSClientGroupStatus_t.m_SteamIDGroup has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "GSClientGroupStatus_t.m_SteamIDGroup has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_bMember";
+                    assert(it.offset_in_bytes == 16, "GSClientGroupStatus_t.m_bMember has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "GSClientGroupStatus_t.m_bMember has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_bOfficer";
+                    assert(it.offset_in_bytes == 17, "GSClientGroupStatus_t.m_bOfficer has unexpected offset % instead of 17", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "GSClientGroupStatus_t.m_bOfficer has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(GSClientGroupStatus_t) == 18, "GSClientGroupStatus_t has size % instead of 18", size_of(GSClientGroupStatus_t));
+    }
+
+    {
+        info := type_info(GSReputation_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "GSReputation_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GSReputation_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_unReputationScore";
+                    assert(it.offset_in_bytes == 4, "GSReputation_t.m_unReputationScore has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GSReputation_t.m_unReputationScore has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_bBanned";
+                    assert(it.offset_in_bytes == 8, "GSReputation_t.m_bBanned has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "GSReputation_t.m_bBanned has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_unBannedIP";
+                    assert(it.offset_in_bytes == 12, "GSReputation_t.m_unBannedIP has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GSReputation_t.m_unBannedIP has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_usBannedPort";
+                    assert(it.offset_in_bytes == 16, "GSReputation_t.m_usBannedPort has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 2, "GSReputation_t.m_usBannedPort has unexpected size % instead of 2", it.type.runtime_size);
+                case "m_ulBannedGameID";
+                    assert(it.offset_in_bytes == 20, "GSReputation_t.m_ulBannedGameID has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "GSReputation_t.m_ulBannedGameID has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_unBanExpires";
+                    assert(it.offset_in_bytes == 28, "GSReputation_t.m_unBanExpires has unexpected offset % instead of 28", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GSReputation_t.m_unBanExpires has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(GSReputation_t) == 32, "GSReputation_t has size % instead of 32", size_of(GSReputation_t));
+    }
+
+    {
+        info := type_info(AssociateWithClanResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "AssociateWithClanResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "AssociateWithClanResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(AssociateWithClanResult_t) == 4, "AssociateWithClanResult_t has size % instead of 4", size_of(AssociateWithClanResult_t));
+    }
+
+    {
+        info := type_info(ComputeNewPlayerCompatibilityResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "ComputeNewPlayerCompatibilityResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "ComputeNewPlayerCompatibilityResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_cPlayersThatDontLikeCandidate";
+                    assert(it.offset_in_bytes == 4, "ComputeNewPlayerCompatibilityResult_t.m_cPlayersThatDontLikeCandidate has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "ComputeNewPlayerCompatibilityResult_t.m_cPlayersThatDontLikeCandidate has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_cPlayersThatCandidateDoesntLike";
+                    assert(it.offset_in_bytes == 8, "ComputeNewPlayerCompatibilityResult_t.m_cPlayersThatCandidateDoesntLike has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "ComputeNewPlayerCompatibilityResult_t.m_cPlayersThatCandidateDoesntLike has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_cClanPlayersThatDontLikeCandidate";
+                    assert(it.offset_in_bytes == 12, "ComputeNewPlayerCompatibilityResult_t.m_cClanPlayersThatDontLikeCandidate has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "ComputeNewPlayerCompatibilityResult_t.m_cClanPlayersThatDontLikeCandidate has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_SteamIDCandidate";
+                    assert(it.offset_in_bytes == 16, "ComputeNewPlayerCompatibilityResult_t.m_SteamIDCandidate has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "ComputeNewPlayerCompatibilityResult_t.m_SteamIDCandidate has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(ComputeNewPlayerCompatibilityResult_t) == 24, "ComputeNewPlayerCompatibilityResult_t has size % instead of 24", size_of(ComputeNewPlayerCompatibilityResult_t));
+    }
 
     assert(size_of(ISteamGameServerStats) == 8, "ISteamGameServerStats has size % instead of 8", size_of(ISteamGameServerStats));
 
+    {
+        info := type_info(GSStatsReceived_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "GSStatsReceived_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GSStatsReceived_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_steamIDUser";
+                    assert(it.offset_in_bytes == 4, "GSStatsReceived_t.m_steamIDUser has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "GSStatsReceived_t.m_steamIDUser has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(GSStatsReceived_t) == 12, "GSStatsReceived_t has size % instead of 12", size_of(GSStatsReceived_t));
+    }
+
+    {
+        info := type_info(GSStatsStored_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "GSStatsStored_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GSStatsStored_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_steamIDUser";
+                    assert(it.offset_in_bytes == 4, "GSStatsStored_t.m_steamIDUser has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "GSStatsStored_t.m_steamIDUser has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(GSStatsStored_t) == 12, "GSStatsStored_t has size % instead of 12", size_of(GSStatsStored_t));
+    }
+
+    {
+        info := type_info(GSStatsUnloaded_t);
+        for info.members {
+            if it.name == {
+                case "m_steamIDUser";
+                    assert(it.offset_in_bytes == 0, "GSStatsUnloaded_t.m_steamIDUser has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "GSStatsUnloaded_t.m_steamIDUser has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(GSStatsUnloaded_t) == 8, "GSStatsUnloaded_t has size % instead of 8", size_of(GSStatsUnloaded_t));
+    }
+
     assert(size_of(ISteamHTMLSurface) == 8, "ISteamHTMLSurface has size % instead of 8", size_of(ISteamHTMLSurface));
+
+    {
+        info := type_info(HTML_BrowserReady_t);
+        for info.members {
+            if it.name == {
+                case "unBrowserHandle";
+                    assert(it.offset_in_bytes == 0, "HTML_BrowserReady_t.unBrowserHandle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_BrowserReady_t.unBrowserHandle has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(HTML_BrowserReady_t) == 4, "HTML_BrowserReady_t has size % instead of 4", size_of(HTML_BrowserReady_t));
+    }
+
+    {
+        info := type_info(HTML_NeedsPaint_t);
+        for info.members {
+            if it.name == {
+                case "unBrowserHandle";
+                    assert(it.offset_in_bytes == 0, "HTML_NeedsPaint_t.unBrowserHandle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_NeedsPaint_t.unBrowserHandle has unexpected size % instead of 4", it.type.runtime_size);
+                case "pBGRA";
+                    assert(it.offset_in_bytes == 4, "HTML_NeedsPaint_t.pBGRA has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "HTML_NeedsPaint_t.pBGRA has unexpected size % instead of 8", it.type.runtime_size);
+                case "unWide";
+                    assert(it.offset_in_bytes == 12, "HTML_NeedsPaint_t.unWide has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_NeedsPaint_t.unWide has unexpected size % instead of 4", it.type.runtime_size);
+                case "unTall";
+                    assert(it.offset_in_bytes == 16, "HTML_NeedsPaint_t.unTall has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_NeedsPaint_t.unTall has unexpected size % instead of 4", it.type.runtime_size);
+                case "unUpdateX";
+                    assert(it.offset_in_bytes == 20, "HTML_NeedsPaint_t.unUpdateX has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_NeedsPaint_t.unUpdateX has unexpected size % instead of 4", it.type.runtime_size);
+                case "unUpdateY";
+                    assert(it.offset_in_bytes == 24, "HTML_NeedsPaint_t.unUpdateY has unexpected offset % instead of 24", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_NeedsPaint_t.unUpdateY has unexpected size % instead of 4", it.type.runtime_size);
+                case "unUpdateWide";
+                    assert(it.offset_in_bytes == 28, "HTML_NeedsPaint_t.unUpdateWide has unexpected offset % instead of 28", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_NeedsPaint_t.unUpdateWide has unexpected size % instead of 4", it.type.runtime_size);
+                case "unUpdateTall";
+                    assert(it.offset_in_bytes == 32, "HTML_NeedsPaint_t.unUpdateTall has unexpected offset % instead of 32", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_NeedsPaint_t.unUpdateTall has unexpected size % instead of 4", it.type.runtime_size);
+                case "unScrollX";
+                    assert(it.offset_in_bytes == 36, "HTML_NeedsPaint_t.unScrollX has unexpected offset % instead of 36", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_NeedsPaint_t.unScrollX has unexpected size % instead of 4", it.type.runtime_size);
+                case "unScrollY";
+                    assert(it.offset_in_bytes == 40, "HTML_NeedsPaint_t.unScrollY has unexpected offset % instead of 40", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_NeedsPaint_t.unScrollY has unexpected size % instead of 4", it.type.runtime_size);
+                case "flPageScale";
+                    assert(it.offset_in_bytes == 44, "HTML_NeedsPaint_t.flPageScale has unexpected offset % instead of 44", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_NeedsPaint_t.flPageScale has unexpected size % instead of 4", it.type.runtime_size);
+                case "unPageSerial";
+                    assert(it.offset_in_bytes == 48, "HTML_NeedsPaint_t.unPageSerial has unexpected offset % instead of 48", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_NeedsPaint_t.unPageSerial has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(HTML_NeedsPaint_t) == 52, "HTML_NeedsPaint_t has size % instead of 52", size_of(HTML_NeedsPaint_t));
+    }
+
+    {
+        info := type_info(HTML_StartRequest_t);
+        for info.members {
+            if it.name == {
+                case "unBrowserHandle";
+                    assert(it.offset_in_bytes == 0, "HTML_StartRequest_t.unBrowserHandle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_StartRequest_t.unBrowserHandle has unexpected size % instead of 4", it.type.runtime_size);
+                case "pchURL";
+                    assert(it.offset_in_bytes == 4, "HTML_StartRequest_t.pchURL has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "HTML_StartRequest_t.pchURL has unexpected size % instead of 8", it.type.runtime_size);
+                case "pchTarget";
+                    assert(it.offset_in_bytes == 12, "HTML_StartRequest_t.pchTarget has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "HTML_StartRequest_t.pchTarget has unexpected size % instead of 8", it.type.runtime_size);
+                case "pchPostData";
+                    assert(it.offset_in_bytes == 20, "HTML_StartRequest_t.pchPostData has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "HTML_StartRequest_t.pchPostData has unexpected size % instead of 8", it.type.runtime_size);
+                case "bIsRedirect";
+                    assert(it.offset_in_bytes == 28, "HTML_StartRequest_t.bIsRedirect has unexpected offset % instead of 28", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "HTML_StartRequest_t.bIsRedirect has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(HTML_StartRequest_t) == 32, "HTML_StartRequest_t has size % instead of 32", size_of(HTML_StartRequest_t));
+    }
+
+    {
+        info := type_info(HTML_CloseBrowser_t);
+        for info.members {
+            if it.name == {
+                case "unBrowserHandle";
+                    assert(it.offset_in_bytes == 0, "HTML_CloseBrowser_t.unBrowserHandle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_CloseBrowser_t.unBrowserHandle has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(HTML_CloseBrowser_t) == 4, "HTML_CloseBrowser_t has size % instead of 4", size_of(HTML_CloseBrowser_t));
+    }
+
+    {
+        info := type_info(HTML_URLChanged_t);
+        for info.members {
+            if it.name == {
+                case "unBrowserHandle";
+                    assert(it.offset_in_bytes == 0, "HTML_URLChanged_t.unBrowserHandle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_URLChanged_t.unBrowserHandle has unexpected size % instead of 4", it.type.runtime_size);
+                case "pchURL";
+                    assert(it.offset_in_bytes == 4, "HTML_URLChanged_t.pchURL has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "HTML_URLChanged_t.pchURL has unexpected size % instead of 8", it.type.runtime_size);
+                case "pchPostData";
+                    assert(it.offset_in_bytes == 12, "HTML_URLChanged_t.pchPostData has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "HTML_URLChanged_t.pchPostData has unexpected size % instead of 8", it.type.runtime_size);
+                case "bIsRedirect";
+                    assert(it.offset_in_bytes == 20, "HTML_URLChanged_t.bIsRedirect has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "HTML_URLChanged_t.bIsRedirect has unexpected size % instead of 1", it.type.runtime_size);
+                case "pchPageTitle";
+                    assert(it.offset_in_bytes == 24, "HTML_URLChanged_t.pchPageTitle has unexpected offset % instead of 24", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "HTML_URLChanged_t.pchPageTitle has unexpected size % instead of 8", it.type.runtime_size);
+                case "bNewNavigation";
+                    assert(it.offset_in_bytes == 32, "HTML_URLChanged_t.bNewNavigation has unexpected offset % instead of 32", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "HTML_URLChanged_t.bNewNavigation has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(HTML_URLChanged_t) == 36, "HTML_URLChanged_t has size % instead of 36", size_of(HTML_URLChanged_t));
+    }
+
+    {
+        info := type_info(HTML_FinishedRequest_t);
+        for info.members {
+            if it.name == {
+                case "unBrowserHandle";
+                    assert(it.offset_in_bytes == 0, "HTML_FinishedRequest_t.unBrowserHandle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_FinishedRequest_t.unBrowserHandle has unexpected size % instead of 4", it.type.runtime_size);
+                case "pchURL";
+                    assert(it.offset_in_bytes == 4, "HTML_FinishedRequest_t.pchURL has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "HTML_FinishedRequest_t.pchURL has unexpected size % instead of 8", it.type.runtime_size);
+                case "pchPageTitle";
+                    assert(it.offset_in_bytes == 12, "HTML_FinishedRequest_t.pchPageTitle has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "HTML_FinishedRequest_t.pchPageTitle has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(HTML_FinishedRequest_t) == 20, "HTML_FinishedRequest_t has size % instead of 20", size_of(HTML_FinishedRequest_t));
+    }
+
+    {
+        info := type_info(HTML_OpenLinkInNewTab_t);
+        for info.members {
+            if it.name == {
+                case "unBrowserHandle";
+                    assert(it.offset_in_bytes == 0, "HTML_OpenLinkInNewTab_t.unBrowserHandle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_OpenLinkInNewTab_t.unBrowserHandle has unexpected size % instead of 4", it.type.runtime_size);
+                case "pchURL";
+                    assert(it.offset_in_bytes == 4, "HTML_OpenLinkInNewTab_t.pchURL has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "HTML_OpenLinkInNewTab_t.pchURL has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(HTML_OpenLinkInNewTab_t) == 12, "HTML_OpenLinkInNewTab_t has size % instead of 12", size_of(HTML_OpenLinkInNewTab_t));
+    }
+
+    {
+        info := type_info(HTML_ChangedTitle_t);
+        for info.members {
+            if it.name == {
+                case "unBrowserHandle";
+                    assert(it.offset_in_bytes == 0, "HTML_ChangedTitle_t.unBrowserHandle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_ChangedTitle_t.unBrowserHandle has unexpected size % instead of 4", it.type.runtime_size);
+                case "pchTitle";
+                    assert(it.offset_in_bytes == 4, "HTML_ChangedTitle_t.pchTitle has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "HTML_ChangedTitle_t.pchTitle has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(HTML_ChangedTitle_t) == 12, "HTML_ChangedTitle_t has size % instead of 12", size_of(HTML_ChangedTitle_t));
+    }
+
+    {
+        info := type_info(HTML_SearchResults_t);
+        for info.members {
+            if it.name == {
+                case "unBrowserHandle";
+                    assert(it.offset_in_bytes == 0, "HTML_SearchResults_t.unBrowserHandle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_SearchResults_t.unBrowserHandle has unexpected size % instead of 4", it.type.runtime_size);
+                case "unResults";
+                    assert(it.offset_in_bytes == 4, "HTML_SearchResults_t.unResults has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_SearchResults_t.unResults has unexpected size % instead of 4", it.type.runtime_size);
+                case "unCurrentMatch";
+                    assert(it.offset_in_bytes == 8, "HTML_SearchResults_t.unCurrentMatch has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_SearchResults_t.unCurrentMatch has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(HTML_SearchResults_t) == 12, "HTML_SearchResults_t has size % instead of 12", size_of(HTML_SearchResults_t));
+    }
+
+    {
+        info := type_info(HTML_CanGoBackAndForward_t);
+        for info.members {
+            if it.name == {
+                case "unBrowserHandle";
+                    assert(it.offset_in_bytes == 0, "HTML_CanGoBackAndForward_t.unBrowserHandle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_CanGoBackAndForward_t.unBrowserHandle has unexpected size % instead of 4", it.type.runtime_size);
+                case "bCanGoBack";
+                    assert(it.offset_in_bytes == 4, "HTML_CanGoBackAndForward_t.bCanGoBack has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "HTML_CanGoBackAndForward_t.bCanGoBack has unexpected size % instead of 1", it.type.runtime_size);
+                case "bCanGoForward";
+                    assert(it.offset_in_bytes == 5, "HTML_CanGoBackAndForward_t.bCanGoForward has unexpected offset % instead of 5", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "HTML_CanGoBackAndForward_t.bCanGoForward has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(HTML_CanGoBackAndForward_t) == 8, "HTML_CanGoBackAndForward_t has size % instead of 8", size_of(HTML_CanGoBackAndForward_t));
+    }
+
+    {
+        info := type_info(HTML_HorizontalScroll_t);
+        for info.members {
+            if it.name == {
+                case "unBrowserHandle";
+                    assert(it.offset_in_bytes == 0, "HTML_HorizontalScroll_t.unBrowserHandle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_HorizontalScroll_t.unBrowserHandle has unexpected size % instead of 4", it.type.runtime_size);
+                case "unScrollMax";
+                    assert(it.offset_in_bytes == 4, "HTML_HorizontalScroll_t.unScrollMax has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_HorizontalScroll_t.unScrollMax has unexpected size % instead of 4", it.type.runtime_size);
+                case "unScrollCurrent";
+                    assert(it.offset_in_bytes == 8, "HTML_HorizontalScroll_t.unScrollCurrent has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_HorizontalScroll_t.unScrollCurrent has unexpected size % instead of 4", it.type.runtime_size);
+                case "flPageScale";
+                    assert(it.offset_in_bytes == 12, "HTML_HorizontalScroll_t.flPageScale has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_HorizontalScroll_t.flPageScale has unexpected size % instead of 4", it.type.runtime_size);
+                case "bVisible";
+                    assert(it.offset_in_bytes == 16, "HTML_HorizontalScroll_t.bVisible has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "HTML_HorizontalScroll_t.bVisible has unexpected size % instead of 1", it.type.runtime_size);
+                case "unPageSize";
+                    assert(it.offset_in_bytes == 20, "HTML_HorizontalScroll_t.unPageSize has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_HorizontalScroll_t.unPageSize has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(HTML_HorizontalScroll_t) == 24, "HTML_HorizontalScroll_t has size % instead of 24", size_of(HTML_HorizontalScroll_t));
+    }
+
+    {
+        info := type_info(HTML_VerticalScroll_t);
+        for info.members {
+            if it.name == {
+                case "unBrowserHandle";
+                    assert(it.offset_in_bytes == 0, "HTML_VerticalScroll_t.unBrowserHandle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_VerticalScroll_t.unBrowserHandle has unexpected size % instead of 4", it.type.runtime_size);
+                case "unScrollMax";
+                    assert(it.offset_in_bytes == 4, "HTML_VerticalScroll_t.unScrollMax has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_VerticalScroll_t.unScrollMax has unexpected size % instead of 4", it.type.runtime_size);
+                case "unScrollCurrent";
+                    assert(it.offset_in_bytes == 8, "HTML_VerticalScroll_t.unScrollCurrent has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_VerticalScroll_t.unScrollCurrent has unexpected size % instead of 4", it.type.runtime_size);
+                case "flPageScale";
+                    assert(it.offset_in_bytes == 12, "HTML_VerticalScroll_t.flPageScale has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_VerticalScroll_t.flPageScale has unexpected size % instead of 4", it.type.runtime_size);
+                case "bVisible";
+                    assert(it.offset_in_bytes == 16, "HTML_VerticalScroll_t.bVisible has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "HTML_VerticalScroll_t.bVisible has unexpected size % instead of 1", it.type.runtime_size);
+                case "unPageSize";
+                    assert(it.offset_in_bytes == 20, "HTML_VerticalScroll_t.unPageSize has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_VerticalScroll_t.unPageSize has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(HTML_VerticalScroll_t) == 24, "HTML_VerticalScroll_t has size % instead of 24", size_of(HTML_VerticalScroll_t));
+    }
+
+    {
+        info := type_info(HTML_LinkAtPosition_t);
+        for info.members {
+            if it.name == {
+                case "unBrowserHandle";
+                    assert(it.offset_in_bytes == 0, "HTML_LinkAtPosition_t.unBrowserHandle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_LinkAtPosition_t.unBrowserHandle has unexpected size % instead of 4", it.type.runtime_size);
+                case "x";
+                    assert(it.offset_in_bytes == 4, "HTML_LinkAtPosition_t.x has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_LinkAtPosition_t.x has unexpected size % instead of 4", it.type.runtime_size);
+                case "y";
+                    assert(it.offset_in_bytes == 8, "HTML_LinkAtPosition_t.y has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_LinkAtPosition_t.y has unexpected size % instead of 4", it.type.runtime_size);
+                case "pchURL";
+                    assert(it.offset_in_bytes == 12, "HTML_LinkAtPosition_t.pchURL has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "HTML_LinkAtPosition_t.pchURL has unexpected size % instead of 8", it.type.runtime_size);
+                case "bInput";
+                    assert(it.offset_in_bytes == 20, "HTML_LinkAtPosition_t.bInput has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "HTML_LinkAtPosition_t.bInput has unexpected size % instead of 1", it.type.runtime_size);
+                case "bLiveLink";
+                    assert(it.offset_in_bytes == 21, "HTML_LinkAtPosition_t.bLiveLink has unexpected offset % instead of 21", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "HTML_LinkAtPosition_t.bLiveLink has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(HTML_LinkAtPosition_t) == 24, "HTML_LinkAtPosition_t has size % instead of 24", size_of(HTML_LinkAtPosition_t));
+    }
+
+    {
+        info := type_info(HTML_JSAlert_t);
+        for info.members {
+            if it.name == {
+                case "unBrowserHandle";
+                    assert(it.offset_in_bytes == 0, "HTML_JSAlert_t.unBrowserHandle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_JSAlert_t.unBrowserHandle has unexpected size % instead of 4", it.type.runtime_size);
+                case "pchMessage";
+                    assert(it.offset_in_bytes == 4, "HTML_JSAlert_t.pchMessage has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "HTML_JSAlert_t.pchMessage has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(HTML_JSAlert_t) == 12, "HTML_JSAlert_t has size % instead of 12", size_of(HTML_JSAlert_t));
+    }
+
+    {
+        info := type_info(HTML_JSConfirm_t);
+        for info.members {
+            if it.name == {
+                case "unBrowserHandle";
+                    assert(it.offset_in_bytes == 0, "HTML_JSConfirm_t.unBrowserHandle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_JSConfirm_t.unBrowserHandle has unexpected size % instead of 4", it.type.runtime_size);
+                case "pchMessage";
+                    assert(it.offset_in_bytes == 4, "HTML_JSConfirm_t.pchMessage has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "HTML_JSConfirm_t.pchMessage has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(HTML_JSConfirm_t) == 12, "HTML_JSConfirm_t has size % instead of 12", size_of(HTML_JSConfirm_t));
+    }
+
+    {
+        info := type_info(HTML_FileOpenDialog_t);
+        for info.members {
+            if it.name == {
+                case "unBrowserHandle";
+                    assert(it.offset_in_bytes == 0, "HTML_FileOpenDialog_t.unBrowserHandle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_FileOpenDialog_t.unBrowserHandle has unexpected size % instead of 4", it.type.runtime_size);
+                case "pchTitle";
+                    assert(it.offset_in_bytes == 4, "HTML_FileOpenDialog_t.pchTitle has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "HTML_FileOpenDialog_t.pchTitle has unexpected size % instead of 8", it.type.runtime_size);
+                case "pchInitialFile";
+                    assert(it.offset_in_bytes == 12, "HTML_FileOpenDialog_t.pchInitialFile has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "HTML_FileOpenDialog_t.pchInitialFile has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(HTML_FileOpenDialog_t) == 20, "HTML_FileOpenDialog_t has size % instead of 20", size_of(HTML_FileOpenDialog_t));
+    }
+
+    {
+        info := type_info(HTML_NewWindow_t);
+        for info.members {
+            if it.name == {
+                case "unBrowserHandle";
+                    assert(it.offset_in_bytes == 0, "HTML_NewWindow_t.unBrowserHandle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_NewWindow_t.unBrowserHandle has unexpected size % instead of 4", it.type.runtime_size);
+                case "pchURL";
+                    assert(it.offset_in_bytes == 4, "HTML_NewWindow_t.pchURL has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "HTML_NewWindow_t.pchURL has unexpected size % instead of 8", it.type.runtime_size);
+                case "unX";
+                    assert(it.offset_in_bytes == 12, "HTML_NewWindow_t.unX has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_NewWindow_t.unX has unexpected size % instead of 4", it.type.runtime_size);
+                case "unY";
+                    assert(it.offset_in_bytes == 16, "HTML_NewWindow_t.unY has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_NewWindow_t.unY has unexpected size % instead of 4", it.type.runtime_size);
+                case "unWide";
+                    assert(it.offset_in_bytes == 20, "HTML_NewWindow_t.unWide has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_NewWindow_t.unWide has unexpected size % instead of 4", it.type.runtime_size);
+                case "unTall";
+                    assert(it.offset_in_bytes == 24, "HTML_NewWindow_t.unTall has unexpected offset % instead of 24", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_NewWindow_t.unTall has unexpected size % instead of 4", it.type.runtime_size);
+                case "unNewWindow_BrowserHandle_IGNORE";
+                    assert(it.offset_in_bytes == 28, "HTML_NewWindow_t.unNewWindow_BrowserHandle_IGNORE has unexpected offset % instead of 28", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_NewWindow_t.unNewWindow_BrowserHandle_IGNORE has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(HTML_NewWindow_t) == 32, "HTML_NewWindow_t has size % instead of 32", size_of(HTML_NewWindow_t));
+    }
+
+    {
+        info := type_info(HTML_SetCursor_t);
+        for info.members {
+            if it.name == {
+                case "unBrowserHandle";
+                    assert(it.offset_in_bytes == 0, "HTML_SetCursor_t.unBrowserHandle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_SetCursor_t.unBrowserHandle has unexpected size % instead of 4", it.type.runtime_size);
+                case "eMouseCursor";
+                    assert(it.offset_in_bytes == 4, "HTML_SetCursor_t.eMouseCursor has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_SetCursor_t.eMouseCursor has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(HTML_SetCursor_t) == 8, "HTML_SetCursor_t has size % instead of 8", size_of(HTML_SetCursor_t));
+    }
+
+    {
+        info := type_info(HTML_StatusText_t);
+        for info.members {
+            if it.name == {
+                case "unBrowserHandle";
+                    assert(it.offset_in_bytes == 0, "HTML_StatusText_t.unBrowserHandle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_StatusText_t.unBrowserHandle has unexpected size % instead of 4", it.type.runtime_size);
+                case "pchMsg";
+                    assert(it.offset_in_bytes == 4, "HTML_StatusText_t.pchMsg has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "HTML_StatusText_t.pchMsg has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(HTML_StatusText_t) == 12, "HTML_StatusText_t has size % instead of 12", size_of(HTML_StatusText_t));
+    }
+
+    {
+        info := type_info(HTML_ShowToolTip_t);
+        for info.members {
+            if it.name == {
+                case "unBrowserHandle";
+                    assert(it.offset_in_bytes == 0, "HTML_ShowToolTip_t.unBrowserHandle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_ShowToolTip_t.unBrowserHandle has unexpected size % instead of 4", it.type.runtime_size);
+                case "pchMsg";
+                    assert(it.offset_in_bytes == 4, "HTML_ShowToolTip_t.pchMsg has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "HTML_ShowToolTip_t.pchMsg has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(HTML_ShowToolTip_t) == 12, "HTML_ShowToolTip_t has size % instead of 12", size_of(HTML_ShowToolTip_t));
+    }
+
+    {
+        info := type_info(HTML_UpdateToolTip_t);
+        for info.members {
+            if it.name == {
+                case "unBrowserHandle";
+                    assert(it.offset_in_bytes == 0, "HTML_UpdateToolTip_t.unBrowserHandle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_UpdateToolTip_t.unBrowserHandle has unexpected size % instead of 4", it.type.runtime_size);
+                case "pchMsg";
+                    assert(it.offset_in_bytes == 4, "HTML_UpdateToolTip_t.pchMsg has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "HTML_UpdateToolTip_t.pchMsg has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(HTML_UpdateToolTip_t) == 12, "HTML_UpdateToolTip_t has size % instead of 12", size_of(HTML_UpdateToolTip_t));
+    }
+
+    {
+        info := type_info(HTML_HideToolTip_t);
+        for info.members {
+            if it.name == {
+                case "unBrowserHandle";
+                    assert(it.offset_in_bytes == 0, "HTML_HideToolTip_t.unBrowserHandle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_HideToolTip_t.unBrowserHandle has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(HTML_HideToolTip_t) == 4, "HTML_HideToolTip_t has size % instead of 4", size_of(HTML_HideToolTip_t));
+    }
+
+    {
+        info := type_info(HTML_BrowserRestarted_t);
+        for info.members {
+            if it.name == {
+                case "unBrowserHandle";
+                    assert(it.offset_in_bytes == 0, "HTML_BrowserRestarted_t.unBrowserHandle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_BrowserRestarted_t.unBrowserHandle has unexpected size % instead of 4", it.type.runtime_size);
+                case "unOldBrowserHandle";
+                    assert(it.offset_in_bytes == 4, "HTML_BrowserRestarted_t.unOldBrowserHandle has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTML_BrowserRestarted_t.unOldBrowserHandle has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(HTML_BrowserRestarted_t) == 8, "HTML_BrowserRestarted_t has size % instead of 8", size_of(HTML_BrowserRestarted_t));
+    }
 
     assert(size_of(ISteamHTTP) == 8, "ISteamHTTP has size % instead of 8", size_of(ISteamHTTP));
 
     {
-        instance: SteamItemDetails_t;
-        assert(((cast(*void)(*instance.m_itemId)) - cast(*void)(*instance)) == 0, "SteamItemDetails_t.m_itemId has unexpected offset % instead of 0", ((cast(*void)(*instance.m_itemId)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamItemDetails_t.m_itemId)) == 8, "SteamItemDetails_t.m_itemId has unexpected size % instead of 8", size_of(type_of(SteamItemDetails_t.m_itemId)));
-        assert(((cast(*void)(*instance.m_iDefinition)) - cast(*void)(*instance)) == 8, "SteamItemDetails_t.m_iDefinition has unexpected offset % instead of 8", ((cast(*void)(*instance.m_iDefinition)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamItemDetails_t.m_iDefinition)) == 4, "SteamItemDetails_t.m_iDefinition has unexpected size % instead of 4", size_of(type_of(SteamItemDetails_t.m_iDefinition)));
-        assert(((cast(*void)(*instance.m_unQuantity)) - cast(*void)(*instance)) == 12, "SteamItemDetails_t.m_unQuantity has unexpected offset % instead of 12", ((cast(*void)(*instance.m_unQuantity)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamItemDetails_t.m_unQuantity)) == 2, "SteamItemDetails_t.m_unQuantity has unexpected size % instead of 2", size_of(type_of(SteamItemDetails_t.m_unQuantity)));
-        assert(((cast(*void)(*instance.m_unFlags)) - cast(*void)(*instance)) == 14, "SteamItemDetails_t.m_unFlags has unexpected offset % instead of 14", ((cast(*void)(*instance.m_unFlags)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamItemDetails_t.m_unFlags)) == 2, "SteamItemDetails_t.m_unFlags has unexpected size % instead of 2", size_of(type_of(SteamItemDetails_t.m_unFlags)));
+        info := type_info(HTTPRequestCompleted_t);
+        for info.members {
+            if it.name == {
+                case "m_hRequest";
+                    assert(it.offset_in_bytes == 0, "HTTPRequestCompleted_t.m_hRequest has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTTPRequestCompleted_t.m_hRequest has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_ulContextValue";
+                    assert(it.offset_in_bytes == 4, "HTTPRequestCompleted_t.m_ulContextValue has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "HTTPRequestCompleted_t.m_ulContextValue has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_bRequestSuccessful";
+                    assert(it.offset_in_bytes == 12, "HTTPRequestCompleted_t.m_bRequestSuccessful has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "HTTPRequestCompleted_t.m_bRequestSuccessful has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_eStatusCode";
+                    assert(it.offset_in_bytes == 16, "HTTPRequestCompleted_t.m_eStatusCode has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTTPRequestCompleted_t.m_eStatusCode has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_unBodySize";
+                    assert(it.offset_in_bytes == 20, "HTTPRequestCompleted_t.m_unBodySize has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTTPRequestCompleted_t.m_unBodySize has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(HTTPRequestCompleted_t) == 24, "HTTPRequestCompleted_t has size % instead of 24", size_of(HTTPRequestCompleted_t));
+    }
+
+    {
+        info := type_info(HTTPRequestHeadersReceived_t);
+        for info.members {
+            if it.name == {
+                case "m_hRequest";
+                    assert(it.offset_in_bytes == 0, "HTTPRequestHeadersReceived_t.m_hRequest has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTTPRequestHeadersReceived_t.m_hRequest has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_ulContextValue";
+                    assert(it.offset_in_bytes == 4, "HTTPRequestHeadersReceived_t.m_ulContextValue has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "HTTPRequestHeadersReceived_t.m_ulContextValue has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(HTTPRequestHeadersReceived_t) == 12, "HTTPRequestHeadersReceived_t has size % instead of 12", size_of(HTTPRequestHeadersReceived_t));
+    }
+
+    {
+        info := type_info(HTTPRequestDataReceived_t);
+        for info.members {
+            if it.name == {
+                case "m_hRequest";
+                    assert(it.offset_in_bytes == 0, "HTTPRequestDataReceived_t.m_hRequest has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTTPRequestDataReceived_t.m_hRequest has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_ulContextValue";
+                    assert(it.offset_in_bytes == 4, "HTTPRequestDataReceived_t.m_ulContextValue has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "HTTPRequestDataReceived_t.m_ulContextValue has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_cOffset";
+                    assert(it.offset_in_bytes == 12, "HTTPRequestDataReceived_t.m_cOffset has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTTPRequestDataReceived_t.m_cOffset has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_cBytesReceived";
+                    assert(it.offset_in_bytes == 16, "HTTPRequestDataReceived_t.m_cBytesReceived has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "HTTPRequestDataReceived_t.m_cBytesReceived has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(HTTPRequestDataReceived_t) == 20, "HTTPRequestDataReceived_t has size % instead of 20", size_of(HTTPRequestDataReceived_t));
+    }
+
+    {
+        info := type_info(SteamItemDetails_t);
+        for info.members {
+            if it.name == {
+                case "m_itemId";
+                    assert(it.offset_in_bytes == 0, "SteamItemDetails_t.m_itemId has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamItemDetails_t.m_itemId has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_iDefinition";
+                    assert(it.offset_in_bytes == 8, "SteamItemDetails_t.m_iDefinition has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamItemDetails_t.m_iDefinition has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_unQuantity";
+                    assert(it.offset_in_bytes == 12, "SteamItemDetails_t.m_unQuantity has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 2, "SteamItemDetails_t.m_unQuantity has unexpected size % instead of 2", it.type.runtime_size);
+                case "m_unFlags";
+                    assert(it.offset_in_bytes == 14, "SteamItemDetails_t.m_unFlags has unexpected offset % instead of 14", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 2, "SteamItemDetails_t.m_unFlags has unexpected size % instead of 2", it.type.runtime_size);
+            }
+        }
         assert(size_of(SteamItemDetails_t) == 16, "SteamItemDetails_t has size % instead of 16", size_of(SteamItemDetails_t));
     }
 
     assert(size_of(ISteamInventory) == 8, "ISteamInventory has size % instead of 8", size_of(ISteamInventory));
 
     {
-        instance: MatchMakingKeyValuePair_t;
-        assert(((cast(*void)(*instance.m_szKey)) - cast(*void)(*instance)) == 0, "MatchMakingKeyValuePair_t.m_szKey has unexpected offset % instead of 0", ((cast(*void)(*instance.m_szKey)) - cast(*void)(*instance)));
-        assert(size_of(type_of(MatchMakingKeyValuePair_t.m_szKey)) == 256, "MatchMakingKeyValuePair_t.m_szKey has unexpected size % instead of 256", size_of(type_of(MatchMakingKeyValuePair_t.m_szKey)));
-        assert(((cast(*void)(*instance.m_szValue)) - cast(*void)(*instance)) == 256, "MatchMakingKeyValuePair_t.m_szValue has unexpected offset % instead of 256", ((cast(*void)(*instance.m_szValue)) - cast(*void)(*instance)));
-        assert(size_of(type_of(MatchMakingKeyValuePair_t.m_szValue)) == 256, "MatchMakingKeyValuePair_t.m_szValue has unexpected size % instead of 256", size_of(type_of(MatchMakingKeyValuePair_t.m_szValue)));
+        info := type_info(SteamInventoryResultReady_t);
+        for info.members {
+            if it.name == {
+                case "m_handle";
+                    assert(it.offset_in_bytes == 0, "SteamInventoryResultReady_t.m_handle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamInventoryResultReady_t.m_handle has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_result";
+                    assert(it.offset_in_bytes == 4, "SteamInventoryResultReady_t.m_result has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamInventoryResultReady_t.m_result has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SteamInventoryResultReady_t) == 8, "SteamInventoryResultReady_t has size % instead of 8", size_of(SteamInventoryResultReady_t));
+    }
+
+    {
+        info := type_info(SteamInventoryFullUpdate_t);
+        for info.members {
+            if it.name == {
+                case "m_handle";
+                    assert(it.offset_in_bytes == 0, "SteamInventoryFullUpdate_t.m_handle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamInventoryFullUpdate_t.m_handle has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SteamInventoryFullUpdate_t) == 4, "SteamInventoryFullUpdate_t has size % instead of 4", size_of(SteamInventoryFullUpdate_t));
+    }
+
+    assert(size_of(SteamInventoryDefinitionUpdate_t) == 1, "SteamInventoryDefinitionUpdate_t has size % instead of 1", size_of(SteamInventoryDefinitionUpdate_t));
+
+    {
+        info := type_info(SteamInventoryEligiblePromoItemDefIDs_t);
+        for info.members {
+            if it.name == {
+                case "m_result";
+                    assert(it.offset_in_bytes == 0, "SteamInventoryEligiblePromoItemDefIDs_t.m_result has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamInventoryEligiblePromoItemDefIDs_t.m_result has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_steamID";
+                    assert(it.offset_in_bytes == 4, "SteamInventoryEligiblePromoItemDefIDs_t.m_steamID has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamInventoryEligiblePromoItemDefIDs_t.m_steamID has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_numEligiblePromoItemDefs";
+                    assert(it.offset_in_bytes == 12, "SteamInventoryEligiblePromoItemDefIDs_t.m_numEligiblePromoItemDefs has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamInventoryEligiblePromoItemDefIDs_t.m_numEligiblePromoItemDefs has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_bCachedData";
+                    assert(it.offset_in_bytes == 16, "SteamInventoryEligiblePromoItemDefIDs_t.m_bCachedData has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "SteamInventoryEligiblePromoItemDefIDs_t.m_bCachedData has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SteamInventoryEligiblePromoItemDefIDs_t) == 20, "SteamInventoryEligiblePromoItemDefIDs_t has size % instead of 20", size_of(SteamInventoryEligiblePromoItemDefIDs_t));
+    }
+
+    {
+        info := type_info(SteamInventoryStartPurchaseResult_t);
+        for info.members {
+            if it.name == {
+                case "m_result";
+                    assert(it.offset_in_bytes == 0, "SteamInventoryStartPurchaseResult_t.m_result has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamInventoryStartPurchaseResult_t.m_result has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_ulOrderID";
+                    assert(it.offset_in_bytes == 4, "SteamInventoryStartPurchaseResult_t.m_ulOrderID has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamInventoryStartPurchaseResult_t.m_ulOrderID has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_ulTransID";
+                    assert(it.offset_in_bytes == 12, "SteamInventoryStartPurchaseResult_t.m_ulTransID has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamInventoryStartPurchaseResult_t.m_ulTransID has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SteamInventoryStartPurchaseResult_t) == 20, "SteamInventoryStartPurchaseResult_t has size % instead of 20", size_of(SteamInventoryStartPurchaseResult_t));
+    }
+
+    {
+        info := type_info(SteamInventoryRequestPricesResult_t);
+        for info.members {
+            if it.name == {
+                case "m_result";
+                    assert(it.offset_in_bytes == 0, "SteamInventoryRequestPricesResult_t.m_result has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamInventoryRequestPricesResult_t.m_result has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_rgchCurrency";
+                    assert(it.offset_in_bytes == 4, "SteamInventoryRequestPricesResult_t.m_rgchCurrency has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamInventoryRequestPricesResult_t.m_rgchCurrency has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SteamInventoryRequestPricesResult_t) == 8, "SteamInventoryRequestPricesResult_t has size % instead of 8", size_of(SteamInventoryRequestPricesResult_t));
+    }
+
+    {
+        info := type_info(MatchMakingKeyValuePair_t);
+        for info.members {
+            if it.name == {
+                case "m_szKey";
+                    assert(it.offset_in_bytes == 0, "MatchMakingKeyValuePair_t.m_szKey has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 256, "MatchMakingKeyValuePair_t.m_szKey has unexpected size % instead of 256", it.type.runtime_size);
+                case "m_szValue";
+                    assert(it.offset_in_bytes == 256, "MatchMakingKeyValuePair_t.m_szValue has unexpected offset % instead of 256", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 256, "MatchMakingKeyValuePair_t.m_szValue has unexpected size % instead of 256", it.type.runtime_size);
+            }
+        }
         assert(size_of(MatchMakingKeyValuePair_t) == 512, "MatchMakingKeyValuePair_t has size % instead of 512", size_of(MatchMakingKeyValuePair_t));
     }
 
     {
-        instance: servernetadr_t;
-        assert(((cast(*void)(*instance.m_usConnectionPort)) - cast(*void)(*instance)) == 0, "servernetadr_t.m_usConnectionPort has unexpected offset % instead of 0", ((cast(*void)(*instance.m_usConnectionPort)) - cast(*void)(*instance)));
-        assert(size_of(type_of(servernetadr_t.m_usConnectionPort)) == 2, "servernetadr_t.m_usConnectionPort has unexpected size % instead of 2", size_of(type_of(servernetadr_t.m_usConnectionPort)));
-        assert(((cast(*void)(*instance.m_usQueryPort)) - cast(*void)(*instance)) == 2, "servernetadr_t.m_usQueryPort has unexpected offset % instead of 2", ((cast(*void)(*instance.m_usQueryPort)) - cast(*void)(*instance)));
-        assert(size_of(type_of(servernetadr_t.m_usQueryPort)) == 2, "servernetadr_t.m_usQueryPort has unexpected size % instead of 2", size_of(type_of(servernetadr_t.m_usQueryPort)));
-        assert(((cast(*void)(*instance.m_unIP)) - cast(*void)(*instance)) == 4, "servernetadr_t.m_unIP has unexpected offset % instead of 4", ((cast(*void)(*instance.m_unIP)) - cast(*void)(*instance)));
-        assert(size_of(type_of(servernetadr_t.m_unIP)) == 4, "servernetadr_t.m_unIP has unexpected size % instead of 4", size_of(type_of(servernetadr_t.m_unIP)));
+        info := type_info(servernetadr_t);
+        for info.members {
+            if it.name == {
+                case "m_usConnectionPort";
+                    assert(it.offset_in_bytes == 0, "servernetadr_t.m_usConnectionPort has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 2, "servernetadr_t.m_usConnectionPort has unexpected size % instead of 2", it.type.runtime_size);
+                case "m_usQueryPort";
+                    assert(it.offset_in_bytes == 2, "servernetadr_t.m_usQueryPort has unexpected offset % instead of 2", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 2, "servernetadr_t.m_usQueryPort has unexpected size % instead of 2", it.type.runtime_size);
+                case "m_unIP";
+                    assert(it.offset_in_bytes == 4, "servernetadr_t.m_unIP has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "servernetadr_t.m_unIP has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
         assert(size_of(servernetadr_t) == 8, "servernetadr_t has size % instead of 8", size_of(servernetadr_t));
     }
 
     {
-        instance: gameserveritem_t;
-        assert(((cast(*void)(*instance.m_NetAdr)) - cast(*void)(*instance)) == 0, "gameserveritem_t.m_NetAdr has unexpected offset % instead of 0", ((cast(*void)(*instance.m_NetAdr)) - cast(*void)(*instance)));
-        assert(size_of(type_of(gameserveritem_t.m_NetAdr)) == 8, "gameserveritem_t.m_NetAdr has unexpected size % instead of 8", size_of(type_of(gameserveritem_t.m_NetAdr)));
-        assert(((cast(*void)(*instance.m_nPing)) - cast(*void)(*instance)) == 8, "gameserveritem_t.m_nPing has unexpected offset % instead of 8", ((cast(*void)(*instance.m_nPing)) - cast(*void)(*instance)));
-        assert(size_of(type_of(gameserveritem_t.m_nPing)) == 4, "gameserveritem_t.m_nPing has unexpected size % instead of 4", size_of(type_of(gameserveritem_t.m_nPing)));
-        assert(((cast(*void)(*instance.m_bHadSuccessfulResponse)) - cast(*void)(*instance)) == 12, "gameserveritem_t.m_bHadSuccessfulResponse has unexpected offset % instead of 12", ((cast(*void)(*instance.m_bHadSuccessfulResponse)) - cast(*void)(*instance)));
-        assert(size_of(type_of(gameserveritem_t.m_bHadSuccessfulResponse)) == 1, "gameserveritem_t.m_bHadSuccessfulResponse has unexpected size % instead of 1", size_of(type_of(gameserveritem_t.m_bHadSuccessfulResponse)));
-        assert(((cast(*void)(*instance.m_bDoNotRefresh)) - cast(*void)(*instance)) == 13, "gameserveritem_t.m_bDoNotRefresh has unexpected offset % instead of 13", ((cast(*void)(*instance.m_bDoNotRefresh)) - cast(*void)(*instance)));
-        assert(size_of(type_of(gameserveritem_t.m_bDoNotRefresh)) == 1, "gameserveritem_t.m_bDoNotRefresh has unexpected size % instead of 1", size_of(type_of(gameserveritem_t.m_bDoNotRefresh)));
-        assert(((cast(*void)(*instance.m_szGameDir)) - cast(*void)(*instance)) == 14, "gameserveritem_t.m_szGameDir has unexpected offset % instead of 14", ((cast(*void)(*instance.m_szGameDir)) - cast(*void)(*instance)));
-        assert(size_of(type_of(gameserveritem_t.m_szGameDir)) == 32, "gameserveritem_t.m_szGameDir has unexpected size % instead of 32", size_of(type_of(gameserveritem_t.m_szGameDir)));
-        assert(((cast(*void)(*instance.m_szMap)) - cast(*void)(*instance)) == 46, "gameserveritem_t.m_szMap has unexpected offset % instead of 46", ((cast(*void)(*instance.m_szMap)) - cast(*void)(*instance)));
-        assert(size_of(type_of(gameserveritem_t.m_szMap)) == 32, "gameserveritem_t.m_szMap has unexpected size % instead of 32", size_of(type_of(gameserveritem_t.m_szMap)));
-        assert(((cast(*void)(*instance.m_szGameDescription)) - cast(*void)(*instance)) == 78, "gameserveritem_t.m_szGameDescription has unexpected offset % instead of 78", ((cast(*void)(*instance.m_szGameDescription)) - cast(*void)(*instance)));
-        assert(size_of(type_of(gameserveritem_t.m_szGameDescription)) == 64, "gameserveritem_t.m_szGameDescription has unexpected size % instead of 64", size_of(type_of(gameserveritem_t.m_szGameDescription)));
-        assert(((cast(*void)(*instance.m_nAppID)) - cast(*void)(*instance)) == 144, "gameserveritem_t.m_nAppID has unexpected offset % instead of 144", ((cast(*void)(*instance.m_nAppID)) - cast(*void)(*instance)));
-        assert(size_of(type_of(gameserveritem_t.m_nAppID)) == 4, "gameserveritem_t.m_nAppID has unexpected size % instead of 4", size_of(type_of(gameserveritem_t.m_nAppID)));
-        assert(((cast(*void)(*instance.m_nPlayers)) - cast(*void)(*instance)) == 148, "gameserveritem_t.m_nPlayers has unexpected offset % instead of 148", ((cast(*void)(*instance.m_nPlayers)) - cast(*void)(*instance)));
-        assert(size_of(type_of(gameserveritem_t.m_nPlayers)) == 4, "gameserveritem_t.m_nPlayers has unexpected size % instead of 4", size_of(type_of(gameserveritem_t.m_nPlayers)));
-        assert(((cast(*void)(*instance.m_nMaxPlayers)) - cast(*void)(*instance)) == 152, "gameserveritem_t.m_nMaxPlayers has unexpected offset % instead of 152", ((cast(*void)(*instance.m_nMaxPlayers)) - cast(*void)(*instance)));
-        assert(size_of(type_of(gameserveritem_t.m_nMaxPlayers)) == 4, "gameserveritem_t.m_nMaxPlayers has unexpected size % instead of 4", size_of(type_of(gameserveritem_t.m_nMaxPlayers)));
-        assert(((cast(*void)(*instance.m_nBotPlayers)) - cast(*void)(*instance)) == 156, "gameserveritem_t.m_nBotPlayers has unexpected offset % instead of 156", ((cast(*void)(*instance.m_nBotPlayers)) - cast(*void)(*instance)));
-        assert(size_of(type_of(gameserveritem_t.m_nBotPlayers)) == 4, "gameserveritem_t.m_nBotPlayers has unexpected size % instead of 4", size_of(type_of(gameserveritem_t.m_nBotPlayers)));
-        assert(((cast(*void)(*instance.m_bPassword)) - cast(*void)(*instance)) == 160, "gameserveritem_t.m_bPassword has unexpected offset % instead of 160", ((cast(*void)(*instance.m_bPassword)) - cast(*void)(*instance)));
-        assert(size_of(type_of(gameserveritem_t.m_bPassword)) == 1, "gameserveritem_t.m_bPassword has unexpected size % instead of 1", size_of(type_of(gameserveritem_t.m_bPassword)));
-        assert(((cast(*void)(*instance.m_bSecure)) - cast(*void)(*instance)) == 161, "gameserveritem_t.m_bSecure has unexpected offset % instead of 161", ((cast(*void)(*instance.m_bSecure)) - cast(*void)(*instance)));
-        assert(size_of(type_of(gameserveritem_t.m_bSecure)) == 1, "gameserveritem_t.m_bSecure has unexpected size % instead of 1", size_of(type_of(gameserveritem_t.m_bSecure)));
-        assert(((cast(*void)(*instance.m_ulTimeLastPlayed)) - cast(*void)(*instance)) == 164, "gameserveritem_t.m_ulTimeLastPlayed has unexpected offset % instead of 164", ((cast(*void)(*instance.m_ulTimeLastPlayed)) - cast(*void)(*instance)));
-        assert(size_of(type_of(gameserveritem_t.m_ulTimeLastPlayed)) == 4, "gameserveritem_t.m_ulTimeLastPlayed has unexpected size % instead of 4", size_of(type_of(gameserveritem_t.m_ulTimeLastPlayed)));
-        assert(((cast(*void)(*instance.m_nServerVersion)) - cast(*void)(*instance)) == 168, "gameserveritem_t.m_nServerVersion has unexpected offset % instead of 168", ((cast(*void)(*instance.m_nServerVersion)) - cast(*void)(*instance)));
-        assert(size_of(type_of(gameserveritem_t.m_nServerVersion)) == 4, "gameserveritem_t.m_nServerVersion has unexpected size % instead of 4", size_of(type_of(gameserveritem_t.m_nServerVersion)));
-        assert(((cast(*void)(*instance.m_szServerName)) - cast(*void)(*instance)) == 172, "gameserveritem_t.m_szServerName has unexpected offset % instead of 172", ((cast(*void)(*instance.m_szServerName)) - cast(*void)(*instance)));
-        assert(size_of(type_of(gameserveritem_t.m_szServerName)) == 64, "gameserveritem_t.m_szServerName has unexpected size % instead of 64", size_of(type_of(gameserveritem_t.m_szServerName)));
-        assert(((cast(*void)(*instance.m_szGameTags)) - cast(*void)(*instance)) == 236, "gameserveritem_t.m_szGameTags has unexpected offset % instead of 236", ((cast(*void)(*instance.m_szGameTags)) - cast(*void)(*instance)));
-        assert(size_of(type_of(gameserveritem_t.m_szGameTags)) == 128, "gameserveritem_t.m_szGameTags has unexpected size % instead of 128", size_of(type_of(gameserveritem_t.m_szGameTags)));
-        assert(((cast(*void)(*instance.m_steamID)) - cast(*void)(*instance)) == 364, "gameserveritem_t.m_steamID has unexpected offset % instead of 364", ((cast(*void)(*instance.m_steamID)) - cast(*void)(*instance)));
-        assert(size_of(type_of(gameserveritem_t.m_steamID)) == 8, "gameserveritem_t.m_steamID has unexpected size % instead of 8", size_of(type_of(gameserveritem_t.m_steamID)));
+        info := type_info(gameserveritem_t);
+        for info.members {
+            if it.name == {
+                case "m_NetAdr";
+                    assert(it.offset_in_bytes == 0, "gameserveritem_t.m_NetAdr has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "gameserveritem_t.m_NetAdr has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_nPing";
+                    assert(it.offset_in_bytes == 8, "gameserveritem_t.m_nPing has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "gameserveritem_t.m_nPing has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_bHadSuccessfulResponse";
+                    assert(it.offset_in_bytes == 12, "gameserveritem_t.m_bHadSuccessfulResponse has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "gameserveritem_t.m_bHadSuccessfulResponse has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_bDoNotRefresh";
+                    assert(it.offset_in_bytes == 13, "gameserveritem_t.m_bDoNotRefresh has unexpected offset % instead of 13", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "gameserveritem_t.m_bDoNotRefresh has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_szGameDir";
+                    assert(it.offset_in_bytes == 14, "gameserveritem_t.m_szGameDir has unexpected offset % instead of 14", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 32, "gameserveritem_t.m_szGameDir has unexpected size % instead of 32", it.type.runtime_size);
+                case "m_szMap";
+                    assert(it.offset_in_bytes == 46, "gameserveritem_t.m_szMap has unexpected offset % instead of 46", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 32, "gameserveritem_t.m_szMap has unexpected size % instead of 32", it.type.runtime_size);
+                case "m_szGameDescription";
+                    assert(it.offset_in_bytes == 78, "gameserveritem_t.m_szGameDescription has unexpected offset % instead of 78", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 64, "gameserveritem_t.m_szGameDescription has unexpected size % instead of 64", it.type.runtime_size);
+                case "m_nAppID";
+                    assert(it.offset_in_bytes == 144, "gameserveritem_t.m_nAppID has unexpected offset % instead of 144", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "gameserveritem_t.m_nAppID has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nPlayers";
+                    assert(it.offset_in_bytes == 148, "gameserveritem_t.m_nPlayers has unexpected offset % instead of 148", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "gameserveritem_t.m_nPlayers has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nMaxPlayers";
+                    assert(it.offset_in_bytes == 152, "gameserveritem_t.m_nMaxPlayers has unexpected offset % instead of 152", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "gameserveritem_t.m_nMaxPlayers has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nBotPlayers";
+                    assert(it.offset_in_bytes == 156, "gameserveritem_t.m_nBotPlayers has unexpected offset % instead of 156", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "gameserveritem_t.m_nBotPlayers has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_bPassword";
+                    assert(it.offset_in_bytes == 160, "gameserveritem_t.m_bPassword has unexpected offset % instead of 160", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "gameserveritem_t.m_bPassword has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_bSecure";
+                    assert(it.offset_in_bytes == 161, "gameserveritem_t.m_bSecure has unexpected offset % instead of 161", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "gameserveritem_t.m_bSecure has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_ulTimeLastPlayed";
+                    assert(it.offset_in_bytes == 164, "gameserveritem_t.m_ulTimeLastPlayed has unexpected offset % instead of 164", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "gameserveritem_t.m_ulTimeLastPlayed has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nServerVersion";
+                    assert(it.offset_in_bytes == 168, "gameserveritem_t.m_nServerVersion has unexpected offset % instead of 168", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "gameserveritem_t.m_nServerVersion has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_szServerName";
+                    assert(it.offset_in_bytes == 172, "gameserveritem_t.m_szServerName has unexpected offset % instead of 172", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 64, "gameserveritem_t.m_szServerName has unexpected size % instead of 64", it.type.runtime_size);
+                case "m_szGameTags";
+                    assert(it.offset_in_bytes == 236, "gameserveritem_t.m_szGameTags has unexpected offset % instead of 236", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 128, "gameserveritem_t.m_szGameTags has unexpected size % instead of 128", it.type.runtime_size);
+                case "m_steamID";
+                    assert(it.offset_in_bytes == 364, "gameserveritem_t.m_steamID has unexpected offset % instead of 364", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "gameserveritem_t.m_steamID has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
         assert(size_of(gameserveritem_t) == 372, "gameserveritem_t has size % instead of 372", size_of(gameserveritem_t));
     }
 
@@ -9355,375 +13610,2839 @@ libsteam_api :: #library "bin/linux/libsteam_api";
     assert(size_of(ISteamGameSearch) == 8, "ISteamGameSearch has size % instead of 8", size_of(ISteamGameSearch));
 
     {
-        instance: SteamPartyBeaconLocation_t;
-        assert(((cast(*void)(*instance.m_eType)) - cast(*void)(*instance)) == 0, "SteamPartyBeaconLocation_t.m_eType has unexpected offset % instead of 0", ((cast(*void)(*instance.m_eType)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamPartyBeaconLocation_t.m_eType)) == 4, "SteamPartyBeaconLocation_t.m_eType has unexpected size % instead of 4", size_of(type_of(SteamPartyBeaconLocation_t.m_eType)));
-        assert(((cast(*void)(*instance.m_ulLocationID)) - cast(*void)(*instance)) == 4, "SteamPartyBeaconLocation_t.m_ulLocationID has unexpected offset % instead of 4", ((cast(*void)(*instance.m_ulLocationID)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamPartyBeaconLocation_t.m_ulLocationID)) == 8, "SteamPartyBeaconLocation_t.m_ulLocationID has unexpected size % instead of 8", size_of(type_of(SteamPartyBeaconLocation_t.m_ulLocationID)));
+        info := type_info(SteamPartyBeaconLocation_t);
+        for info.members {
+            if it.name == {
+                case "m_eType";
+                    assert(it.offset_in_bytes == 0, "SteamPartyBeaconLocation_t.m_eType has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamPartyBeaconLocation_t.m_eType has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_ulLocationID";
+                    assert(it.offset_in_bytes == 4, "SteamPartyBeaconLocation_t.m_ulLocationID has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamPartyBeaconLocation_t.m_ulLocationID has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
         assert(size_of(SteamPartyBeaconLocation_t) == 12, "SteamPartyBeaconLocation_t has size % instead of 12", size_of(SteamPartyBeaconLocation_t));
     }
 
     assert(size_of(ISteamParties) == 8, "ISteamParties has size % instead of 8", size_of(ISteamParties));
 
+    {
+        info := type_info(FavoritesListChanged_t);
+        for info.members {
+            if it.name == {
+                case "m_nIP";
+                    assert(it.offset_in_bytes == 0, "FavoritesListChanged_t.m_nIP has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "FavoritesListChanged_t.m_nIP has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nQueryPort";
+                    assert(it.offset_in_bytes == 4, "FavoritesListChanged_t.m_nQueryPort has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "FavoritesListChanged_t.m_nQueryPort has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nConnPort";
+                    assert(it.offset_in_bytes == 8, "FavoritesListChanged_t.m_nConnPort has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "FavoritesListChanged_t.m_nConnPort has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nAppID";
+                    assert(it.offset_in_bytes == 12, "FavoritesListChanged_t.m_nAppID has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "FavoritesListChanged_t.m_nAppID has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nFlags";
+                    assert(it.offset_in_bytes == 16, "FavoritesListChanged_t.m_nFlags has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "FavoritesListChanged_t.m_nFlags has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_bAdd";
+                    assert(it.offset_in_bytes == 20, "FavoritesListChanged_t.m_bAdd has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "FavoritesListChanged_t.m_bAdd has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_unAccountId";
+                    assert(it.offset_in_bytes == 24, "FavoritesListChanged_t.m_unAccountId has unexpected offset % instead of 24", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "FavoritesListChanged_t.m_unAccountId has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(FavoritesListChanged_t) == 28, "FavoritesListChanged_t has size % instead of 28", size_of(FavoritesListChanged_t));
+    }
+
+    {
+        info := type_info(LobbyInvite_t);
+        for info.members {
+            if it.name == {
+                case "m_ulSteamIDUser";
+                    assert(it.offset_in_bytes == 0, "LobbyInvite_t.m_ulSteamIDUser has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "LobbyInvite_t.m_ulSteamIDUser has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_ulSteamIDLobby";
+                    assert(it.offset_in_bytes == 8, "LobbyInvite_t.m_ulSteamIDLobby has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "LobbyInvite_t.m_ulSteamIDLobby has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_ulGameID";
+                    assert(it.offset_in_bytes == 16, "LobbyInvite_t.m_ulGameID has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "LobbyInvite_t.m_ulGameID has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(LobbyInvite_t) == 24, "LobbyInvite_t has size % instead of 24", size_of(LobbyInvite_t));
+    }
+
+    {
+        info := type_info(LobbyEnter_t);
+        for info.members {
+            if it.name == {
+                case "m_ulSteamIDLobby";
+                    assert(it.offset_in_bytes == 0, "LobbyEnter_t.m_ulSteamIDLobby has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "LobbyEnter_t.m_ulSteamIDLobby has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_rgfChatPermissions";
+                    assert(it.offset_in_bytes == 8, "LobbyEnter_t.m_rgfChatPermissions has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "LobbyEnter_t.m_rgfChatPermissions has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_bLocked";
+                    assert(it.offset_in_bytes == 12, "LobbyEnter_t.m_bLocked has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "LobbyEnter_t.m_bLocked has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_EChatRoomEnterResponse";
+                    assert(it.offset_in_bytes == 16, "LobbyEnter_t.m_EChatRoomEnterResponse has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "LobbyEnter_t.m_EChatRoomEnterResponse has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(LobbyEnter_t) == 20, "LobbyEnter_t has size % instead of 20", size_of(LobbyEnter_t));
+    }
+
+    {
+        info := type_info(LobbyDataUpdate_t);
+        for info.members {
+            if it.name == {
+                case "m_ulSteamIDLobby";
+                    assert(it.offset_in_bytes == 0, "LobbyDataUpdate_t.m_ulSteamIDLobby has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "LobbyDataUpdate_t.m_ulSteamIDLobby has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_ulSteamIDMember";
+                    assert(it.offset_in_bytes == 8, "LobbyDataUpdate_t.m_ulSteamIDMember has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "LobbyDataUpdate_t.m_ulSteamIDMember has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_bSuccess";
+                    assert(it.offset_in_bytes == 16, "LobbyDataUpdate_t.m_bSuccess has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "LobbyDataUpdate_t.m_bSuccess has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(LobbyDataUpdate_t) == 20, "LobbyDataUpdate_t has size % instead of 20", size_of(LobbyDataUpdate_t));
+    }
+
+    {
+        info := type_info(LobbyChatUpdate_t);
+        for info.members {
+            if it.name == {
+                case "m_ulSteamIDLobby";
+                    assert(it.offset_in_bytes == 0, "LobbyChatUpdate_t.m_ulSteamIDLobby has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "LobbyChatUpdate_t.m_ulSteamIDLobby has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_ulSteamIDUserChanged";
+                    assert(it.offset_in_bytes == 8, "LobbyChatUpdate_t.m_ulSteamIDUserChanged has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "LobbyChatUpdate_t.m_ulSteamIDUserChanged has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_ulSteamIDMakingChange";
+                    assert(it.offset_in_bytes == 16, "LobbyChatUpdate_t.m_ulSteamIDMakingChange has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "LobbyChatUpdate_t.m_ulSteamIDMakingChange has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_rgfChatMemberStateChange";
+                    assert(it.offset_in_bytes == 24, "LobbyChatUpdate_t.m_rgfChatMemberStateChange has unexpected offset % instead of 24", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "LobbyChatUpdate_t.m_rgfChatMemberStateChange has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(LobbyChatUpdate_t) == 28, "LobbyChatUpdate_t has size % instead of 28", size_of(LobbyChatUpdate_t));
+    }
+
+    {
+        info := type_info(LobbyChatMsg_t);
+        for info.members {
+            if it.name == {
+                case "m_ulSteamIDLobby";
+                    assert(it.offset_in_bytes == 0, "LobbyChatMsg_t.m_ulSteamIDLobby has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "LobbyChatMsg_t.m_ulSteamIDLobby has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_ulSteamIDUser";
+                    assert(it.offset_in_bytes == 8, "LobbyChatMsg_t.m_ulSteamIDUser has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "LobbyChatMsg_t.m_ulSteamIDUser has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_eChatEntryType";
+                    assert(it.offset_in_bytes == 16, "LobbyChatMsg_t.m_eChatEntryType has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "LobbyChatMsg_t.m_eChatEntryType has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_iChatID";
+                    assert(it.offset_in_bytes == 20, "LobbyChatMsg_t.m_iChatID has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "LobbyChatMsg_t.m_iChatID has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(LobbyChatMsg_t) == 24, "LobbyChatMsg_t has size % instead of 24", size_of(LobbyChatMsg_t));
+    }
+
+    {
+        info := type_info(LobbyGameCreated_t);
+        for info.members {
+            if it.name == {
+                case "m_ulSteamIDLobby";
+                    assert(it.offset_in_bytes == 0, "LobbyGameCreated_t.m_ulSteamIDLobby has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "LobbyGameCreated_t.m_ulSteamIDLobby has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_ulSteamIDGameServer";
+                    assert(it.offset_in_bytes == 8, "LobbyGameCreated_t.m_ulSteamIDGameServer has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "LobbyGameCreated_t.m_ulSteamIDGameServer has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_unIP";
+                    assert(it.offset_in_bytes == 16, "LobbyGameCreated_t.m_unIP has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "LobbyGameCreated_t.m_unIP has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_usPort";
+                    assert(it.offset_in_bytes == 20, "LobbyGameCreated_t.m_usPort has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 2, "LobbyGameCreated_t.m_usPort has unexpected size % instead of 2", it.type.runtime_size);
+            }
+        }
+        assert(size_of(LobbyGameCreated_t) == 24, "LobbyGameCreated_t has size % instead of 24", size_of(LobbyGameCreated_t));
+    }
+
+    {
+        info := type_info(LobbyMatchList_t);
+        for info.members {
+            if it.name == {
+                case "m_nLobbiesMatching";
+                    assert(it.offset_in_bytes == 0, "LobbyMatchList_t.m_nLobbiesMatching has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "LobbyMatchList_t.m_nLobbiesMatching has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(LobbyMatchList_t) == 4, "LobbyMatchList_t has size % instead of 4", size_of(LobbyMatchList_t));
+    }
+
+    {
+        info := type_info(LobbyKicked_t);
+        for info.members {
+            if it.name == {
+                case "m_ulSteamIDLobby";
+                    assert(it.offset_in_bytes == 0, "LobbyKicked_t.m_ulSteamIDLobby has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "LobbyKicked_t.m_ulSteamIDLobby has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_ulSteamIDAdmin";
+                    assert(it.offset_in_bytes == 8, "LobbyKicked_t.m_ulSteamIDAdmin has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "LobbyKicked_t.m_ulSteamIDAdmin has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_bKickedDueToDisconnect";
+                    assert(it.offset_in_bytes == 16, "LobbyKicked_t.m_bKickedDueToDisconnect has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "LobbyKicked_t.m_bKickedDueToDisconnect has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(LobbyKicked_t) == 20, "LobbyKicked_t has size % instead of 20", size_of(LobbyKicked_t));
+    }
+
+    {
+        info := type_info(LobbyCreated_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "LobbyCreated_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "LobbyCreated_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_ulSteamIDLobby";
+                    assert(it.offset_in_bytes == 4, "LobbyCreated_t.m_ulSteamIDLobby has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "LobbyCreated_t.m_ulSteamIDLobby has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(LobbyCreated_t) == 12, "LobbyCreated_t has size % instead of 12", size_of(LobbyCreated_t));
+    }
+
+    {
+        info := type_info(PSNGameBootInviteResult_t);
+        for info.members {
+            if it.name == {
+                case "m_bGameBootInviteExists";
+                    assert(it.offset_in_bytes == 0, "PSNGameBootInviteResult_t.m_bGameBootInviteExists has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "PSNGameBootInviteResult_t.m_bGameBootInviteExists has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_steamIDLobby";
+                    assert(it.offset_in_bytes == 1, "PSNGameBootInviteResult_t.m_steamIDLobby has unexpected offset % instead of 1", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "PSNGameBootInviteResult_t.m_steamIDLobby has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(PSNGameBootInviteResult_t) == 9, "PSNGameBootInviteResult_t has size % instead of 9", size_of(PSNGameBootInviteResult_t));
+    }
+
+    {
+        info := type_info(FavoritesListAccountsUpdated_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "FavoritesListAccountsUpdated_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "FavoritesListAccountsUpdated_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(FavoritesListAccountsUpdated_t) == 4, "FavoritesListAccountsUpdated_t has size % instead of 4", size_of(FavoritesListAccountsUpdated_t));
+    }
+
+    {
+        info := type_info(SearchForGameProgressCallback_t);
+        for info.members {
+            if it.name == {
+                case "m_ullSearchID";
+                    assert(it.offset_in_bytes == 0, "SearchForGameProgressCallback_t.m_ullSearchID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SearchForGameProgressCallback_t.m_ullSearchID has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 8, "SearchForGameProgressCallback_t.m_eResult has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SearchForGameProgressCallback_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_lobbyID";
+                    assert(it.offset_in_bytes == 12, "SearchForGameProgressCallback_t.m_lobbyID has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SearchForGameProgressCallback_t.m_lobbyID has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_steamIDEndedSearch";
+                    assert(it.offset_in_bytes == 20, "SearchForGameProgressCallback_t.m_steamIDEndedSearch has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SearchForGameProgressCallback_t.m_steamIDEndedSearch has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_nSecondsRemainingEstimate";
+                    assert(it.offset_in_bytes == 28, "SearchForGameProgressCallback_t.m_nSecondsRemainingEstimate has unexpected offset % instead of 28", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SearchForGameProgressCallback_t.m_nSecondsRemainingEstimate has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_cPlayersSearching";
+                    assert(it.offset_in_bytes == 32, "SearchForGameProgressCallback_t.m_cPlayersSearching has unexpected offset % instead of 32", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SearchForGameProgressCallback_t.m_cPlayersSearching has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SearchForGameProgressCallback_t) == 36, "SearchForGameProgressCallback_t has size % instead of 36", size_of(SearchForGameProgressCallback_t));
+    }
+
+    {
+        info := type_info(SearchForGameResultCallback_t);
+        for info.members {
+            if it.name == {
+                case "m_ullSearchID";
+                    assert(it.offset_in_bytes == 0, "SearchForGameResultCallback_t.m_ullSearchID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SearchForGameResultCallback_t.m_ullSearchID has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 8, "SearchForGameResultCallback_t.m_eResult has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SearchForGameResultCallback_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nCountPlayersInGame";
+                    assert(it.offset_in_bytes == 12, "SearchForGameResultCallback_t.m_nCountPlayersInGame has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SearchForGameResultCallback_t.m_nCountPlayersInGame has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nCountAcceptedGame";
+                    assert(it.offset_in_bytes == 16, "SearchForGameResultCallback_t.m_nCountAcceptedGame has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SearchForGameResultCallback_t.m_nCountAcceptedGame has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_steamIDHost";
+                    assert(it.offset_in_bytes == 20, "SearchForGameResultCallback_t.m_steamIDHost has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SearchForGameResultCallback_t.m_steamIDHost has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_bFinalCallback";
+                    assert(it.offset_in_bytes == 28, "SearchForGameResultCallback_t.m_bFinalCallback has unexpected offset % instead of 28", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "SearchForGameResultCallback_t.m_bFinalCallback has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SearchForGameResultCallback_t) == 32, "SearchForGameResultCallback_t has size % instead of 32", size_of(SearchForGameResultCallback_t));
+    }
+
+    {
+        info := type_info(RequestPlayersForGameProgressCallback_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "RequestPlayersForGameProgressCallback_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RequestPlayersForGameProgressCallback_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_ullSearchID";
+                    assert(it.offset_in_bytes == 4, "RequestPlayersForGameProgressCallback_t.m_ullSearchID has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RequestPlayersForGameProgressCallback_t.m_ullSearchID has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(RequestPlayersForGameProgressCallback_t) == 12, "RequestPlayersForGameProgressCallback_t has size % instead of 12", size_of(RequestPlayersForGameProgressCallback_t));
+    }
+
+    {
+        info := type_info(RequestPlayersForGameResultCallback_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "RequestPlayersForGameResultCallback_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RequestPlayersForGameResultCallback_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_ullSearchID";
+                    assert(it.offset_in_bytes == 4, "RequestPlayersForGameResultCallback_t.m_ullSearchID has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RequestPlayersForGameResultCallback_t.m_ullSearchID has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_SteamIDPlayerFound";
+                    assert(it.offset_in_bytes == 12, "RequestPlayersForGameResultCallback_t.m_SteamIDPlayerFound has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RequestPlayersForGameResultCallback_t.m_SteamIDPlayerFound has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_SteamIDLobby";
+                    assert(it.offset_in_bytes == 20, "RequestPlayersForGameResultCallback_t.m_SteamIDLobby has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RequestPlayersForGameResultCallback_t.m_SteamIDLobby has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_ePlayerAcceptState";
+                    assert(it.offset_in_bytes == 28, "RequestPlayersForGameResultCallback_t.m_ePlayerAcceptState has unexpected offset % instead of 28", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RequestPlayersForGameResultCallback_t.m_ePlayerAcceptState has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nPlayerIndex";
+                    assert(it.offset_in_bytes == 32, "RequestPlayersForGameResultCallback_t.m_nPlayerIndex has unexpected offset % instead of 32", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RequestPlayersForGameResultCallback_t.m_nPlayerIndex has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nTotalPlayersFound";
+                    assert(it.offset_in_bytes == 36, "RequestPlayersForGameResultCallback_t.m_nTotalPlayersFound has unexpected offset % instead of 36", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RequestPlayersForGameResultCallback_t.m_nTotalPlayersFound has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nTotalPlayersAcceptedGame";
+                    assert(it.offset_in_bytes == 40, "RequestPlayersForGameResultCallback_t.m_nTotalPlayersAcceptedGame has unexpected offset % instead of 40", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RequestPlayersForGameResultCallback_t.m_nTotalPlayersAcceptedGame has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nSuggestedTeamIndex";
+                    assert(it.offset_in_bytes == 44, "RequestPlayersForGameResultCallback_t.m_nSuggestedTeamIndex has unexpected offset % instead of 44", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RequestPlayersForGameResultCallback_t.m_nSuggestedTeamIndex has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_ullUniqueGameID";
+                    assert(it.offset_in_bytes == 48, "RequestPlayersForGameResultCallback_t.m_ullUniqueGameID has unexpected offset % instead of 48", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RequestPlayersForGameResultCallback_t.m_ullUniqueGameID has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(RequestPlayersForGameResultCallback_t) == 56, "RequestPlayersForGameResultCallback_t has size % instead of 56", size_of(RequestPlayersForGameResultCallback_t));
+    }
+
+    {
+        info := type_info(RequestPlayersForGameFinalResultCallback_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "RequestPlayersForGameFinalResultCallback_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RequestPlayersForGameFinalResultCallback_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_ullSearchID";
+                    assert(it.offset_in_bytes == 4, "RequestPlayersForGameFinalResultCallback_t.m_ullSearchID has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RequestPlayersForGameFinalResultCallback_t.m_ullSearchID has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_ullUniqueGameID";
+                    assert(it.offset_in_bytes == 12, "RequestPlayersForGameFinalResultCallback_t.m_ullUniqueGameID has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RequestPlayersForGameFinalResultCallback_t.m_ullUniqueGameID has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(RequestPlayersForGameFinalResultCallback_t) == 20, "RequestPlayersForGameFinalResultCallback_t has size % instead of 20", size_of(RequestPlayersForGameFinalResultCallback_t));
+    }
+
+    {
+        info := type_info(SubmitPlayerResultResultCallback_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "SubmitPlayerResultResultCallback_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SubmitPlayerResultResultCallback_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "ullUniqueGameID";
+                    assert(it.offset_in_bytes == 4, "SubmitPlayerResultResultCallback_t.ullUniqueGameID has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SubmitPlayerResultResultCallback_t.ullUniqueGameID has unexpected size % instead of 8", it.type.runtime_size);
+                case "steamIDPlayer";
+                    assert(it.offset_in_bytes == 12, "SubmitPlayerResultResultCallback_t.steamIDPlayer has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SubmitPlayerResultResultCallback_t.steamIDPlayer has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SubmitPlayerResultResultCallback_t) == 20, "SubmitPlayerResultResultCallback_t has size % instead of 20", size_of(SubmitPlayerResultResultCallback_t));
+    }
+
+    {
+        info := type_info(EndGameResultCallback_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "EndGameResultCallback_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "EndGameResultCallback_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "ullUniqueGameID";
+                    assert(it.offset_in_bytes == 4, "EndGameResultCallback_t.ullUniqueGameID has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "EndGameResultCallback_t.ullUniqueGameID has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(EndGameResultCallback_t) == 12, "EndGameResultCallback_t has size % instead of 12", size_of(EndGameResultCallback_t));
+    }
+
+    {
+        info := type_info(JoinPartyCallback_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "JoinPartyCallback_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "JoinPartyCallback_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_ulBeaconID";
+                    assert(it.offset_in_bytes == 4, "JoinPartyCallback_t.m_ulBeaconID has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "JoinPartyCallback_t.m_ulBeaconID has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_SteamIDBeaconOwner";
+                    assert(it.offset_in_bytes == 12, "JoinPartyCallback_t.m_SteamIDBeaconOwner has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "JoinPartyCallback_t.m_SteamIDBeaconOwner has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_rgchConnectString";
+                    assert(it.offset_in_bytes == 20, "JoinPartyCallback_t.m_rgchConnectString has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 256, "JoinPartyCallback_t.m_rgchConnectString has unexpected size % instead of 256", it.type.runtime_size);
+            }
+        }
+        assert(size_of(JoinPartyCallback_t) == 276, "JoinPartyCallback_t has size % instead of 276", size_of(JoinPartyCallback_t));
+    }
+
+    {
+        info := type_info(CreateBeaconCallback_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "CreateBeaconCallback_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "CreateBeaconCallback_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_ulBeaconID";
+                    assert(it.offset_in_bytes == 4, "CreateBeaconCallback_t.m_ulBeaconID has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "CreateBeaconCallback_t.m_ulBeaconID has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(CreateBeaconCallback_t) == 12, "CreateBeaconCallback_t has size % instead of 12", size_of(CreateBeaconCallback_t));
+    }
+
+    {
+        info := type_info(ReservationNotificationCallback_t);
+        for info.members {
+            if it.name == {
+                case "m_ulBeaconID";
+                    assert(it.offset_in_bytes == 0, "ReservationNotificationCallback_t.m_ulBeaconID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "ReservationNotificationCallback_t.m_ulBeaconID has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_steamIDJoiner";
+                    assert(it.offset_in_bytes == 8, "ReservationNotificationCallback_t.m_steamIDJoiner has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "ReservationNotificationCallback_t.m_steamIDJoiner has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(ReservationNotificationCallback_t) == 16, "ReservationNotificationCallback_t has size % instead of 16", size_of(ReservationNotificationCallback_t));
+    }
+
+    {
+        info := type_info(ChangeNumOpenSlotsCallback_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "ChangeNumOpenSlotsCallback_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "ChangeNumOpenSlotsCallback_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(ChangeNumOpenSlotsCallback_t) == 4, "ChangeNumOpenSlotsCallback_t has size % instead of 4", size_of(ChangeNumOpenSlotsCallback_t));
+    }
+
+    assert(size_of(AvailableBeaconLocationsUpdated_t) == 1, "AvailableBeaconLocationsUpdated_t has size % instead of 1", size_of(AvailableBeaconLocationsUpdated_t));
+
+    assert(size_of(ActiveBeaconsUpdated_t) == 1, "ActiveBeaconsUpdated_t has size % instead of 1", size_of(ActiveBeaconsUpdated_t));
+
     assert(size_of(ISteamMusic) == 8, "ISteamMusic has size % instead of 8", size_of(ISteamMusic));
+
+    assert(size_of(PlaybackStatusHasChanged_t) == 1, "PlaybackStatusHasChanged_t has size % instead of 1", size_of(PlaybackStatusHasChanged_t));
+
+    {
+        info := type_info(VolumeHasChanged_t);
+        for info.members {
+            if it.name == {
+                case "m_flNewVolume";
+                    assert(it.offset_in_bytes == 0, "VolumeHasChanged_t.m_flNewVolume has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "VolumeHasChanged_t.m_flNewVolume has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(VolumeHasChanged_t) == 4, "VolumeHasChanged_t has size % instead of 4", size_of(VolumeHasChanged_t));
+    }
 
     assert(size_of(ISteamMusicRemote) == 8, "ISteamMusicRemote has size % instead of 8", size_of(ISteamMusicRemote));
 
+    assert(size_of(MusicPlayerRemoteWillActivate_t) == 1, "MusicPlayerRemoteWillActivate_t has size % instead of 1", size_of(MusicPlayerRemoteWillActivate_t));
+
+    assert(size_of(MusicPlayerRemoteWillDeactivate_t) == 1, "MusicPlayerRemoteWillDeactivate_t has size % instead of 1", size_of(MusicPlayerRemoteWillDeactivate_t));
+
+    assert(size_of(MusicPlayerRemoteToFront_t) == 1, "MusicPlayerRemoteToFront_t has size % instead of 1", size_of(MusicPlayerRemoteToFront_t));
+
+    assert(size_of(MusicPlayerWillQuit_t) == 1, "MusicPlayerWillQuit_t has size % instead of 1", size_of(MusicPlayerWillQuit_t));
+
+    assert(size_of(MusicPlayerWantsPlay_t) == 1, "MusicPlayerWantsPlay_t has size % instead of 1", size_of(MusicPlayerWantsPlay_t));
+
+    assert(size_of(MusicPlayerWantsPause_t) == 1, "MusicPlayerWantsPause_t has size % instead of 1", size_of(MusicPlayerWantsPause_t));
+
+    assert(size_of(MusicPlayerWantsPlayPrevious_t) == 1, "MusicPlayerWantsPlayPrevious_t has size % instead of 1", size_of(MusicPlayerWantsPlayPrevious_t));
+
+    assert(size_of(MusicPlayerWantsPlayNext_t) == 1, "MusicPlayerWantsPlayNext_t has size % instead of 1", size_of(MusicPlayerWantsPlayNext_t));
+
     {
-        instance: P2PSessionState_t;
-        assert(((cast(*void)(*instance.m_bConnectionActive)) - cast(*void)(*instance)) == 0, "P2PSessionState_t.m_bConnectionActive has unexpected offset % instead of 0", ((cast(*void)(*instance.m_bConnectionActive)) - cast(*void)(*instance)));
-        assert(size_of(type_of(P2PSessionState_t.m_bConnectionActive)) == 1, "P2PSessionState_t.m_bConnectionActive has unexpected size % instead of 1", size_of(type_of(P2PSessionState_t.m_bConnectionActive)));
-        assert(((cast(*void)(*instance.m_bConnecting)) - cast(*void)(*instance)) == 1, "P2PSessionState_t.m_bConnecting has unexpected offset % instead of 1", ((cast(*void)(*instance.m_bConnecting)) - cast(*void)(*instance)));
-        assert(size_of(type_of(P2PSessionState_t.m_bConnecting)) == 1, "P2PSessionState_t.m_bConnecting has unexpected size % instead of 1", size_of(type_of(P2PSessionState_t.m_bConnecting)));
-        assert(((cast(*void)(*instance.m_eP2PSessionError)) - cast(*void)(*instance)) == 2, "P2PSessionState_t.m_eP2PSessionError has unexpected offset % instead of 2", ((cast(*void)(*instance.m_eP2PSessionError)) - cast(*void)(*instance)));
-        assert(size_of(type_of(P2PSessionState_t.m_eP2PSessionError)) == 1, "P2PSessionState_t.m_eP2PSessionError has unexpected size % instead of 1", size_of(type_of(P2PSessionState_t.m_eP2PSessionError)));
-        assert(((cast(*void)(*instance.m_bUsingRelay)) - cast(*void)(*instance)) == 3, "P2PSessionState_t.m_bUsingRelay has unexpected offset % instead of 3", ((cast(*void)(*instance.m_bUsingRelay)) - cast(*void)(*instance)));
-        assert(size_of(type_of(P2PSessionState_t.m_bUsingRelay)) == 1, "P2PSessionState_t.m_bUsingRelay has unexpected size % instead of 1", size_of(type_of(P2PSessionState_t.m_bUsingRelay)));
-        assert(((cast(*void)(*instance.m_nBytesQueuedForSend)) - cast(*void)(*instance)) == 4, "P2PSessionState_t.m_nBytesQueuedForSend has unexpected offset % instead of 4", ((cast(*void)(*instance.m_nBytesQueuedForSend)) - cast(*void)(*instance)));
-        assert(size_of(type_of(P2PSessionState_t.m_nBytesQueuedForSend)) == 4, "P2PSessionState_t.m_nBytesQueuedForSend has unexpected size % instead of 4", size_of(type_of(P2PSessionState_t.m_nBytesQueuedForSend)));
-        assert(((cast(*void)(*instance.m_nPacketsQueuedForSend)) - cast(*void)(*instance)) == 8, "P2PSessionState_t.m_nPacketsQueuedForSend has unexpected offset % instead of 8", ((cast(*void)(*instance.m_nPacketsQueuedForSend)) - cast(*void)(*instance)));
-        assert(size_of(type_of(P2PSessionState_t.m_nPacketsQueuedForSend)) == 4, "P2PSessionState_t.m_nPacketsQueuedForSend has unexpected size % instead of 4", size_of(type_of(P2PSessionState_t.m_nPacketsQueuedForSend)));
-        assert(((cast(*void)(*instance.m_nRemoteIP)) - cast(*void)(*instance)) == 12, "P2PSessionState_t.m_nRemoteIP has unexpected offset % instead of 12", ((cast(*void)(*instance.m_nRemoteIP)) - cast(*void)(*instance)));
-        assert(size_of(type_of(P2PSessionState_t.m_nRemoteIP)) == 4, "P2PSessionState_t.m_nRemoteIP has unexpected size % instead of 4", size_of(type_of(P2PSessionState_t.m_nRemoteIP)));
-        assert(((cast(*void)(*instance.m_nRemotePort)) - cast(*void)(*instance)) == 16, "P2PSessionState_t.m_nRemotePort has unexpected offset % instead of 16", ((cast(*void)(*instance.m_nRemotePort)) - cast(*void)(*instance)));
-        assert(size_of(type_of(P2PSessionState_t.m_nRemotePort)) == 2, "P2PSessionState_t.m_nRemotePort has unexpected size % instead of 2", size_of(type_of(P2PSessionState_t.m_nRemotePort)));
+        info := type_info(MusicPlayerWantsShuffled_t);
+        for info.members {
+            if it.name == {
+                case "m_bShuffled";
+                    assert(it.offset_in_bytes == 0, "MusicPlayerWantsShuffled_t.m_bShuffled has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "MusicPlayerWantsShuffled_t.m_bShuffled has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(MusicPlayerWantsShuffled_t) == 1, "MusicPlayerWantsShuffled_t has size % instead of 1", size_of(MusicPlayerWantsShuffled_t));
+    }
+
+    {
+        info := type_info(MusicPlayerWantsLooped_t);
+        for info.members {
+            if it.name == {
+                case "m_bLooped";
+                    assert(it.offset_in_bytes == 0, "MusicPlayerWantsLooped_t.m_bLooped has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "MusicPlayerWantsLooped_t.m_bLooped has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(MusicPlayerWantsLooped_t) == 1, "MusicPlayerWantsLooped_t has size % instead of 1", size_of(MusicPlayerWantsLooped_t));
+    }
+
+    {
+        info := type_info(MusicPlayerWantsVolume_t);
+        for info.members {
+            if it.name == {
+                case "m_flNewVolume";
+                    assert(it.offset_in_bytes == 0, "MusicPlayerWantsVolume_t.m_flNewVolume has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "MusicPlayerWantsVolume_t.m_flNewVolume has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(MusicPlayerWantsVolume_t) == 4, "MusicPlayerWantsVolume_t has size % instead of 4", size_of(MusicPlayerWantsVolume_t));
+    }
+
+    {
+        info := type_info(MusicPlayerSelectsQueueEntry_t);
+        for info.members {
+            if it.name == {
+                case "nID";
+                    assert(it.offset_in_bytes == 0, "MusicPlayerSelectsQueueEntry_t.nID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "MusicPlayerSelectsQueueEntry_t.nID has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(MusicPlayerSelectsQueueEntry_t) == 4, "MusicPlayerSelectsQueueEntry_t has size % instead of 4", size_of(MusicPlayerSelectsQueueEntry_t));
+    }
+
+    {
+        info := type_info(MusicPlayerSelectsPlaylistEntry_t);
+        for info.members {
+            if it.name == {
+                case "nID";
+                    assert(it.offset_in_bytes == 0, "MusicPlayerSelectsPlaylistEntry_t.nID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "MusicPlayerSelectsPlaylistEntry_t.nID has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(MusicPlayerSelectsPlaylistEntry_t) == 4, "MusicPlayerSelectsPlaylistEntry_t has size % instead of 4", size_of(MusicPlayerSelectsPlaylistEntry_t));
+    }
+
+    {
+        info := type_info(MusicPlayerWantsPlayingRepeatStatus_t);
+        for info.members {
+            if it.name == {
+                case "m_nPlayingRepeatStatus";
+                    assert(it.offset_in_bytes == 0, "MusicPlayerWantsPlayingRepeatStatus_t.m_nPlayingRepeatStatus has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "MusicPlayerWantsPlayingRepeatStatus_t.m_nPlayingRepeatStatus has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(MusicPlayerWantsPlayingRepeatStatus_t) == 4, "MusicPlayerWantsPlayingRepeatStatus_t has size % instead of 4", size_of(MusicPlayerWantsPlayingRepeatStatus_t));
+    }
+
+    {
+        info := type_info(P2PSessionState_t);
+        for info.members {
+            if it.name == {
+                case "m_bConnectionActive";
+                    assert(it.offset_in_bytes == 0, "P2PSessionState_t.m_bConnectionActive has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "P2PSessionState_t.m_bConnectionActive has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_bConnecting";
+                    assert(it.offset_in_bytes == 1, "P2PSessionState_t.m_bConnecting has unexpected offset % instead of 1", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "P2PSessionState_t.m_bConnecting has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_eP2PSessionError";
+                    assert(it.offset_in_bytes == 2, "P2PSessionState_t.m_eP2PSessionError has unexpected offset % instead of 2", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "P2PSessionState_t.m_eP2PSessionError has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_bUsingRelay";
+                    assert(it.offset_in_bytes == 3, "P2PSessionState_t.m_bUsingRelay has unexpected offset % instead of 3", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "P2PSessionState_t.m_bUsingRelay has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_nBytesQueuedForSend";
+                    assert(it.offset_in_bytes == 4, "P2PSessionState_t.m_nBytesQueuedForSend has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "P2PSessionState_t.m_nBytesQueuedForSend has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nPacketsQueuedForSend";
+                    assert(it.offset_in_bytes == 8, "P2PSessionState_t.m_nPacketsQueuedForSend has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "P2PSessionState_t.m_nPacketsQueuedForSend has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nRemoteIP";
+                    assert(it.offset_in_bytes == 12, "P2PSessionState_t.m_nRemoteIP has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "P2PSessionState_t.m_nRemoteIP has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nRemotePort";
+                    assert(it.offset_in_bytes == 16, "P2PSessionState_t.m_nRemotePort has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 2, "P2PSessionState_t.m_nRemotePort has unexpected size % instead of 2", it.type.runtime_size);
+            }
+        }
         assert(size_of(P2PSessionState_t) == 20, "P2PSessionState_t has size % instead of 20", size_of(P2PSessionState_t));
     }
 
     assert(size_of(ISteamNetworking) == 8, "ISteamNetworking has size % instead of 8", size_of(ISteamNetworking));
 
     {
-        instance: SteamNetworkingIPAddr.IPv4MappedAddress;
-        assert(((cast(*void)(*instance.m_8zeros)) - cast(*void)(*instance)) == 0, "SteamNetworkingIPAddr.IPv4MappedAddress.m_8zeros has unexpected offset % instead of 0", ((cast(*void)(*instance.m_8zeros)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkingIPAddr.IPv4MappedAddress.m_8zeros)) == 8, "SteamNetworkingIPAddr.IPv4MappedAddress.m_8zeros has unexpected size % instead of 8", size_of(type_of(SteamNetworkingIPAddr.IPv4MappedAddress.m_8zeros)));
-        assert(((cast(*void)(*instance.m_0000)) - cast(*void)(*instance)) == 8, "SteamNetworkingIPAddr.IPv4MappedAddress.m_0000 has unexpected offset % instead of 8", ((cast(*void)(*instance.m_0000)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkingIPAddr.IPv4MappedAddress.m_0000)) == 2, "SteamNetworkingIPAddr.IPv4MappedAddress.m_0000 has unexpected size % instead of 2", size_of(type_of(SteamNetworkingIPAddr.IPv4MappedAddress.m_0000)));
-        assert(((cast(*void)(*instance.m_ffff)) - cast(*void)(*instance)) == 10, "SteamNetworkingIPAddr.IPv4MappedAddress.m_ffff has unexpected offset % instead of 10", ((cast(*void)(*instance.m_ffff)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkingIPAddr.IPv4MappedAddress.m_ffff)) == 2, "SteamNetworkingIPAddr.IPv4MappedAddress.m_ffff has unexpected size % instead of 2", size_of(type_of(SteamNetworkingIPAddr.IPv4MappedAddress.m_ffff)));
-        assert(((cast(*void)(*instance.m_ip)) - cast(*void)(*instance)) == 12, "SteamNetworkingIPAddr.IPv4MappedAddress.m_ip has unexpected offset % instead of 12", ((cast(*void)(*instance.m_ip)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkingIPAddr.IPv4MappedAddress.m_ip)) == 4, "SteamNetworkingIPAddr.IPv4MappedAddress.m_ip has unexpected size % instead of 4", size_of(type_of(SteamNetworkingIPAddr.IPv4MappedAddress.m_ip)));
+        info := type_info(P2PSessionRequest_t);
+        for info.members {
+            if it.name == {
+                case "m_steamIDRemote";
+                    assert(it.offset_in_bytes == 0, "P2PSessionRequest_t.m_steamIDRemote has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "P2PSessionRequest_t.m_steamIDRemote has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(P2PSessionRequest_t) == 8, "P2PSessionRequest_t has size % instead of 8", size_of(P2PSessionRequest_t));
+    }
+
+    {
+        info := type_info(P2PSessionConnectFail_t);
+        for info.members {
+            if it.name == {
+                case "m_steamIDRemote";
+                    assert(it.offset_in_bytes == 0, "P2PSessionConnectFail_t.m_steamIDRemote has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "P2PSessionConnectFail_t.m_steamIDRemote has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_eP2PSessionError";
+                    assert(it.offset_in_bytes == 8, "P2PSessionConnectFail_t.m_eP2PSessionError has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "P2PSessionConnectFail_t.m_eP2PSessionError has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(P2PSessionConnectFail_t) == 9, "P2PSessionConnectFail_t has size % instead of 9", size_of(P2PSessionConnectFail_t));
+    }
+
+    {
+        info := type_info(SocketStatusCallback_t);
+        for info.members {
+            if it.name == {
+                case "m_hSocket";
+                    assert(it.offset_in_bytes == 0, "SocketStatusCallback_t.m_hSocket has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SocketStatusCallback_t.m_hSocket has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_hListenSocket";
+                    assert(it.offset_in_bytes == 4, "SocketStatusCallback_t.m_hListenSocket has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SocketStatusCallback_t.m_hListenSocket has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_steamIDRemote";
+                    assert(it.offset_in_bytes == 8, "SocketStatusCallback_t.m_steamIDRemote has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SocketStatusCallback_t.m_steamIDRemote has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_eSNetSocketState";
+                    assert(it.offset_in_bytes == 16, "SocketStatusCallback_t.m_eSNetSocketState has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SocketStatusCallback_t.m_eSNetSocketState has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SocketStatusCallback_t) == 20, "SocketStatusCallback_t has size % instead of 20", size_of(SocketStatusCallback_t));
+    }
+
+    {
+        info := type_info(SteamNetworkingIPAddr.IPv4MappedAddress);
+        for info.members {
+            if it.name == {
+                case "m_8zeros";
+                    assert(it.offset_in_bytes == 0, "SteamNetworkingIPAddr.IPv4MappedAddress.m_8zeros has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamNetworkingIPAddr.IPv4MappedAddress.m_8zeros has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_0000";
+                    assert(it.offset_in_bytes == 8, "SteamNetworkingIPAddr.IPv4MappedAddress.m_0000 has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 2, "SteamNetworkingIPAddr.IPv4MappedAddress.m_0000 has unexpected size % instead of 2", it.type.runtime_size);
+                case "m_ffff";
+                    assert(it.offset_in_bytes == 10, "SteamNetworkingIPAddr.IPv4MappedAddress.m_ffff has unexpected offset % instead of 10", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 2, "SteamNetworkingIPAddr.IPv4MappedAddress.m_ffff has unexpected size % instead of 2", it.type.runtime_size);
+                case "m_ip";
+                    assert(it.offset_in_bytes == 12, "SteamNetworkingIPAddr.IPv4MappedAddress.m_ip has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetworkingIPAddr.IPv4MappedAddress.m_ip has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
         assert(size_of(SteamNetworkingIPAddr.IPv4MappedAddress) == 16, "SteamNetworkingIPAddr.IPv4MappedAddress has size % instead of 16", size_of(SteamNetworkingIPAddr.IPv4MappedAddress));
     }
 
     {
-        instance: SteamNetworkingIPAddr;
-        assert(((cast(*void)(*instance.m_port)) - cast(*void)(*instance)) == 16, "SteamNetworkingIPAddr.m_port has unexpected offset % instead of 16", ((cast(*void)(*instance.m_port)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkingIPAddr.m_port)) == 2, "SteamNetworkingIPAddr.m_port has unexpected size % instead of 2", size_of(type_of(SteamNetworkingIPAddr.m_port)));
+        info := type_info(SteamNetworkingIPAddr);
+        for info.members {
+            if it.name == {
+                case "m_port";
+                    assert(it.offset_in_bytes == 16, "SteamNetworkingIPAddr.m_port has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 2, "SteamNetworkingIPAddr.m_port has unexpected size % instead of 2", it.type.runtime_size);
+            }
+        }
         assert(size_of(SteamNetworkingIPAddr) == 18, "SteamNetworkingIPAddr has size % instead of 18", size_of(SteamNetworkingIPAddr));
     }
 
     {
-        instance: SteamNetworkingIdentity;
-        assert(((cast(*void)(*instance.m_eType)) - cast(*void)(*instance)) == 0, "SteamNetworkingIdentity.m_eType has unexpected offset % instead of 0", ((cast(*void)(*instance.m_eType)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkingIdentity.m_eType)) == 4, "SteamNetworkingIdentity.m_eType has unexpected size % instead of 4", size_of(type_of(SteamNetworkingIdentity.m_eType)));
-        assert(((cast(*void)(*instance.m_cbSize)) - cast(*void)(*instance)) == 4, "SteamNetworkingIdentity.m_cbSize has unexpected offset % instead of 4", ((cast(*void)(*instance.m_cbSize)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkingIdentity.m_cbSize)) == 4, "SteamNetworkingIdentity.m_cbSize has unexpected size % instead of 4", size_of(type_of(SteamNetworkingIdentity.m_cbSize)));
+        info := type_info(SteamNetworkingIdentity);
+        for info.members {
+            if it.name == {
+                case "m_eType";
+                    assert(it.offset_in_bytes == 0, "SteamNetworkingIdentity.m_eType has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetworkingIdentity.m_eType has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_cbSize";
+                    assert(it.offset_in_bytes == 4, "SteamNetworkingIdentity.m_cbSize has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetworkingIdentity.m_cbSize has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
         assert(size_of(SteamNetworkingIdentity) == 136, "SteamNetworkingIdentity has size % instead of 136", size_of(SteamNetworkingIdentity));
     }
 
     {
-        instance: SteamNetConnectionInfo_t;
-        assert(((cast(*void)(*instance.m_identityRemote)) - cast(*void)(*instance)) == 0, "SteamNetConnectionInfo_t.m_identityRemote has unexpected offset % instead of 0", ((cast(*void)(*instance.m_identityRemote)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionInfo_t.m_identityRemote)) == 136, "SteamNetConnectionInfo_t.m_identityRemote has unexpected size % instead of 136", size_of(type_of(SteamNetConnectionInfo_t.m_identityRemote)));
-        assert(((cast(*void)(*instance.m_nUserData)) - cast(*void)(*instance)) == 136, "SteamNetConnectionInfo_t.m_nUserData has unexpected offset % instead of 136", ((cast(*void)(*instance.m_nUserData)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionInfo_t.m_nUserData)) == 8, "SteamNetConnectionInfo_t.m_nUserData has unexpected size % instead of 8", size_of(type_of(SteamNetConnectionInfo_t.m_nUserData)));
-        assert(((cast(*void)(*instance.m_hListenSocket)) - cast(*void)(*instance)) == 144, "SteamNetConnectionInfo_t.m_hListenSocket has unexpected offset % instead of 144", ((cast(*void)(*instance.m_hListenSocket)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionInfo_t.m_hListenSocket)) == 4, "SteamNetConnectionInfo_t.m_hListenSocket has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionInfo_t.m_hListenSocket)));
-        assert(((cast(*void)(*instance.m_addrRemote)) - cast(*void)(*instance)) == 148, "SteamNetConnectionInfo_t.m_addrRemote has unexpected offset % instead of 148", ((cast(*void)(*instance.m_addrRemote)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionInfo_t.m_addrRemote)) == 18, "SteamNetConnectionInfo_t.m_addrRemote has unexpected size % instead of 18", size_of(type_of(SteamNetConnectionInfo_t.m_addrRemote)));
-        assert(((cast(*void)(*instance.m__pad1)) - cast(*void)(*instance)) == 166, "SteamNetConnectionInfo_t.m__pad1 has unexpected offset % instead of 166", ((cast(*void)(*instance.m__pad1)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionInfo_t.m__pad1)) == 2, "SteamNetConnectionInfo_t.m__pad1 has unexpected size % instead of 2", size_of(type_of(SteamNetConnectionInfo_t.m__pad1)));
-        assert(((cast(*void)(*instance.m_idPOPRemote)) - cast(*void)(*instance)) == 168, "SteamNetConnectionInfo_t.m_idPOPRemote has unexpected offset % instead of 168", ((cast(*void)(*instance.m_idPOPRemote)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionInfo_t.m_idPOPRemote)) == 4, "SteamNetConnectionInfo_t.m_idPOPRemote has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionInfo_t.m_idPOPRemote)));
-        assert(((cast(*void)(*instance.m_idPOPRelay)) - cast(*void)(*instance)) == 172, "SteamNetConnectionInfo_t.m_idPOPRelay has unexpected offset % instead of 172", ((cast(*void)(*instance.m_idPOPRelay)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionInfo_t.m_idPOPRelay)) == 4, "SteamNetConnectionInfo_t.m_idPOPRelay has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionInfo_t.m_idPOPRelay)));
-        assert(((cast(*void)(*instance.m_eState)) - cast(*void)(*instance)) == 176, "SteamNetConnectionInfo_t.m_eState has unexpected offset % instead of 176", ((cast(*void)(*instance.m_eState)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionInfo_t.m_eState)) == 4, "SteamNetConnectionInfo_t.m_eState has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionInfo_t.m_eState)));
-        assert(((cast(*void)(*instance.m_eEndReason)) - cast(*void)(*instance)) == 180, "SteamNetConnectionInfo_t.m_eEndReason has unexpected offset % instead of 180", ((cast(*void)(*instance.m_eEndReason)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionInfo_t.m_eEndReason)) == 4, "SteamNetConnectionInfo_t.m_eEndReason has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionInfo_t.m_eEndReason)));
-        assert(((cast(*void)(*instance.m_szEndDebug)) - cast(*void)(*instance)) == 184, "SteamNetConnectionInfo_t.m_szEndDebug has unexpected offset % instead of 184", ((cast(*void)(*instance.m_szEndDebug)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionInfo_t.m_szEndDebug)) == 128, "SteamNetConnectionInfo_t.m_szEndDebug has unexpected size % instead of 128", size_of(type_of(SteamNetConnectionInfo_t.m_szEndDebug)));
-        assert(((cast(*void)(*instance.m_szConnectionDescription)) - cast(*void)(*instance)) == 312, "SteamNetConnectionInfo_t.m_szConnectionDescription has unexpected offset % instead of 312", ((cast(*void)(*instance.m_szConnectionDescription)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionInfo_t.m_szConnectionDescription)) == 128, "SteamNetConnectionInfo_t.m_szConnectionDescription has unexpected size % instead of 128", size_of(type_of(SteamNetConnectionInfo_t.m_szConnectionDescription)));
-        assert(((cast(*void)(*instance.m_nFlags)) - cast(*void)(*instance)) == 440, "SteamNetConnectionInfo_t.m_nFlags has unexpected offset % instead of 440", ((cast(*void)(*instance.m_nFlags)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionInfo_t.m_nFlags)) == 4, "SteamNetConnectionInfo_t.m_nFlags has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionInfo_t.m_nFlags)));
-        assert(((cast(*void)(*instance.reserved)) - cast(*void)(*instance)) == 444, "SteamNetConnectionInfo_t.reserved has unexpected offset % instead of 444", ((cast(*void)(*instance.reserved)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionInfo_t.reserved)) == 252, "SteamNetConnectionInfo_t.reserved has unexpected size % instead of 252", size_of(type_of(SteamNetConnectionInfo_t.reserved)));
+        info := type_info(SteamNetConnectionInfo_t);
+        for info.members {
+            if it.name == {
+                case "m_identityRemote";
+                    assert(it.offset_in_bytes == 0, "SteamNetConnectionInfo_t.m_identityRemote has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 136, "SteamNetConnectionInfo_t.m_identityRemote has unexpected size % instead of 136", it.type.runtime_size);
+                case "m_nUserData";
+                    assert(it.offset_in_bytes == 136, "SteamNetConnectionInfo_t.m_nUserData has unexpected offset % instead of 136", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamNetConnectionInfo_t.m_nUserData has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_hListenSocket";
+                    assert(it.offset_in_bytes == 144, "SteamNetConnectionInfo_t.m_hListenSocket has unexpected offset % instead of 144", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetConnectionInfo_t.m_hListenSocket has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_addrRemote";
+                    assert(it.offset_in_bytes == 148, "SteamNetConnectionInfo_t.m_addrRemote has unexpected offset % instead of 148", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 18, "SteamNetConnectionInfo_t.m_addrRemote has unexpected size % instead of 18", it.type.runtime_size);
+                case "m__pad1";
+                    assert(it.offset_in_bytes == 166, "SteamNetConnectionInfo_t.m__pad1 has unexpected offset % instead of 166", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 2, "SteamNetConnectionInfo_t.m__pad1 has unexpected size % instead of 2", it.type.runtime_size);
+                case "m_idPOPRemote";
+                    assert(it.offset_in_bytes == 168, "SteamNetConnectionInfo_t.m_idPOPRemote has unexpected offset % instead of 168", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetConnectionInfo_t.m_idPOPRemote has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_idPOPRelay";
+                    assert(it.offset_in_bytes == 172, "SteamNetConnectionInfo_t.m_idPOPRelay has unexpected offset % instead of 172", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetConnectionInfo_t.m_idPOPRelay has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_eState";
+                    assert(it.offset_in_bytes == 176, "SteamNetConnectionInfo_t.m_eState has unexpected offset % instead of 176", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetConnectionInfo_t.m_eState has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_eEndReason";
+                    assert(it.offset_in_bytes == 180, "SteamNetConnectionInfo_t.m_eEndReason has unexpected offset % instead of 180", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetConnectionInfo_t.m_eEndReason has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_szEndDebug";
+                    assert(it.offset_in_bytes == 184, "SteamNetConnectionInfo_t.m_szEndDebug has unexpected offset % instead of 184", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 128, "SteamNetConnectionInfo_t.m_szEndDebug has unexpected size % instead of 128", it.type.runtime_size);
+                case "m_szConnectionDescription";
+                    assert(it.offset_in_bytes == 312, "SteamNetConnectionInfo_t.m_szConnectionDescription has unexpected offset % instead of 312", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 128, "SteamNetConnectionInfo_t.m_szConnectionDescription has unexpected size % instead of 128", it.type.runtime_size);
+                case "m_nFlags";
+                    assert(it.offset_in_bytes == 440, "SteamNetConnectionInfo_t.m_nFlags has unexpected offset % instead of 440", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetConnectionInfo_t.m_nFlags has unexpected size % instead of 4", it.type.runtime_size);
+                case "reserved";
+                    assert(it.offset_in_bytes == 444, "SteamNetConnectionInfo_t.reserved has unexpected offset % instead of 444", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 252, "SteamNetConnectionInfo_t.reserved has unexpected size % instead of 252", it.type.runtime_size);
+            }
+        }
         assert(size_of(SteamNetConnectionInfo_t) == 696, "SteamNetConnectionInfo_t has size % instead of 696", size_of(SteamNetConnectionInfo_t));
     }
 
     {
-        instance: SteamNetConnectionRealTimeStatus_t;
-        assert(((cast(*void)(*instance.m_eState)) - cast(*void)(*instance)) == 0, "SteamNetConnectionRealTimeStatus_t.m_eState has unexpected offset % instead of 0", ((cast(*void)(*instance.m_eState)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_eState)) == 4, "SteamNetConnectionRealTimeStatus_t.m_eState has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_eState)));
-        assert(((cast(*void)(*instance.m_nPing)) - cast(*void)(*instance)) == 4, "SteamNetConnectionRealTimeStatus_t.m_nPing has unexpected offset % instead of 4", ((cast(*void)(*instance.m_nPing)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_nPing)) == 4, "SteamNetConnectionRealTimeStatus_t.m_nPing has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_nPing)));
-        assert(((cast(*void)(*instance.m_flConnectionQualityLocal)) - cast(*void)(*instance)) == 8, "SteamNetConnectionRealTimeStatus_t.m_flConnectionQualityLocal has unexpected offset % instead of 8", ((cast(*void)(*instance.m_flConnectionQualityLocal)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_flConnectionQualityLocal)) == 4, "SteamNetConnectionRealTimeStatus_t.m_flConnectionQualityLocal has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_flConnectionQualityLocal)));
-        assert(((cast(*void)(*instance.m_flConnectionQualityRemote)) - cast(*void)(*instance)) == 12, "SteamNetConnectionRealTimeStatus_t.m_flConnectionQualityRemote has unexpected offset % instead of 12", ((cast(*void)(*instance.m_flConnectionQualityRemote)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_flConnectionQualityRemote)) == 4, "SteamNetConnectionRealTimeStatus_t.m_flConnectionQualityRemote has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_flConnectionQualityRemote)));
-        assert(((cast(*void)(*instance.m_flOutPacketsPerSec)) - cast(*void)(*instance)) == 16, "SteamNetConnectionRealTimeStatus_t.m_flOutPacketsPerSec has unexpected offset % instead of 16", ((cast(*void)(*instance.m_flOutPacketsPerSec)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_flOutPacketsPerSec)) == 4, "SteamNetConnectionRealTimeStatus_t.m_flOutPacketsPerSec has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_flOutPacketsPerSec)));
-        assert(((cast(*void)(*instance.m_flOutBytesPerSec)) - cast(*void)(*instance)) == 20, "SteamNetConnectionRealTimeStatus_t.m_flOutBytesPerSec has unexpected offset % instead of 20", ((cast(*void)(*instance.m_flOutBytesPerSec)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_flOutBytesPerSec)) == 4, "SteamNetConnectionRealTimeStatus_t.m_flOutBytesPerSec has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_flOutBytesPerSec)));
-        assert(((cast(*void)(*instance.m_flInPacketsPerSec)) - cast(*void)(*instance)) == 24, "SteamNetConnectionRealTimeStatus_t.m_flInPacketsPerSec has unexpected offset % instead of 24", ((cast(*void)(*instance.m_flInPacketsPerSec)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_flInPacketsPerSec)) == 4, "SteamNetConnectionRealTimeStatus_t.m_flInPacketsPerSec has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_flInPacketsPerSec)));
-        assert(((cast(*void)(*instance.m_flInBytesPerSec)) - cast(*void)(*instance)) == 28, "SteamNetConnectionRealTimeStatus_t.m_flInBytesPerSec has unexpected offset % instead of 28", ((cast(*void)(*instance.m_flInBytesPerSec)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_flInBytesPerSec)) == 4, "SteamNetConnectionRealTimeStatus_t.m_flInBytesPerSec has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_flInBytesPerSec)));
-        assert(((cast(*void)(*instance.m_nSendRateBytesPerSecond)) - cast(*void)(*instance)) == 32, "SteamNetConnectionRealTimeStatus_t.m_nSendRateBytesPerSecond has unexpected offset % instead of 32", ((cast(*void)(*instance.m_nSendRateBytesPerSecond)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_nSendRateBytesPerSecond)) == 4, "SteamNetConnectionRealTimeStatus_t.m_nSendRateBytesPerSecond has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_nSendRateBytesPerSecond)));
-        assert(((cast(*void)(*instance.m_cbPendingUnreliable)) - cast(*void)(*instance)) == 36, "SteamNetConnectionRealTimeStatus_t.m_cbPendingUnreliable has unexpected offset % instead of 36", ((cast(*void)(*instance.m_cbPendingUnreliable)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_cbPendingUnreliable)) == 4, "SteamNetConnectionRealTimeStatus_t.m_cbPendingUnreliable has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_cbPendingUnreliable)));
-        assert(((cast(*void)(*instance.m_cbPendingReliable)) - cast(*void)(*instance)) == 40, "SteamNetConnectionRealTimeStatus_t.m_cbPendingReliable has unexpected offset % instead of 40", ((cast(*void)(*instance.m_cbPendingReliable)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_cbPendingReliable)) == 4, "SteamNetConnectionRealTimeStatus_t.m_cbPendingReliable has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_cbPendingReliable)));
-        assert(((cast(*void)(*instance.m_cbSentUnackedReliable)) - cast(*void)(*instance)) == 44, "SteamNetConnectionRealTimeStatus_t.m_cbSentUnackedReliable has unexpected offset % instead of 44", ((cast(*void)(*instance.m_cbSentUnackedReliable)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_cbSentUnackedReliable)) == 4, "SteamNetConnectionRealTimeStatus_t.m_cbSentUnackedReliable has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_cbSentUnackedReliable)));
-        assert(((cast(*void)(*instance.m_usecQueueTime)) - cast(*void)(*instance)) == 48, "SteamNetConnectionRealTimeStatus_t.m_usecQueueTime has unexpected offset % instead of 48", ((cast(*void)(*instance.m_usecQueueTime)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_usecQueueTime)) == 8, "SteamNetConnectionRealTimeStatus_t.m_usecQueueTime has unexpected size % instead of 8", size_of(type_of(SteamNetConnectionRealTimeStatus_t.m_usecQueueTime)));
-        assert(((cast(*void)(*instance.reserved)) - cast(*void)(*instance)) == 56, "SteamNetConnectionRealTimeStatus_t.reserved has unexpected offset % instead of 56", ((cast(*void)(*instance.reserved)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionRealTimeStatus_t.reserved)) == 64, "SteamNetConnectionRealTimeStatus_t.reserved has unexpected size % instead of 64", size_of(type_of(SteamNetConnectionRealTimeStatus_t.reserved)));
+        info := type_info(SteamNetConnectionRealTimeStatus_t);
+        for info.members {
+            if it.name == {
+                case "m_eState";
+                    assert(it.offset_in_bytes == 0, "SteamNetConnectionRealTimeStatus_t.m_eState has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetConnectionRealTimeStatus_t.m_eState has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nPing";
+                    assert(it.offset_in_bytes == 4, "SteamNetConnectionRealTimeStatus_t.m_nPing has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetConnectionRealTimeStatus_t.m_nPing has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_flConnectionQualityLocal";
+                    assert(it.offset_in_bytes == 8, "SteamNetConnectionRealTimeStatus_t.m_flConnectionQualityLocal has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetConnectionRealTimeStatus_t.m_flConnectionQualityLocal has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_flConnectionQualityRemote";
+                    assert(it.offset_in_bytes == 12, "SteamNetConnectionRealTimeStatus_t.m_flConnectionQualityRemote has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetConnectionRealTimeStatus_t.m_flConnectionQualityRemote has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_flOutPacketsPerSec";
+                    assert(it.offset_in_bytes == 16, "SteamNetConnectionRealTimeStatus_t.m_flOutPacketsPerSec has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetConnectionRealTimeStatus_t.m_flOutPacketsPerSec has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_flOutBytesPerSec";
+                    assert(it.offset_in_bytes == 20, "SteamNetConnectionRealTimeStatus_t.m_flOutBytesPerSec has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetConnectionRealTimeStatus_t.m_flOutBytesPerSec has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_flInPacketsPerSec";
+                    assert(it.offset_in_bytes == 24, "SteamNetConnectionRealTimeStatus_t.m_flInPacketsPerSec has unexpected offset % instead of 24", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetConnectionRealTimeStatus_t.m_flInPacketsPerSec has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_flInBytesPerSec";
+                    assert(it.offset_in_bytes == 28, "SteamNetConnectionRealTimeStatus_t.m_flInBytesPerSec has unexpected offset % instead of 28", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetConnectionRealTimeStatus_t.m_flInBytesPerSec has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nSendRateBytesPerSecond";
+                    assert(it.offset_in_bytes == 32, "SteamNetConnectionRealTimeStatus_t.m_nSendRateBytesPerSecond has unexpected offset % instead of 32", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetConnectionRealTimeStatus_t.m_nSendRateBytesPerSecond has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_cbPendingUnreliable";
+                    assert(it.offset_in_bytes == 36, "SteamNetConnectionRealTimeStatus_t.m_cbPendingUnreliable has unexpected offset % instead of 36", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetConnectionRealTimeStatus_t.m_cbPendingUnreliable has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_cbPendingReliable";
+                    assert(it.offset_in_bytes == 40, "SteamNetConnectionRealTimeStatus_t.m_cbPendingReliable has unexpected offset % instead of 40", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetConnectionRealTimeStatus_t.m_cbPendingReliable has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_cbSentUnackedReliable";
+                    assert(it.offset_in_bytes == 44, "SteamNetConnectionRealTimeStatus_t.m_cbSentUnackedReliable has unexpected offset % instead of 44", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetConnectionRealTimeStatus_t.m_cbSentUnackedReliable has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_usecQueueTime";
+                    assert(it.offset_in_bytes == 48, "SteamNetConnectionRealTimeStatus_t.m_usecQueueTime has unexpected offset % instead of 48", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamNetConnectionRealTimeStatus_t.m_usecQueueTime has unexpected size % instead of 8", it.type.runtime_size);
+                case "reserved";
+                    assert(it.offset_in_bytes == 56, "SteamNetConnectionRealTimeStatus_t.reserved has unexpected offset % instead of 56", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 64, "SteamNetConnectionRealTimeStatus_t.reserved has unexpected size % instead of 64", it.type.runtime_size);
+            }
+        }
         assert(size_of(SteamNetConnectionRealTimeStatus_t) == 120, "SteamNetConnectionRealTimeStatus_t has size % instead of 120", size_of(SteamNetConnectionRealTimeStatus_t));
     }
 
     {
-        instance: SteamNetConnectionRealTimeLaneStatus_t;
-        assert(((cast(*void)(*instance.m_cbPendingUnreliable)) - cast(*void)(*instance)) == 0, "SteamNetConnectionRealTimeLaneStatus_t.m_cbPendingUnreliable has unexpected offset % instead of 0", ((cast(*void)(*instance.m_cbPendingUnreliable)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionRealTimeLaneStatus_t.m_cbPendingUnreliable)) == 4, "SteamNetConnectionRealTimeLaneStatus_t.m_cbPendingUnreliable has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeLaneStatus_t.m_cbPendingUnreliable)));
-        assert(((cast(*void)(*instance.m_cbPendingReliable)) - cast(*void)(*instance)) == 4, "SteamNetConnectionRealTimeLaneStatus_t.m_cbPendingReliable has unexpected offset % instead of 4", ((cast(*void)(*instance.m_cbPendingReliable)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionRealTimeLaneStatus_t.m_cbPendingReliable)) == 4, "SteamNetConnectionRealTimeLaneStatus_t.m_cbPendingReliable has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeLaneStatus_t.m_cbPendingReliable)));
-        assert(((cast(*void)(*instance.m_cbSentUnackedReliable)) - cast(*void)(*instance)) == 8, "SteamNetConnectionRealTimeLaneStatus_t.m_cbSentUnackedReliable has unexpected offset % instead of 8", ((cast(*void)(*instance.m_cbSentUnackedReliable)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionRealTimeLaneStatus_t.m_cbSentUnackedReliable)) == 4, "SteamNetConnectionRealTimeLaneStatus_t.m_cbSentUnackedReliable has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeLaneStatus_t.m_cbSentUnackedReliable)));
-        assert(((cast(*void)(*instance._reservePad1)) - cast(*void)(*instance)) == 12, "SteamNetConnectionRealTimeLaneStatus_t._reservePad1 has unexpected offset % instead of 12", ((cast(*void)(*instance._reservePad1)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionRealTimeLaneStatus_t._reservePad1)) == 4, "SteamNetConnectionRealTimeLaneStatus_t._reservePad1 has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionRealTimeLaneStatus_t._reservePad1)));
-        assert(((cast(*void)(*instance.m_usecQueueTime)) - cast(*void)(*instance)) == 16, "SteamNetConnectionRealTimeLaneStatus_t.m_usecQueueTime has unexpected offset % instead of 16", ((cast(*void)(*instance.m_usecQueueTime)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionRealTimeLaneStatus_t.m_usecQueueTime)) == 8, "SteamNetConnectionRealTimeLaneStatus_t.m_usecQueueTime has unexpected size % instead of 8", size_of(type_of(SteamNetConnectionRealTimeLaneStatus_t.m_usecQueueTime)));
-        assert(((cast(*void)(*instance.reserved)) - cast(*void)(*instance)) == 24, "SteamNetConnectionRealTimeLaneStatus_t.reserved has unexpected offset % instead of 24", ((cast(*void)(*instance.reserved)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionRealTimeLaneStatus_t.reserved)) == 40, "SteamNetConnectionRealTimeLaneStatus_t.reserved has unexpected size % instead of 40", size_of(type_of(SteamNetConnectionRealTimeLaneStatus_t.reserved)));
+        info := type_info(SteamNetConnectionRealTimeLaneStatus_t);
+        for info.members {
+            if it.name == {
+                case "m_cbPendingUnreliable";
+                    assert(it.offset_in_bytes == 0, "SteamNetConnectionRealTimeLaneStatus_t.m_cbPendingUnreliable has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetConnectionRealTimeLaneStatus_t.m_cbPendingUnreliable has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_cbPendingReliable";
+                    assert(it.offset_in_bytes == 4, "SteamNetConnectionRealTimeLaneStatus_t.m_cbPendingReliable has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetConnectionRealTimeLaneStatus_t.m_cbPendingReliable has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_cbSentUnackedReliable";
+                    assert(it.offset_in_bytes == 8, "SteamNetConnectionRealTimeLaneStatus_t.m_cbSentUnackedReliable has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetConnectionRealTimeLaneStatus_t.m_cbSentUnackedReliable has unexpected size % instead of 4", it.type.runtime_size);
+                case "_reservePad1";
+                    assert(it.offset_in_bytes == 12, "SteamNetConnectionRealTimeLaneStatus_t._reservePad1 has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetConnectionRealTimeLaneStatus_t._reservePad1 has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_usecQueueTime";
+                    assert(it.offset_in_bytes == 16, "SteamNetConnectionRealTimeLaneStatus_t.m_usecQueueTime has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamNetConnectionRealTimeLaneStatus_t.m_usecQueueTime has unexpected size % instead of 8", it.type.runtime_size);
+                case "reserved";
+                    assert(it.offset_in_bytes == 24, "SteamNetConnectionRealTimeLaneStatus_t.reserved has unexpected offset % instead of 24", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 40, "SteamNetConnectionRealTimeLaneStatus_t.reserved has unexpected size % instead of 40", it.type.runtime_size);
+            }
+        }
         assert(size_of(SteamNetConnectionRealTimeLaneStatus_t) == 64, "SteamNetConnectionRealTimeLaneStatus_t has size % instead of 64", size_of(SteamNetConnectionRealTimeLaneStatus_t));
     }
 
     {
-        instance: SteamNetworkingMessage_t;
-        assert(((cast(*void)(*instance.m_pData)) - cast(*void)(*instance)) == 0, "SteamNetworkingMessage_t.m_pData has unexpected offset % instead of 0", ((cast(*void)(*instance.m_pData)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkingMessage_t.m_pData)) == 8, "SteamNetworkingMessage_t.m_pData has unexpected size % instead of 8", size_of(type_of(SteamNetworkingMessage_t.m_pData)));
-        assert(((cast(*void)(*instance.m_cbSize)) - cast(*void)(*instance)) == 8, "SteamNetworkingMessage_t.m_cbSize has unexpected offset % instead of 8", ((cast(*void)(*instance.m_cbSize)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkingMessage_t.m_cbSize)) == 4, "SteamNetworkingMessage_t.m_cbSize has unexpected size % instead of 4", size_of(type_of(SteamNetworkingMessage_t.m_cbSize)));
-        assert(((cast(*void)(*instance.m_conn)) - cast(*void)(*instance)) == 12, "SteamNetworkingMessage_t.m_conn has unexpected offset % instead of 12", ((cast(*void)(*instance.m_conn)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkingMessage_t.m_conn)) == 4, "SteamNetworkingMessage_t.m_conn has unexpected size % instead of 4", size_of(type_of(SteamNetworkingMessage_t.m_conn)));
-        assert(((cast(*void)(*instance.m_identityPeer)) - cast(*void)(*instance)) == 16, "SteamNetworkingMessage_t.m_identityPeer has unexpected offset % instead of 16", ((cast(*void)(*instance.m_identityPeer)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkingMessage_t.m_identityPeer)) == 136, "SteamNetworkingMessage_t.m_identityPeer has unexpected size % instead of 136", size_of(type_of(SteamNetworkingMessage_t.m_identityPeer)));
-        assert(((cast(*void)(*instance.m_nConnUserData)) - cast(*void)(*instance)) == 152, "SteamNetworkingMessage_t.m_nConnUserData has unexpected offset % instead of 152", ((cast(*void)(*instance.m_nConnUserData)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkingMessage_t.m_nConnUserData)) == 8, "SteamNetworkingMessage_t.m_nConnUserData has unexpected size % instead of 8", size_of(type_of(SteamNetworkingMessage_t.m_nConnUserData)));
-        assert(((cast(*void)(*instance.m_usecTimeReceived)) - cast(*void)(*instance)) == 160, "SteamNetworkingMessage_t.m_usecTimeReceived has unexpected offset % instead of 160", ((cast(*void)(*instance.m_usecTimeReceived)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkingMessage_t.m_usecTimeReceived)) == 8, "SteamNetworkingMessage_t.m_usecTimeReceived has unexpected size % instead of 8", size_of(type_of(SteamNetworkingMessage_t.m_usecTimeReceived)));
-        assert(((cast(*void)(*instance.m_nMessageNumber)) - cast(*void)(*instance)) == 168, "SteamNetworkingMessage_t.m_nMessageNumber has unexpected offset % instead of 168", ((cast(*void)(*instance.m_nMessageNumber)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkingMessage_t.m_nMessageNumber)) == 8, "SteamNetworkingMessage_t.m_nMessageNumber has unexpected size % instead of 8", size_of(type_of(SteamNetworkingMessage_t.m_nMessageNumber)));
-        assert(((cast(*void)(*instance.m_pfnFreeData)) - cast(*void)(*instance)) == 176, "SteamNetworkingMessage_t.m_pfnFreeData has unexpected offset % instead of 176", ((cast(*void)(*instance.m_pfnFreeData)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkingMessage_t.m_pfnFreeData)) == 8, "SteamNetworkingMessage_t.m_pfnFreeData has unexpected size % instead of 8", size_of(type_of(SteamNetworkingMessage_t.m_pfnFreeData)));
-        assert(((cast(*void)(*instance.m_pfnRelease)) - cast(*void)(*instance)) == 184, "SteamNetworkingMessage_t.m_pfnRelease has unexpected offset % instead of 184", ((cast(*void)(*instance.m_pfnRelease)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkingMessage_t.m_pfnRelease)) == 8, "SteamNetworkingMessage_t.m_pfnRelease has unexpected size % instead of 8", size_of(type_of(SteamNetworkingMessage_t.m_pfnRelease)));
-        assert(((cast(*void)(*instance.m_nChannel)) - cast(*void)(*instance)) == 192, "SteamNetworkingMessage_t.m_nChannel has unexpected offset % instead of 192", ((cast(*void)(*instance.m_nChannel)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkingMessage_t.m_nChannel)) == 4, "SteamNetworkingMessage_t.m_nChannel has unexpected size % instead of 4", size_of(type_of(SteamNetworkingMessage_t.m_nChannel)));
-        assert(((cast(*void)(*instance.m_nFlags)) - cast(*void)(*instance)) == 196, "SteamNetworkingMessage_t.m_nFlags has unexpected offset % instead of 196", ((cast(*void)(*instance.m_nFlags)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkingMessage_t.m_nFlags)) == 4, "SteamNetworkingMessage_t.m_nFlags has unexpected size % instead of 4", size_of(type_of(SteamNetworkingMessage_t.m_nFlags)));
-        assert(((cast(*void)(*instance.m_nUserData)) - cast(*void)(*instance)) == 200, "SteamNetworkingMessage_t.m_nUserData has unexpected offset % instead of 200", ((cast(*void)(*instance.m_nUserData)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkingMessage_t.m_nUserData)) == 8, "SteamNetworkingMessage_t.m_nUserData has unexpected size % instead of 8", size_of(type_of(SteamNetworkingMessage_t.m_nUserData)));
-        assert(((cast(*void)(*instance.m_idxLane)) - cast(*void)(*instance)) == 208, "SteamNetworkingMessage_t.m_idxLane has unexpected offset % instead of 208", ((cast(*void)(*instance.m_idxLane)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkingMessage_t.m_idxLane)) == 2, "SteamNetworkingMessage_t.m_idxLane has unexpected size % instead of 2", size_of(type_of(SteamNetworkingMessage_t.m_idxLane)));
-        assert(((cast(*void)(*instance._pad1__)) - cast(*void)(*instance)) == 210, "SteamNetworkingMessage_t._pad1__ has unexpected offset % instead of 210", ((cast(*void)(*instance._pad1__)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkingMessage_t._pad1__)) == 2, "SteamNetworkingMessage_t._pad1__ has unexpected size % instead of 2", size_of(type_of(SteamNetworkingMessage_t._pad1__)));
+        info := type_info(SteamNetworkingMessage_t);
+        for info.members {
+            if it.name == {
+                case "m_pData";
+                    assert(it.offset_in_bytes == 0, "SteamNetworkingMessage_t.m_pData has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamNetworkingMessage_t.m_pData has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_cbSize";
+                    assert(it.offset_in_bytes == 8, "SteamNetworkingMessage_t.m_cbSize has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetworkingMessage_t.m_cbSize has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_conn";
+                    assert(it.offset_in_bytes == 12, "SteamNetworkingMessage_t.m_conn has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetworkingMessage_t.m_conn has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_identityPeer";
+                    assert(it.offset_in_bytes == 16, "SteamNetworkingMessage_t.m_identityPeer has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 136, "SteamNetworkingMessage_t.m_identityPeer has unexpected size % instead of 136", it.type.runtime_size);
+                case "m_nConnUserData";
+                    assert(it.offset_in_bytes == 152, "SteamNetworkingMessage_t.m_nConnUserData has unexpected offset % instead of 152", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamNetworkingMessage_t.m_nConnUserData has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_usecTimeReceived";
+                    assert(it.offset_in_bytes == 160, "SteamNetworkingMessage_t.m_usecTimeReceived has unexpected offset % instead of 160", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamNetworkingMessage_t.m_usecTimeReceived has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_nMessageNumber";
+                    assert(it.offset_in_bytes == 168, "SteamNetworkingMessage_t.m_nMessageNumber has unexpected offset % instead of 168", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamNetworkingMessage_t.m_nMessageNumber has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_pfnFreeData";
+                    assert(it.offset_in_bytes == 176, "SteamNetworkingMessage_t.m_pfnFreeData has unexpected offset % instead of 176", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamNetworkingMessage_t.m_pfnFreeData has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_pfnRelease";
+                    assert(it.offset_in_bytes == 184, "SteamNetworkingMessage_t.m_pfnRelease has unexpected offset % instead of 184", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamNetworkingMessage_t.m_pfnRelease has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_nChannel";
+                    assert(it.offset_in_bytes == 192, "SteamNetworkingMessage_t.m_nChannel has unexpected offset % instead of 192", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetworkingMessage_t.m_nChannel has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nFlags";
+                    assert(it.offset_in_bytes == 196, "SteamNetworkingMessage_t.m_nFlags has unexpected offset % instead of 196", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetworkingMessage_t.m_nFlags has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nUserData";
+                    assert(it.offset_in_bytes == 200, "SteamNetworkingMessage_t.m_nUserData has unexpected offset % instead of 200", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamNetworkingMessage_t.m_nUserData has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_idxLane";
+                    assert(it.offset_in_bytes == 208, "SteamNetworkingMessage_t.m_idxLane has unexpected offset % instead of 208", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 2, "SteamNetworkingMessage_t.m_idxLane has unexpected size % instead of 2", it.type.runtime_size);
+                case "_pad1__";
+                    assert(it.offset_in_bytes == 210, "SteamNetworkingMessage_t._pad1__ has unexpected offset % instead of 210", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 2, "SteamNetworkingMessage_t._pad1__ has unexpected size % instead of 2", it.type.runtime_size);
+            }
+        }
         assert(size_of(SteamNetworkingMessage_t) == 216, "SteamNetworkingMessage_t has size % instead of 216", size_of(SteamNetworkingMessage_t));
     }
 
     {
-        instance: SteamNetworkPingLocation_t;
-        assert(((cast(*void)(*instance.m_data)) - cast(*void)(*instance)) == 0, "SteamNetworkPingLocation_t.m_data has unexpected offset % instead of 0", ((cast(*void)(*instance.m_data)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkPingLocation_t.m_data)) == 512, "SteamNetworkPingLocation_t.m_data has unexpected size % instead of 512", size_of(type_of(SteamNetworkPingLocation_t.m_data)));
+        info := type_info(SteamNetworkPingLocation_t);
+        for info.members {
+            if it.name == {
+                case "m_data";
+                    assert(it.offset_in_bytes == 0, "SteamNetworkPingLocation_t.m_data has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 512, "SteamNetworkPingLocation_t.m_data has unexpected size % instead of 512", it.type.runtime_size);
+            }
+        }
         assert(size_of(SteamNetworkPingLocation_t) == 512, "SteamNetworkPingLocation_t has size % instead of 512", size_of(SteamNetworkPingLocation_t));
     }
 
     {
-        instance: SteamNetworkingConfigValue_t;
-        assert(((cast(*void)(*instance.m_eValue)) - cast(*void)(*instance)) == 0, "SteamNetworkingConfigValue_t.m_eValue has unexpected offset % instead of 0", ((cast(*void)(*instance.m_eValue)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkingConfigValue_t.m_eValue)) == 4, "SteamNetworkingConfigValue_t.m_eValue has unexpected size % instead of 4", size_of(type_of(SteamNetworkingConfigValue_t.m_eValue)));
-        assert(((cast(*void)(*instance.m_eDataType)) - cast(*void)(*instance)) == 4, "SteamNetworkingConfigValue_t.m_eDataType has unexpected offset % instead of 4", ((cast(*void)(*instance.m_eDataType)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkingConfigValue_t.m_eDataType)) == 4, "SteamNetworkingConfigValue_t.m_eDataType has unexpected size % instead of 4", size_of(type_of(SteamNetworkingConfigValue_t.m_eDataType)));
-        assert(((cast(*void)(*instance.m_val)) - cast(*void)(*instance)) == 8, "SteamNetworkingConfigValue_t.m_val has unexpected offset % instead of 8", ((cast(*void)(*instance.m_val)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkingConfigValue_t.m_val)) == 8, "SteamNetworkingConfigValue_t.m_val has unexpected size % instead of 8", size_of(type_of(SteamNetworkingConfigValue_t.m_val)));
+        info := type_info(SteamNetworkingConfigValue_t);
+        for info.members {
+            if it.name == {
+                case "m_eValue";
+                    assert(it.offset_in_bytes == 0, "SteamNetworkingConfigValue_t.m_eValue has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetworkingConfigValue_t.m_eValue has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_eDataType";
+                    assert(it.offset_in_bytes == 4, "SteamNetworkingConfigValue_t.m_eDataType has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetworkingConfigValue_t.m_eDataType has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_val";
+                    assert(it.offset_in_bytes == 8, "SteamNetworkingConfigValue_t.m_val has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamNetworkingConfigValue_t.m_val has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
         assert(size_of(SteamNetworkingConfigValue_t) == 16, "SteamNetworkingConfigValue_t has size % instead of 16", size_of(SteamNetworkingConfigValue_t));
+    }
+
+    {
+        info := type_info(SteamNetworkingPOPIDRender);
+        for info.members {
+            if it.name == {
+                case "buf";
+                    assert(it.offset_in_bytes == 0, "SteamNetworkingPOPIDRender.buf has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamNetworkingPOPIDRender.buf has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SteamNetworkingPOPIDRender) == 8, "SteamNetworkingPOPIDRender has size % instead of 8", size_of(SteamNetworkingPOPIDRender));
     }
 
     assert(size_of(ISteamNetworkingMessages) == 8, "ISteamNetworkingMessages has size % instead of 8", size_of(ISteamNetworkingMessages));
 
     {
-        instance: SteamNetworkingMessagesSessionRequest_t;
-        assert(((cast(*void)(*instance.m_identityRemote)) - cast(*void)(*instance)) == 0, "SteamNetworkingMessagesSessionRequest_t.m_identityRemote has unexpected offset % instead of 0", ((cast(*void)(*instance.m_identityRemote)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkingMessagesSessionRequest_t.m_identityRemote)) == 136, "SteamNetworkingMessagesSessionRequest_t.m_identityRemote has unexpected size % instead of 136", size_of(type_of(SteamNetworkingMessagesSessionRequest_t.m_identityRemote)));
+        info := type_info(SteamNetworkingMessagesSessionRequest_t);
+        for info.members {
+            if it.name == {
+                case "m_identityRemote";
+                    assert(it.offset_in_bytes == 0, "SteamNetworkingMessagesSessionRequest_t.m_identityRemote has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 136, "SteamNetworkingMessagesSessionRequest_t.m_identityRemote has unexpected size % instead of 136", it.type.runtime_size);
+            }
+        }
         assert(size_of(SteamNetworkingMessagesSessionRequest_t) == 136, "SteamNetworkingMessagesSessionRequest_t has size % instead of 136", size_of(SteamNetworkingMessagesSessionRequest_t));
     }
 
     {
-        instance: SteamNetworkingMessagesSessionFailed_t;
-        assert(((cast(*void)(*instance.m_info)) - cast(*void)(*instance)) == 0, "SteamNetworkingMessagesSessionFailed_t.m_info has unexpected offset % instead of 0", ((cast(*void)(*instance.m_info)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkingMessagesSessionFailed_t.m_info)) == 696, "SteamNetworkingMessagesSessionFailed_t.m_info has unexpected size % instead of 696", size_of(type_of(SteamNetworkingMessagesSessionFailed_t.m_info)));
+        info := type_info(SteamNetworkingMessagesSessionFailed_t);
+        for info.members {
+            if it.name == {
+                case "m_info";
+                    assert(it.offset_in_bytes == 0, "SteamNetworkingMessagesSessionFailed_t.m_info has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 696, "SteamNetworkingMessagesSessionFailed_t.m_info has unexpected size % instead of 696", it.type.runtime_size);
+            }
+        }
         assert(size_of(SteamNetworkingMessagesSessionFailed_t) == 696, "SteamNetworkingMessagesSessionFailed_t has size % instead of 696", size_of(SteamNetworkingMessagesSessionFailed_t));
     }
 
     assert(size_of(ISteamNetworkingSockets) == 8, "ISteamNetworkingSockets has size % instead of 8", size_of(ISteamNetworkingSockets));
 
     {
-        instance: SteamNetConnectionStatusChangedCallback_t;
-        assert(((cast(*void)(*instance.m_hConn)) - cast(*void)(*instance)) == 0, "SteamNetConnectionStatusChangedCallback_t.m_hConn has unexpected offset % instead of 0", ((cast(*void)(*instance.m_hConn)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionStatusChangedCallback_t.m_hConn)) == 4, "SteamNetConnectionStatusChangedCallback_t.m_hConn has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionStatusChangedCallback_t.m_hConn)));
-        assert(((cast(*void)(*instance.m_info)) - cast(*void)(*instance)) == 4, "SteamNetConnectionStatusChangedCallback_t.m_info has unexpected offset % instead of 4", ((cast(*void)(*instance.m_info)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionStatusChangedCallback_t.m_info)) == 696, "SteamNetConnectionStatusChangedCallback_t.m_info has unexpected size % instead of 696", size_of(type_of(SteamNetConnectionStatusChangedCallback_t.m_info)));
-        assert(((cast(*void)(*instance.m_eOldState)) - cast(*void)(*instance)) == 700, "SteamNetConnectionStatusChangedCallback_t.m_eOldState has unexpected offset % instead of 700", ((cast(*void)(*instance.m_eOldState)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetConnectionStatusChangedCallback_t.m_eOldState)) == 4, "SteamNetConnectionStatusChangedCallback_t.m_eOldState has unexpected size % instead of 4", size_of(type_of(SteamNetConnectionStatusChangedCallback_t.m_eOldState)));
+        info := type_info(SteamNetConnectionStatusChangedCallback_t);
+        for info.members {
+            if it.name == {
+                case "m_hConn";
+                    assert(it.offset_in_bytes == 0, "SteamNetConnectionStatusChangedCallback_t.m_hConn has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetConnectionStatusChangedCallback_t.m_hConn has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_info";
+                    assert(it.offset_in_bytes == 4, "SteamNetConnectionStatusChangedCallback_t.m_info has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 696, "SteamNetConnectionStatusChangedCallback_t.m_info has unexpected size % instead of 696", it.type.runtime_size);
+                case "m_eOldState";
+                    assert(it.offset_in_bytes == 700, "SteamNetConnectionStatusChangedCallback_t.m_eOldState has unexpected offset % instead of 700", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetConnectionStatusChangedCallback_t.m_eOldState has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
         assert(size_of(SteamNetConnectionStatusChangedCallback_t) == 704, "SteamNetConnectionStatusChangedCallback_t has size % instead of 704", size_of(SteamNetConnectionStatusChangedCallback_t));
     }
 
     {
-        instance: SteamNetAuthenticationStatus_t;
-        assert(((cast(*void)(*instance.m_eAvail)) - cast(*void)(*instance)) == 0, "SteamNetAuthenticationStatus_t.m_eAvail has unexpected offset % instead of 0", ((cast(*void)(*instance.m_eAvail)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetAuthenticationStatus_t.m_eAvail)) == 4, "SteamNetAuthenticationStatus_t.m_eAvail has unexpected size % instead of 4", size_of(type_of(SteamNetAuthenticationStatus_t.m_eAvail)));
-        assert(((cast(*void)(*instance.m_debugMsg)) - cast(*void)(*instance)) == 4, "SteamNetAuthenticationStatus_t.m_debugMsg has unexpected offset % instead of 4", ((cast(*void)(*instance.m_debugMsg)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetAuthenticationStatus_t.m_debugMsg)) == 256, "SteamNetAuthenticationStatus_t.m_debugMsg has unexpected size % instead of 256", size_of(type_of(SteamNetAuthenticationStatus_t.m_debugMsg)));
+        info := type_info(SteamNetAuthenticationStatus_t);
+        for info.members {
+            if it.name == {
+                case "m_eAvail";
+                    assert(it.offset_in_bytes == 0, "SteamNetAuthenticationStatus_t.m_eAvail has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetAuthenticationStatus_t.m_eAvail has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_debugMsg";
+                    assert(it.offset_in_bytes == 4, "SteamNetAuthenticationStatus_t.m_debugMsg has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 256, "SteamNetAuthenticationStatus_t.m_debugMsg has unexpected size % instead of 256", it.type.runtime_size);
+            }
+        }
         assert(size_of(SteamNetAuthenticationStatus_t) == 260, "SteamNetAuthenticationStatus_t has size % instead of 260", size_of(SteamNetAuthenticationStatus_t));
     }
 
     assert(size_of(ISteamNetworkingUtils) == 8, "ISteamNetworkingUtils has size % instead of 8", size_of(ISteamNetworkingUtils));
 
     {
-        instance: SteamRelayNetworkStatus_t;
-        assert(((cast(*void)(*instance.m_eAvail)) - cast(*void)(*instance)) == 0, "SteamRelayNetworkStatus_t.m_eAvail has unexpected offset % instead of 0", ((cast(*void)(*instance.m_eAvail)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamRelayNetworkStatus_t.m_eAvail)) == 4, "SteamRelayNetworkStatus_t.m_eAvail has unexpected size % instead of 4", size_of(type_of(SteamRelayNetworkStatus_t.m_eAvail)));
-        assert(((cast(*void)(*instance.m_bPingMeasurementInProgress)) - cast(*void)(*instance)) == 4, "SteamRelayNetworkStatus_t.m_bPingMeasurementInProgress has unexpected offset % instead of 4", ((cast(*void)(*instance.m_bPingMeasurementInProgress)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamRelayNetworkStatus_t.m_bPingMeasurementInProgress)) == 4, "SteamRelayNetworkStatus_t.m_bPingMeasurementInProgress has unexpected size % instead of 4", size_of(type_of(SteamRelayNetworkStatus_t.m_bPingMeasurementInProgress)));
-        assert(((cast(*void)(*instance.m_eAvailNetworkConfig)) - cast(*void)(*instance)) == 8, "SteamRelayNetworkStatus_t.m_eAvailNetworkConfig has unexpected offset % instead of 8", ((cast(*void)(*instance.m_eAvailNetworkConfig)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamRelayNetworkStatus_t.m_eAvailNetworkConfig)) == 4, "SteamRelayNetworkStatus_t.m_eAvailNetworkConfig has unexpected size % instead of 4", size_of(type_of(SteamRelayNetworkStatus_t.m_eAvailNetworkConfig)));
-        assert(((cast(*void)(*instance.m_eAvailAnyRelay)) - cast(*void)(*instance)) == 12, "SteamRelayNetworkStatus_t.m_eAvailAnyRelay has unexpected offset % instead of 12", ((cast(*void)(*instance.m_eAvailAnyRelay)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamRelayNetworkStatus_t.m_eAvailAnyRelay)) == 4, "SteamRelayNetworkStatus_t.m_eAvailAnyRelay has unexpected size % instead of 4", size_of(type_of(SteamRelayNetworkStatus_t.m_eAvailAnyRelay)));
-        assert(((cast(*void)(*instance.m_debugMsg)) - cast(*void)(*instance)) == 16, "SteamRelayNetworkStatus_t.m_debugMsg has unexpected offset % instead of 16", ((cast(*void)(*instance.m_debugMsg)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamRelayNetworkStatus_t.m_debugMsg)) == 256, "SteamRelayNetworkStatus_t.m_debugMsg has unexpected size % instead of 256", size_of(type_of(SteamRelayNetworkStatus_t.m_debugMsg)));
+        info := type_info(SteamRelayNetworkStatus_t);
+        for info.members {
+            if it.name == {
+                case "m_eAvail";
+                    assert(it.offset_in_bytes == 0, "SteamRelayNetworkStatus_t.m_eAvail has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamRelayNetworkStatus_t.m_eAvail has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_bPingMeasurementInProgress";
+                    assert(it.offset_in_bytes == 4, "SteamRelayNetworkStatus_t.m_bPingMeasurementInProgress has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamRelayNetworkStatus_t.m_bPingMeasurementInProgress has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_eAvailNetworkConfig";
+                    assert(it.offset_in_bytes == 8, "SteamRelayNetworkStatus_t.m_eAvailNetworkConfig has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamRelayNetworkStatus_t.m_eAvailNetworkConfig has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_eAvailAnyRelay";
+                    assert(it.offset_in_bytes == 12, "SteamRelayNetworkStatus_t.m_eAvailAnyRelay has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamRelayNetworkStatus_t.m_eAvailAnyRelay has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_debugMsg";
+                    assert(it.offset_in_bytes == 16, "SteamRelayNetworkStatus_t.m_debugMsg has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 256, "SteamRelayNetworkStatus_t.m_debugMsg has unexpected size % instead of 256", it.type.runtime_size);
+            }
+        }
         assert(size_of(SteamRelayNetworkStatus_t) == 272, "SteamRelayNetworkStatus_t has size % instead of 272", size_of(SteamRelayNetworkStatus_t));
+    }
+
+    {
+        info := type_info(SteamNetworkingIdentityRender);
+        for info.members {
+            if it.name == {
+                case "buf";
+                    assert(it.offset_in_bytes == 0, "SteamNetworkingIdentityRender.buf has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 128, "SteamNetworkingIdentityRender.buf has unexpected size % instead of 128", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SteamNetworkingIdentityRender) == 128, "SteamNetworkingIdentityRender has size % instead of 128", size_of(SteamNetworkingIdentityRender));
+    }
+
+    {
+        info := type_info(SteamNetworkingIPAddrRender);
+        for info.members {
+            if it.name == {
+                case "buf";
+                    assert(it.offset_in_bytes == 0, "SteamNetworkingIPAddrRender.buf has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 48, "SteamNetworkingIPAddrRender.buf has unexpected size % instead of 48", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SteamNetworkingIPAddrRender) == 48, "SteamNetworkingIPAddrRender has size % instead of 48", size_of(SteamNetworkingIPAddrRender));
     }
 
     assert(size_of(ISteamParentalSettings) == 8, "ISteamParentalSettings has size % instead of 8", size_of(ISteamParentalSettings));
 
+    assert(size_of(SteamParentalSettingsChanged_t) == 1, "SteamParentalSettingsChanged_t has size % instead of 1", size_of(SteamParentalSettingsChanged_t));
+
     assert(size_of(ISteamRemotePlay) == 8, "ISteamRemotePlay has size % instead of 8", size_of(ISteamRemotePlay));
 
     {
-        instance: SteamParamStringArray_t;
-        assert(((cast(*void)(*instance.m_ppStrings)) - cast(*void)(*instance)) == 0, "SteamParamStringArray_t.m_ppStrings has unexpected offset % instead of 0", ((cast(*void)(*instance.m_ppStrings)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamParamStringArray_t.m_ppStrings)) == 8, "SteamParamStringArray_t.m_ppStrings has unexpected size % instead of 8", size_of(type_of(SteamParamStringArray_t.m_ppStrings)));
-        assert(((cast(*void)(*instance.m_nNumStrings)) - cast(*void)(*instance)) == 8, "SteamParamStringArray_t.m_nNumStrings has unexpected offset % instead of 8", ((cast(*void)(*instance.m_nNumStrings)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamParamStringArray_t.m_nNumStrings)) == 4, "SteamParamStringArray_t.m_nNumStrings has unexpected size % instead of 4", size_of(type_of(SteamParamStringArray_t.m_nNumStrings)));
+        info := type_info(SteamRemotePlaySessionConnected_t);
+        for info.members {
+            if it.name == {
+                case "m_unSessionID";
+                    assert(it.offset_in_bytes == 0, "SteamRemotePlaySessionConnected_t.m_unSessionID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamRemotePlaySessionConnected_t.m_unSessionID has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SteamRemotePlaySessionConnected_t) == 4, "SteamRemotePlaySessionConnected_t has size % instead of 4", size_of(SteamRemotePlaySessionConnected_t));
+    }
+
+    {
+        info := type_info(SteamRemotePlaySessionDisconnected_t);
+        for info.members {
+            if it.name == {
+                case "m_unSessionID";
+                    assert(it.offset_in_bytes == 0, "SteamRemotePlaySessionDisconnected_t.m_unSessionID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamRemotePlaySessionDisconnected_t.m_unSessionID has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SteamRemotePlaySessionDisconnected_t) == 4, "SteamRemotePlaySessionDisconnected_t has size % instead of 4", size_of(SteamRemotePlaySessionDisconnected_t));
+    }
+
+    {
+        info := type_info(SteamRemotePlayTogetherGuestInvite_t);
+        for info.members {
+            if it.name == {
+                case "m_szConnectURL";
+                    assert(it.offset_in_bytes == 0, "SteamRemotePlayTogetherGuestInvite_t.m_szConnectURL has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1024, "SteamRemotePlayTogetherGuestInvite_t.m_szConnectURL has unexpected size % instead of 1024", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SteamRemotePlayTogetherGuestInvite_t) == 1024, "SteamRemotePlayTogetherGuestInvite_t has size % instead of 1024", size_of(SteamRemotePlayTogetherGuestInvite_t));
+    }
+
+    {
+        info := type_info(SteamParamStringArray_t);
+        for info.members {
+            if it.name == {
+                case "m_ppStrings";
+                    assert(it.offset_in_bytes == 0, "SteamParamStringArray_t.m_ppStrings has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamParamStringArray_t.m_ppStrings has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_nNumStrings";
+                    assert(it.offset_in_bytes == 8, "SteamParamStringArray_t.m_nNumStrings has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamParamStringArray_t.m_nNumStrings has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
         assert(size_of(SteamParamStringArray_t) == 12, "SteamParamStringArray_t has size % instead of 12", size_of(SteamParamStringArray_t));
     }
 
     assert(size_of(ISteamRemoteStorage) == 8, "ISteamRemoteStorage has size % instead of 8", size_of(ISteamRemoteStorage));
 
+    {
+        info := type_info(RemoteStorageFileShareResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "RemoteStorageFileShareResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageFileShareResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_hFile";
+                    assert(it.offset_in_bytes == 4, "RemoteStorageFileShareResult_t.m_hFile has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RemoteStorageFileShareResult_t.m_hFile has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_rgchFilename";
+                    assert(it.offset_in_bytes == 12, "RemoteStorageFileShareResult_t.m_rgchFilename has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 260, "RemoteStorageFileShareResult_t.m_rgchFilename has unexpected size % instead of 260", it.type.runtime_size);
+            }
+        }
+        assert(size_of(RemoteStorageFileShareResult_t) == 272, "RemoteStorageFileShareResult_t has size % instead of 272", size_of(RemoteStorageFileShareResult_t));
+    }
+
+    {
+        info := type_info(RemoteStoragePublishFileResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "RemoteStoragePublishFileResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStoragePublishFileResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nPublishedFileId";
+                    assert(it.offset_in_bytes == 4, "RemoteStoragePublishFileResult_t.m_nPublishedFileId has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RemoteStoragePublishFileResult_t.m_nPublishedFileId has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_bUserNeedsToAcceptWorkshopLegalAgreement";
+                    assert(it.offset_in_bytes == 12, "RemoteStoragePublishFileResult_t.m_bUserNeedsToAcceptWorkshopLegalAgreement has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "RemoteStoragePublishFileResult_t.m_bUserNeedsToAcceptWorkshopLegalAgreement has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(RemoteStoragePublishFileResult_t) == 16, "RemoteStoragePublishFileResult_t has size % instead of 16", size_of(RemoteStoragePublishFileResult_t));
+    }
+
+    {
+        info := type_info(RemoteStorageDeletePublishedFileResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "RemoteStorageDeletePublishedFileResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageDeletePublishedFileResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nPublishedFileId";
+                    assert(it.offset_in_bytes == 4, "RemoteStorageDeletePublishedFileResult_t.m_nPublishedFileId has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RemoteStorageDeletePublishedFileResult_t.m_nPublishedFileId has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(RemoteStorageDeletePublishedFileResult_t) == 12, "RemoteStorageDeletePublishedFileResult_t has size % instead of 12", size_of(RemoteStorageDeletePublishedFileResult_t));
+    }
+
+    {
+        info := type_info(RemoteStorageEnumerateUserPublishedFilesResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "RemoteStorageEnumerateUserPublishedFilesResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageEnumerateUserPublishedFilesResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nResultsReturned";
+                    assert(it.offset_in_bytes == 4, "RemoteStorageEnumerateUserPublishedFilesResult_t.m_nResultsReturned has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageEnumerateUserPublishedFilesResult_t.m_nResultsReturned has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nTotalResultCount";
+                    assert(it.offset_in_bytes == 8, "RemoteStorageEnumerateUserPublishedFilesResult_t.m_nTotalResultCount has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageEnumerateUserPublishedFilesResult_t.m_nTotalResultCount has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_rgPublishedFileId";
+                    assert(it.offset_in_bytes == 12, "RemoteStorageEnumerateUserPublishedFilesResult_t.m_rgPublishedFileId has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 400, "RemoteStorageEnumerateUserPublishedFilesResult_t.m_rgPublishedFileId has unexpected size % instead of 400", it.type.runtime_size);
+            }
+        }
+        assert(size_of(RemoteStorageEnumerateUserPublishedFilesResult_t) == 412, "RemoteStorageEnumerateUserPublishedFilesResult_t has size % instead of 412", size_of(RemoteStorageEnumerateUserPublishedFilesResult_t));
+    }
+
+    {
+        info := type_info(RemoteStorageSubscribePublishedFileResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "RemoteStorageSubscribePublishedFileResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageSubscribePublishedFileResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nPublishedFileId";
+                    assert(it.offset_in_bytes == 4, "RemoteStorageSubscribePublishedFileResult_t.m_nPublishedFileId has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RemoteStorageSubscribePublishedFileResult_t.m_nPublishedFileId has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(RemoteStorageSubscribePublishedFileResult_t) == 12, "RemoteStorageSubscribePublishedFileResult_t has size % instead of 12", size_of(RemoteStorageSubscribePublishedFileResult_t));
+    }
+
+    {
+        info := type_info(RemoteStorageEnumerateUserSubscribedFilesResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "RemoteStorageEnumerateUserSubscribedFilesResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageEnumerateUserSubscribedFilesResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nResultsReturned";
+                    assert(it.offset_in_bytes == 4, "RemoteStorageEnumerateUserSubscribedFilesResult_t.m_nResultsReturned has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageEnumerateUserSubscribedFilesResult_t.m_nResultsReturned has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nTotalResultCount";
+                    assert(it.offset_in_bytes == 8, "RemoteStorageEnumerateUserSubscribedFilesResult_t.m_nTotalResultCount has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageEnumerateUserSubscribedFilesResult_t.m_nTotalResultCount has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_rgPublishedFileId";
+                    assert(it.offset_in_bytes == 12, "RemoteStorageEnumerateUserSubscribedFilesResult_t.m_rgPublishedFileId has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 400, "RemoteStorageEnumerateUserSubscribedFilesResult_t.m_rgPublishedFileId has unexpected size % instead of 400", it.type.runtime_size);
+                case "m_rgRTimeSubscribed";
+                    assert(it.offset_in_bytes == 412, "RemoteStorageEnumerateUserSubscribedFilesResult_t.m_rgRTimeSubscribed has unexpected offset % instead of 412", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 200, "RemoteStorageEnumerateUserSubscribedFilesResult_t.m_rgRTimeSubscribed has unexpected size % instead of 200", it.type.runtime_size);
+            }
+        }
+        assert(size_of(RemoteStorageEnumerateUserSubscribedFilesResult_t) == 612, "RemoteStorageEnumerateUserSubscribedFilesResult_t has size % instead of 612", size_of(RemoteStorageEnumerateUserSubscribedFilesResult_t));
+    }
+
+    {
+        info := type_info(RemoteStorageUnsubscribePublishedFileResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "RemoteStorageUnsubscribePublishedFileResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageUnsubscribePublishedFileResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nPublishedFileId";
+                    assert(it.offset_in_bytes == 4, "RemoteStorageUnsubscribePublishedFileResult_t.m_nPublishedFileId has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RemoteStorageUnsubscribePublishedFileResult_t.m_nPublishedFileId has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(RemoteStorageUnsubscribePublishedFileResult_t) == 12, "RemoteStorageUnsubscribePublishedFileResult_t has size % instead of 12", size_of(RemoteStorageUnsubscribePublishedFileResult_t));
+    }
+
+    {
+        info := type_info(RemoteStorageUpdatePublishedFileResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "RemoteStorageUpdatePublishedFileResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageUpdatePublishedFileResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nPublishedFileId";
+                    assert(it.offset_in_bytes == 4, "RemoteStorageUpdatePublishedFileResult_t.m_nPublishedFileId has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RemoteStorageUpdatePublishedFileResult_t.m_nPublishedFileId has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_bUserNeedsToAcceptWorkshopLegalAgreement";
+                    assert(it.offset_in_bytes == 12, "RemoteStorageUpdatePublishedFileResult_t.m_bUserNeedsToAcceptWorkshopLegalAgreement has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "RemoteStorageUpdatePublishedFileResult_t.m_bUserNeedsToAcceptWorkshopLegalAgreement has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(RemoteStorageUpdatePublishedFileResult_t) == 16, "RemoteStorageUpdatePublishedFileResult_t has size % instead of 16", size_of(RemoteStorageUpdatePublishedFileResult_t));
+    }
+
+    {
+        info := type_info(RemoteStorageDownloadUGCResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "RemoteStorageDownloadUGCResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageDownloadUGCResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_hFile";
+                    assert(it.offset_in_bytes == 4, "RemoteStorageDownloadUGCResult_t.m_hFile has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RemoteStorageDownloadUGCResult_t.m_hFile has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_nAppID";
+                    assert(it.offset_in_bytes == 12, "RemoteStorageDownloadUGCResult_t.m_nAppID has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageDownloadUGCResult_t.m_nAppID has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nSizeInBytes";
+                    assert(it.offset_in_bytes == 16, "RemoteStorageDownloadUGCResult_t.m_nSizeInBytes has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageDownloadUGCResult_t.m_nSizeInBytes has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_pchFileName";
+                    assert(it.offset_in_bytes == 20, "RemoteStorageDownloadUGCResult_t.m_pchFileName has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 260, "RemoteStorageDownloadUGCResult_t.m_pchFileName has unexpected size % instead of 260", it.type.runtime_size);
+                case "m_ulSteamIDOwner";
+                    assert(it.offset_in_bytes == 280, "RemoteStorageDownloadUGCResult_t.m_ulSteamIDOwner has unexpected offset % instead of 280", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RemoteStorageDownloadUGCResult_t.m_ulSteamIDOwner has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(RemoteStorageDownloadUGCResult_t) == 288, "RemoteStorageDownloadUGCResult_t has size % instead of 288", size_of(RemoteStorageDownloadUGCResult_t));
+    }
+
+    {
+        info := type_info(RemoteStorageGetPublishedFileDetailsResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "RemoteStorageGetPublishedFileDetailsResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageGetPublishedFileDetailsResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nPublishedFileId";
+                    assert(it.offset_in_bytes == 4, "RemoteStorageGetPublishedFileDetailsResult_t.m_nPublishedFileId has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RemoteStorageGetPublishedFileDetailsResult_t.m_nPublishedFileId has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_nCreatorAppID";
+                    assert(it.offset_in_bytes == 12, "RemoteStorageGetPublishedFileDetailsResult_t.m_nCreatorAppID has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageGetPublishedFileDetailsResult_t.m_nCreatorAppID has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nConsumerAppID";
+                    assert(it.offset_in_bytes == 16, "RemoteStorageGetPublishedFileDetailsResult_t.m_nConsumerAppID has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageGetPublishedFileDetailsResult_t.m_nConsumerAppID has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_rgchTitle";
+                    assert(it.offset_in_bytes == 20, "RemoteStorageGetPublishedFileDetailsResult_t.m_rgchTitle has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 129, "RemoteStorageGetPublishedFileDetailsResult_t.m_rgchTitle has unexpected size % instead of 129", it.type.runtime_size);
+                case "m_rgchDescription";
+                    assert(it.offset_in_bytes == 149, "RemoteStorageGetPublishedFileDetailsResult_t.m_rgchDescription has unexpected offset % instead of 149", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8000, "RemoteStorageGetPublishedFileDetailsResult_t.m_rgchDescription has unexpected size % instead of 8000", it.type.runtime_size);
+                case "m_hFile";
+                    assert(it.offset_in_bytes == 8152, "RemoteStorageGetPublishedFileDetailsResult_t.m_hFile has unexpected offset % instead of 8152", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RemoteStorageGetPublishedFileDetailsResult_t.m_hFile has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_hPreviewFile";
+                    assert(it.offset_in_bytes == 8160, "RemoteStorageGetPublishedFileDetailsResult_t.m_hPreviewFile has unexpected offset % instead of 8160", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RemoteStorageGetPublishedFileDetailsResult_t.m_hPreviewFile has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_ulSteamIDOwner";
+                    assert(it.offset_in_bytes == 8168, "RemoteStorageGetPublishedFileDetailsResult_t.m_ulSteamIDOwner has unexpected offset % instead of 8168", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RemoteStorageGetPublishedFileDetailsResult_t.m_ulSteamIDOwner has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_rtimeCreated";
+                    assert(it.offset_in_bytes == 8176, "RemoteStorageGetPublishedFileDetailsResult_t.m_rtimeCreated has unexpected offset % instead of 8176", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageGetPublishedFileDetailsResult_t.m_rtimeCreated has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_rtimeUpdated";
+                    assert(it.offset_in_bytes == 8180, "RemoteStorageGetPublishedFileDetailsResult_t.m_rtimeUpdated has unexpected offset % instead of 8180", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageGetPublishedFileDetailsResult_t.m_rtimeUpdated has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_eVisibility";
+                    assert(it.offset_in_bytes == 8184, "RemoteStorageGetPublishedFileDetailsResult_t.m_eVisibility has unexpected offset % instead of 8184", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageGetPublishedFileDetailsResult_t.m_eVisibility has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_bBanned";
+                    assert(it.offset_in_bytes == 8188, "RemoteStorageGetPublishedFileDetailsResult_t.m_bBanned has unexpected offset % instead of 8188", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "RemoteStorageGetPublishedFileDetailsResult_t.m_bBanned has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_rgchTags";
+                    assert(it.offset_in_bytes == 8189, "RemoteStorageGetPublishedFileDetailsResult_t.m_rgchTags has unexpected offset % instead of 8189", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1025, "RemoteStorageGetPublishedFileDetailsResult_t.m_rgchTags has unexpected size % instead of 1025", it.type.runtime_size);
+                case "m_bTagsTruncated";
+                    assert(it.offset_in_bytes == 9214, "RemoteStorageGetPublishedFileDetailsResult_t.m_bTagsTruncated has unexpected offset % instead of 9214", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "RemoteStorageGetPublishedFileDetailsResult_t.m_bTagsTruncated has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_pchFileName";
+                    assert(it.offset_in_bytes == 9215, "RemoteStorageGetPublishedFileDetailsResult_t.m_pchFileName has unexpected offset % instead of 9215", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 260, "RemoteStorageGetPublishedFileDetailsResult_t.m_pchFileName has unexpected size % instead of 260", it.type.runtime_size);
+                case "m_nFileSize";
+                    assert(it.offset_in_bytes == 9476, "RemoteStorageGetPublishedFileDetailsResult_t.m_nFileSize has unexpected offset % instead of 9476", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageGetPublishedFileDetailsResult_t.m_nFileSize has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nPreviewFileSize";
+                    assert(it.offset_in_bytes == 9480, "RemoteStorageGetPublishedFileDetailsResult_t.m_nPreviewFileSize has unexpected offset % instead of 9480", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageGetPublishedFileDetailsResult_t.m_nPreviewFileSize has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_rgchURL";
+                    assert(it.offset_in_bytes == 9484, "RemoteStorageGetPublishedFileDetailsResult_t.m_rgchURL has unexpected offset % instead of 9484", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 256, "RemoteStorageGetPublishedFileDetailsResult_t.m_rgchURL has unexpected size % instead of 256", it.type.runtime_size);
+                case "m_eFileType";
+                    assert(it.offset_in_bytes == 9740, "RemoteStorageGetPublishedFileDetailsResult_t.m_eFileType has unexpected offset % instead of 9740", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageGetPublishedFileDetailsResult_t.m_eFileType has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_bAcceptedForUse";
+                    assert(it.offset_in_bytes == 9744, "RemoteStorageGetPublishedFileDetailsResult_t.m_bAcceptedForUse has unexpected offset % instead of 9744", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "RemoteStorageGetPublishedFileDetailsResult_t.m_bAcceptedForUse has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(RemoteStorageGetPublishedFileDetailsResult_t) == 9748, "RemoteStorageGetPublishedFileDetailsResult_t has size % instead of 9748", size_of(RemoteStorageGetPublishedFileDetailsResult_t));
+    }
+
+    {
+        info := type_info(RemoteStorageEnumerateWorkshopFilesResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "RemoteStorageEnumerateWorkshopFilesResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageEnumerateWorkshopFilesResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nResultsReturned";
+                    assert(it.offset_in_bytes == 4, "RemoteStorageEnumerateWorkshopFilesResult_t.m_nResultsReturned has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageEnumerateWorkshopFilesResult_t.m_nResultsReturned has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nTotalResultCount";
+                    assert(it.offset_in_bytes == 8, "RemoteStorageEnumerateWorkshopFilesResult_t.m_nTotalResultCount has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageEnumerateWorkshopFilesResult_t.m_nTotalResultCount has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_rgPublishedFileId";
+                    assert(it.offset_in_bytes == 12, "RemoteStorageEnumerateWorkshopFilesResult_t.m_rgPublishedFileId has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 400, "RemoteStorageEnumerateWorkshopFilesResult_t.m_rgPublishedFileId has unexpected size % instead of 400", it.type.runtime_size);
+                case "m_rgScore";
+                    assert(it.offset_in_bytes == 412, "RemoteStorageEnumerateWorkshopFilesResult_t.m_rgScore has unexpected offset % instead of 412", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 200, "RemoteStorageEnumerateWorkshopFilesResult_t.m_rgScore has unexpected size % instead of 200", it.type.runtime_size);
+                case "m_nAppId";
+                    assert(it.offset_in_bytes == 612, "RemoteStorageEnumerateWorkshopFilesResult_t.m_nAppId has unexpected offset % instead of 612", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageEnumerateWorkshopFilesResult_t.m_nAppId has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_unStartIndex";
+                    assert(it.offset_in_bytes == 616, "RemoteStorageEnumerateWorkshopFilesResult_t.m_unStartIndex has unexpected offset % instead of 616", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageEnumerateWorkshopFilesResult_t.m_unStartIndex has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(RemoteStorageEnumerateWorkshopFilesResult_t) == 620, "RemoteStorageEnumerateWorkshopFilesResult_t has size % instead of 620", size_of(RemoteStorageEnumerateWorkshopFilesResult_t));
+    }
+
+    {
+        info := type_info(RemoteStorageGetPublishedItemVoteDetailsResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "RemoteStorageGetPublishedItemVoteDetailsResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageGetPublishedItemVoteDetailsResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_unPublishedFileId";
+                    assert(it.offset_in_bytes == 4, "RemoteStorageGetPublishedItemVoteDetailsResult_t.m_unPublishedFileId has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RemoteStorageGetPublishedItemVoteDetailsResult_t.m_unPublishedFileId has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_nVotesFor";
+                    assert(it.offset_in_bytes == 12, "RemoteStorageGetPublishedItemVoteDetailsResult_t.m_nVotesFor has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageGetPublishedItemVoteDetailsResult_t.m_nVotesFor has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nVotesAgainst";
+                    assert(it.offset_in_bytes == 16, "RemoteStorageGetPublishedItemVoteDetailsResult_t.m_nVotesAgainst has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageGetPublishedItemVoteDetailsResult_t.m_nVotesAgainst has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nReports";
+                    assert(it.offset_in_bytes == 20, "RemoteStorageGetPublishedItemVoteDetailsResult_t.m_nReports has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageGetPublishedItemVoteDetailsResult_t.m_nReports has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_fScore";
+                    assert(it.offset_in_bytes == 24, "RemoteStorageGetPublishedItemVoteDetailsResult_t.m_fScore has unexpected offset % instead of 24", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageGetPublishedItemVoteDetailsResult_t.m_fScore has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(RemoteStorageGetPublishedItemVoteDetailsResult_t) == 28, "RemoteStorageGetPublishedItemVoteDetailsResult_t has size % instead of 28", size_of(RemoteStorageGetPublishedItemVoteDetailsResult_t));
+    }
+
+    {
+        info := type_info(RemoteStoragePublishedFileSubscribed_t);
+        for info.members {
+            if it.name == {
+                case "m_nPublishedFileId";
+                    assert(it.offset_in_bytes == 0, "RemoteStoragePublishedFileSubscribed_t.m_nPublishedFileId has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RemoteStoragePublishedFileSubscribed_t.m_nPublishedFileId has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_nAppID";
+                    assert(it.offset_in_bytes == 8, "RemoteStoragePublishedFileSubscribed_t.m_nAppID has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStoragePublishedFileSubscribed_t.m_nAppID has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(RemoteStoragePublishedFileSubscribed_t) == 12, "RemoteStoragePublishedFileSubscribed_t has size % instead of 12", size_of(RemoteStoragePublishedFileSubscribed_t));
+    }
+
+    {
+        info := type_info(RemoteStoragePublishedFileUnsubscribed_t);
+        for info.members {
+            if it.name == {
+                case "m_nPublishedFileId";
+                    assert(it.offset_in_bytes == 0, "RemoteStoragePublishedFileUnsubscribed_t.m_nPublishedFileId has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RemoteStoragePublishedFileUnsubscribed_t.m_nPublishedFileId has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_nAppID";
+                    assert(it.offset_in_bytes == 8, "RemoteStoragePublishedFileUnsubscribed_t.m_nAppID has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStoragePublishedFileUnsubscribed_t.m_nAppID has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(RemoteStoragePublishedFileUnsubscribed_t) == 12, "RemoteStoragePublishedFileUnsubscribed_t has size % instead of 12", size_of(RemoteStoragePublishedFileUnsubscribed_t));
+    }
+
+    {
+        info := type_info(RemoteStoragePublishedFileDeleted_t);
+        for info.members {
+            if it.name == {
+                case "m_nPublishedFileId";
+                    assert(it.offset_in_bytes == 0, "RemoteStoragePublishedFileDeleted_t.m_nPublishedFileId has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RemoteStoragePublishedFileDeleted_t.m_nPublishedFileId has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_nAppID";
+                    assert(it.offset_in_bytes == 8, "RemoteStoragePublishedFileDeleted_t.m_nAppID has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStoragePublishedFileDeleted_t.m_nAppID has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(RemoteStoragePublishedFileDeleted_t) == 12, "RemoteStoragePublishedFileDeleted_t has size % instead of 12", size_of(RemoteStoragePublishedFileDeleted_t));
+    }
+
+    {
+        info := type_info(RemoteStorageUpdateUserPublishedItemVoteResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "RemoteStorageUpdateUserPublishedItemVoteResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageUpdateUserPublishedItemVoteResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nPublishedFileId";
+                    assert(it.offset_in_bytes == 4, "RemoteStorageUpdateUserPublishedItemVoteResult_t.m_nPublishedFileId has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RemoteStorageUpdateUserPublishedItemVoteResult_t.m_nPublishedFileId has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(RemoteStorageUpdateUserPublishedItemVoteResult_t) == 12, "RemoteStorageUpdateUserPublishedItemVoteResult_t has size % instead of 12", size_of(RemoteStorageUpdateUserPublishedItemVoteResult_t));
+    }
+
+    {
+        info := type_info(RemoteStorageUserVoteDetails_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "RemoteStorageUserVoteDetails_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageUserVoteDetails_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nPublishedFileId";
+                    assert(it.offset_in_bytes == 4, "RemoteStorageUserVoteDetails_t.m_nPublishedFileId has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RemoteStorageUserVoteDetails_t.m_nPublishedFileId has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_eVote";
+                    assert(it.offset_in_bytes == 12, "RemoteStorageUserVoteDetails_t.m_eVote has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageUserVoteDetails_t.m_eVote has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(RemoteStorageUserVoteDetails_t) == 16, "RemoteStorageUserVoteDetails_t has size % instead of 16", size_of(RemoteStorageUserVoteDetails_t));
+    }
+
+    {
+        info := type_info(RemoteStorageEnumerateUserSharedWorkshopFilesResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "RemoteStorageEnumerateUserSharedWorkshopFilesResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageEnumerateUserSharedWorkshopFilesResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nResultsReturned";
+                    assert(it.offset_in_bytes == 4, "RemoteStorageEnumerateUserSharedWorkshopFilesResult_t.m_nResultsReturned has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageEnumerateUserSharedWorkshopFilesResult_t.m_nResultsReturned has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nTotalResultCount";
+                    assert(it.offset_in_bytes == 8, "RemoteStorageEnumerateUserSharedWorkshopFilesResult_t.m_nTotalResultCount has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageEnumerateUserSharedWorkshopFilesResult_t.m_nTotalResultCount has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_rgPublishedFileId";
+                    assert(it.offset_in_bytes == 12, "RemoteStorageEnumerateUserSharedWorkshopFilesResult_t.m_rgPublishedFileId has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 400, "RemoteStorageEnumerateUserSharedWorkshopFilesResult_t.m_rgPublishedFileId has unexpected size % instead of 400", it.type.runtime_size);
+            }
+        }
+        assert(size_of(RemoteStorageEnumerateUserSharedWorkshopFilesResult_t) == 412, "RemoteStorageEnumerateUserSharedWorkshopFilesResult_t has size % instead of 412", size_of(RemoteStorageEnumerateUserSharedWorkshopFilesResult_t));
+    }
+
+    {
+        info := type_info(RemoteStorageSetUserPublishedFileActionResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "RemoteStorageSetUserPublishedFileActionResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageSetUserPublishedFileActionResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nPublishedFileId";
+                    assert(it.offset_in_bytes == 4, "RemoteStorageSetUserPublishedFileActionResult_t.m_nPublishedFileId has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RemoteStorageSetUserPublishedFileActionResult_t.m_nPublishedFileId has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_eAction";
+                    assert(it.offset_in_bytes == 12, "RemoteStorageSetUserPublishedFileActionResult_t.m_eAction has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageSetUserPublishedFileActionResult_t.m_eAction has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(RemoteStorageSetUserPublishedFileActionResult_t) == 16, "RemoteStorageSetUserPublishedFileActionResult_t has size % instead of 16", size_of(RemoteStorageSetUserPublishedFileActionResult_t));
+    }
+
+    {
+        info := type_info(RemoteStorageEnumeratePublishedFilesByUserActionResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "RemoteStorageEnumeratePublishedFilesByUserActionResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageEnumeratePublishedFilesByUserActionResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_eAction";
+                    assert(it.offset_in_bytes == 4, "RemoteStorageEnumeratePublishedFilesByUserActionResult_t.m_eAction has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageEnumeratePublishedFilesByUserActionResult_t.m_eAction has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nResultsReturned";
+                    assert(it.offset_in_bytes == 8, "RemoteStorageEnumeratePublishedFilesByUserActionResult_t.m_nResultsReturned has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageEnumeratePublishedFilesByUserActionResult_t.m_nResultsReturned has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nTotalResultCount";
+                    assert(it.offset_in_bytes == 12, "RemoteStorageEnumeratePublishedFilesByUserActionResult_t.m_nTotalResultCount has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageEnumeratePublishedFilesByUserActionResult_t.m_nTotalResultCount has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_rgPublishedFileId";
+                    assert(it.offset_in_bytes == 16, "RemoteStorageEnumeratePublishedFilesByUserActionResult_t.m_rgPublishedFileId has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 400, "RemoteStorageEnumeratePublishedFilesByUserActionResult_t.m_rgPublishedFileId has unexpected size % instead of 400", it.type.runtime_size);
+                case "m_rgRTimeUpdated";
+                    assert(it.offset_in_bytes == 416, "RemoteStorageEnumeratePublishedFilesByUserActionResult_t.m_rgRTimeUpdated has unexpected offset % instead of 416", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 200, "RemoteStorageEnumeratePublishedFilesByUserActionResult_t.m_rgRTimeUpdated has unexpected size % instead of 200", it.type.runtime_size);
+            }
+        }
+        assert(size_of(RemoteStorageEnumeratePublishedFilesByUserActionResult_t) == 616, "RemoteStorageEnumeratePublishedFilesByUserActionResult_t has size % instead of 616", size_of(RemoteStorageEnumeratePublishedFilesByUserActionResult_t));
+    }
+
+    {
+        info := type_info(RemoteStoragePublishFileProgress_t);
+        for info.members {
+            if it.name == {
+                case "m_dPercentFile";
+                    assert(it.offset_in_bytes == 0, "RemoteStoragePublishFileProgress_t.m_dPercentFile has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RemoteStoragePublishFileProgress_t.m_dPercentFile has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_bPreview";
+                    assert(it.offset_in_bytes == 8, "RemoteStoragePublishFileProgress_t.m_bPreview has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "RemoteStoragePublishFileProgress_t.m_bPreview has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(RemoteStoragePublishFileProgress_t) == 12, "RemoteStoragePublishFileProgress_t has size % instead of 12", size_of(RemoteStoragePublishFileProgress_t));
+    }
+
+    {
+        info := type_info(RemoteStoragePublishedFileUpdated_t);
+        for info.members {
+            if it.name == {
+                case "m_nPublishedFileId";
+                    assert(it.offset_in_bytes == 0, "RemoteStoragePublishedFileUpdated_t.m_nPublishedFileId has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RemoteStoragePublishedFileUpdated_t.m_nPublishedFileId has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_nAppID";
+                    assert(it.offset_in_bytes == 8, "RemoteStoragePublishedFileUpdated_t.m_nAppID has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStoragePublishedFileUpdated_t.m_nAppID has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_ulUnused";
+                    assert(it.offset_in_bytes == 12, "RemoteStoragePublishedFileUpdated_t.m_ulUnused has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RemoteStoragePublishedFileUpdated_t.m_ulUnused has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(RemoteStoragePublishedFileUpdated_t) == 20, "RemoteStoragePublishedFileUpdated_t has size % instead of 20", size_of(RemoteStoragePublishedFileUpdated_t));
+    }
+
+    {
+        info := type_info(RemoteStorageFileWriteAsyncComplete_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "RemoteStorageFileWriteAsyncComplete_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageFileWriteAsyncComplete_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(RemoteStorageFileWriteAsyncComplete_t) == 4, "RemoteStorageFileWriteAsyncComplete_t has size % instead of 4", size_of(RemoteStorageFileWriteAsyncComplete_t));
+    }
+
+    {
+        info := type_info(RemoteStorageFileReadAsyncComplete_t);
+        for info.members {
+            if it.name == {
+                case "m_hFileReadAsync";
+                    assert(it.offset_in_bytes == 0, "RemoteStorageFileReadAsyncComplete_t.m_hFileReadAsync has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RemoteStorageFileReadAsyncComplete_t.m_hFileReadAsync has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 8, "RemoteStorageFileReadAsyncComplete_t.m_eResult has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageFileReadAsyncComplete_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nOffset";
+                    assert(it.offset_in_bytes == 12, "RemoteStorageFileReadAsyncComplete_t.m_nOffset has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageFileReadAsyncComplete_t.m_nOffset has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_cubRead";
+                    assert(it.offset_in_bytes == 16, "RemoteStorageFileReadAsyncComplete_t.m_cubRead has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoteStorageFileReadAsyncComplete_t.m_cubRead has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(RemoteStorageFileReadAsyncComplete_t) == 20, "RemoteStorageFileReadAsyncComplete_t has size % instead of 20", size_of(RemoteStorageFileReadAsyncComplete_t));
+    }
+
+    assert(size_of(RemoteStorageLocalFileChange_t) == 1, "RemoteStorageLocalFileChange_t has size % instead of 1", size_of(RemoteStorageLocalFileChange_t));
+
     assert(size_of(ISteamScreenshots) == 8, "ISteamScreenshots has size % instead of 8", size_of(ISteamScreenshots));
+
+    {
+        info := type_info(ScreenshotReady_t);
+        for info.members {
+            if it.name == {
+                case "m_hLocal";
+                    assert(it.offset_in_bytes == 0, "ScreenshotReady_t.m_hLocal has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "ScreenshotReady_t.m_hLocal has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 4, "ScreenshotReady_t.m_eResult has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "ScreenshotReady_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(ScreenshotReady_t) == 8, "ScreenshotReady_t has size % instead of 8", size_of(ScreenshotReady_t));
+    }
+
+    assert(size_of(ScreenshotRequested_t) == 1, "ScreenshotRequested_t has size % instead of 1", size_of(ScreenshotRequested_t));
 
     assert(size_of(ISteamTimeline) == 8, "ISteamTimeline has size % instead of 8", size_of(ISteamTimeline));
 
     {
-        instance: SteamUGCDetails_t;
-        assert(((cast(*void)(*instance.m_nPublishedFileId)) - cast(*void)(*instance)) == 0, "SteamUGCDetails_t.m_nPublishedFileId has unexpected offset % instead of 0", ((cast(*void)(*instance.m_nPublishedFileId)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamUGCDetails_t.m_nPublishedFileId)) == 8, "SteamUGCDetails_t.m_nPublishedFileId has unexpected size % instead of 8", size_of(type_of(SteamUGCDetails_t.m_nPublishedFileId)));
-        assert(((cast(*void)(*instance.m_eResult)) - cast(*void)(*instance)) == 8, "SteamUGCDetails_t.m_eResult has unexpected offset % instead of 8", ((cast(*void)(*instance.m_eResult)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamUGCDetails_t.m_eResult)) == 4, "SteamUGCDetails_t.m_eResult has unexpected size % instead of 4", size_of(type_of(SteamUGCDetails_t.m_eResult)));
-        assert(((cast(*void)(*instance.m_eFileType)) - cast(*void)(*instance)) == 12, "SteamUGCDetails_t.m_eFileType has unexpected offset % instead of 12", ((cast(*void)(*instance.m_eFileType)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamUGCDetails_t.m_eFileType)) == 4, "SteamUGCDetails_t.m_eFileType has unexpected size % instead of 4", size_of(type_of(SteamUGCDetails_t.m_eFileType)));
-        assert(((cast(*void)(*instance.m_nCreatorAppID)) - cast(*void)(*instance)) == 16, "SteamUGCDetails_t.m_nCreatorAppID has unexpected offset % instead of 16", ((cast(*void)(*instance.m_nCreatorAppID)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamUGCDetails_t.m_nCreatorAppID)) == 4, "SteamUGCDetails_t.m_nCreatorAppID has unexpected size % instead of 4", size_of(type_of(SteamUGCDetails_t.m_nCreatorAppID)));
-        assert(((cast(*void)(*instance.m_nConsumerAppID)) - cast(*void)(*instance)) == 20, "SteamUGCDetails_t.m_nConsumerAppID has unexpected offset % instead of 20", ((cast(*void)(*instance.m_nConsumerAppID)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamUGCDetails_t.m_nConsumerAppID)) == 4, "SteamUGCDetails_t.m_nConsumerAppID has unexpected size % instead of 4", size_of(type_of(SteamUGCDetails_t.m_nConsumerAppID)));
-        assert(((cast(*void)(*instance.m_rgchTitle)) - cast(*void)(*instance)) == 24, "SteamUGCDetails_t.m_rgchTitle has unexpected offset % instead of 24", ((cast(*void)(*instance.m_rgchTitle)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamUGCDetails_t.m_rgchTitle)) == 129, "SteamUGCDetails_t.m_rgchTitle has unexpected size % instead of 129", size_of(type_of(SteamUGCDetails_t.m_rgchTitle)));
-        assert(((cast(*void)(*instance.m_rgchDescription)) - cast(*void)(*instance)) == 153, "SteamUGCDetails_t.m_rgchDescription has unexpected offset % instead of 153", ((cast(*void)(*instance.m_rgchDescription)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamUGCDetails_t.m_rgchDescription)) == 8000, "SteamUGCDetails_t.m_rgchDescription has unexpected size % instead of 8000", size_of(type_of(SteamUGCDetails_t.m_rgchDescription)));
-        assert(((cast(*void)(*instance.m_ulSteamIDOwner)) - cast(*void)(*instance)) == 8156, "SteamUGCDetails_t.m_ulSteamIDOwner has unexpected offset % instead of 8156", ((cast(*void)(*instance.m_ulSteamIDOwner)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamUGCDetails_t.m_ulSteamIDOwner)) == 8, "SteamUGCDetails_t.m_ulSteamIDOwner has unexpected size % instead of 8", size_of(type_of(SteamUGCDetails_t.m_ulSteamIDOwner)));
-        assert(((cast(*void)(*instance.m_rtimeCreated)) - cast(*void)(*instance)) == 8164, "SteamUGCDetails_t.m_rtimeCreated has unexpected offset % instead of 8164", ((cast(*void)(*instance.m_rtimeCreated)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamUGCDetails_t.m_rtimeCreated)) == 4, "SteamUGCDetails_t.m_rtimeCreated has unexpected size % instead of 4", size_of(type_of(SteamUGCDetails_t.m_rtimeCreated)));
-        assert(((cast(*void)(*instance.m_rtimeUpdated)) - cast(*void)(*instance)) == 8168, "SteamUGCDetails_t.m_rtimeUpdated has unexpected offset % instead of 8168", ((cast(*void)(*instance.m_rtimeUpdated)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamUGCDetails_t.m_rtimeUpdated)) == 4, "SteamUGCDetails_t.m_rtimeUpdated has unexpected size % instead of 4", size_of(type_of(SteamUGCDetails_t.m_rtimeUpdated)));
-        assert(((cast(*void)(*instance.m_rtimeAddedToUserList)) - cast(*void)(*instance)) == 8172, "SteamUGCDetails_t.m_rtimeAddedToUserList has unexpected offset % instead of 8172", ((cast(*void)(*instance.m_rtimeAddedToUserList)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamUGCDetails_t.m_rtimeAddedToUserList)) == 4, "SteamUGCDetails_t.m_rtimeAddedToUserList has unexpected size % instead of 4", size_of(type_of(SteamUGCDetails_t.m_rtimeAddedToUserList)));
-        assert(((cast(*void)(*instance.m_eVisibility)) - cast(*void)(*instance)) == 8176, "SteamUGCDetails_t.m_eVisibility has unexpected offset % instead of 8176", ((cast(*void)(*instance.m_eVisibility)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamUGCDetails_t.m_eVisibility)) == 4, "SteamUGCDetails_t.m_eVisibility has unexpected size % instead of 4", size_of(type_of(SteamUGCDetails_t.m_eVisibility)));
-        assert(((cast(*void)(*instance.m_bBanned)) - cast(*void)(*instance)) == 8180, "SteamUGCDetails_t.m_bBanned has unexpected offset % instead of 8180", ((cast(*void)(*instance.m_bBanned)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamUGCDetails_t.m_bBanned)) == 1, "SteamUGCDetails_t.m_bBanned has unexpected size % instead of 1", size_of(type_of(SteamUGCDetails_t.m_bBanned)));
-        assert(((cast(*void)(*instance.m_bAcceptedForUse)) - cast(*void)(*instance)) == 8181, "SteamUGCDetails_t.m_bAcceptedForUse has unexpected offset % instead of 8181", ((cast(*void)(*instance.m_bAcceptedForUse)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamUGCDetails_t.m_bAcceptedForUse)) == 1, "SteamUGCDetails_t.m_bAcceptedForUse has unexpected size % instead of 1", size_of(type_of(SteamUGCDetails_t.m_bAcceptedForUse)));
-        assert(((cast(*void)(*instance.m_bTagsTruncated)) - cast(*void)(*instance)) == 8182, "SteamUGCDetails_t.m_bTagsTruncated has unexpected offset % instead of 8182", ((cast(*void)(*instance.m_bTagsTruncated)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamUGCDetails_t.m_bTagsTruncated)) == 1, "SteamUGCDetails_t.m_bTagsTruncated has unexpected size % instead of 1", size_of(type_of(SteamUGCDetails_t.m_bTagsTruncated)));
-        assert(((cast(*void)(*instance.m_rgchTags)) - cast(*void)(*instance)) == 8183, "SteamUGCDetails_t.m_rgchTags has unexpected offset % instead of 8183", ((cast(*void)(*instance.m_rgchTags)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamUGCDetails_t.m_rgchTags)) == 1025, "SteamUGCDetails_t.m_rgchTags has unexpected size % instead of 1025", size_of(type_of(SteamUGCDetails_t.m_rgchTags)));
-        assert(((cast(*void)(*instance.m_hFile)) - cast(*void)(*instance)) == 9208, "SteamUGCDetails_t.m_hFile has unexpected offset % instead of 9208", ((cast(*void)(*instance.m_hFile)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamUGCDetails_t.m_hFile)) == 8, "SteamUGCDetails_t.m_hFile has unexpected size % instead of 8", size_of(type_of(SteamUGCDetails_t.m_hFile)));
-        assert(((cast(*void)(*instance.m_hPreviewFile)) - cast(*void)(*instance)) == 9216, "SteamUGCDetails_t.m_hPreviewFile has unexpected offset % instead of 9216", ((cast(*void)(*instance.m_hPreviewFile)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamUGCDetails_t.m_hPreviewFile)) == 8, "SteamUGCDetails_t.m_hPreviewFile has unexpected size % instead of 8", size_of(type_of(SteamUGCDetails_t.m_hPreviewFile)));
-        assert(((cast(*void)(*instance.m_pchFileName)) - cast(*void)(*instance)) == 9224, "SteamUGCDetails_t.m_pchFileName has unexpected offset % instead of 9224", ((cast(*void)(*instance.m_pchFileName)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamUGCDetails_t.m_pchFileName)) == 260, "SteamUGCDetails_t.m_pchFileName has unexpected size % instead of 260", size_of(type_of(SteamUGCDetails_t.m_pchFileName)));
-        assert(((cast(*void)(*instance.m_nFileSize)) - cast(*void)(*instance)) == 9484, "SteamUGCDetails_t.m_nFileSize has unexpected offset % instead of 9484", ((cast(*void)(*instance.m_nFileSize)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamUGCDetails_t.m_nFileSize)) == 4, "SteamUGCDetails_t.m_nFileSize has unexpected size % instead of 4", size_of(type_of(SteamUGCDetails_t.m_nFileSize)));
-        assert(((cast(*void)(*instance.m_nPreviewFileSize)) - cast(*void)(*instance)) == 9488, "SteamUGCDetails_t.m_nPreviewFileSize has unexpected offset % instead of 9488", ((cast(*void)(*instance.m_nPreviewFileSize)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamUGCDetails_t.m_nPreviewFileSize)) == 4, "SteamUGCDetails_t.m_nPreviewFileSize has unexpected size % instead of 4", size_of(type_of(SteamUGCDetails_t.m_nPreviewFileSize)));
-        assert(((cast(*void)(*instance.m_rgchURL)) - cast(*void)(*instance)) == 9492, "SteamUGCDetails_t.m_rgchURL has unexpected offset % instead of 9492", ((cast(*void)(*instance.m_rgchURL)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamUGCDetails_t.m_rgchURL)) == 256, "SteamUGCDetails_t.m_rgchURL has unexpected size % instead of 256", size_of(type_of(SteamUGCDetails_t.m_rgchURL)));
-        assert(((cast(*void)(*instance.m_unVotesUp)) - cast(*void)(*instance)) == 9748, "SteamUGCDetails_t.m_unVotesUp has unexpected offset % instead of 9748", ((cast(*void)(*instance.m_unVotesUp)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamUGCDetails_t.m_unVotesUp)) == 4, "SteamUGCDetails_t.m_unVotesUp has unexpected size % instead of 4", size_of(type_of(SteamUGCDetails_t.m_unVotesUp)));
-        assert(((cast(*void)(*instance.m_unVotesDown)) - cast(*void)(*instance)) == 9752, "SteamUGCDetails_t.m_unVotesDown has unexpected offset % instead of 9752", ((cast(*void)(*instance.m_unVotesDown)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamUGCDetails_t.m_unVotesDown)) == 4, "SteamUGCDetails_t.m_unVotesDown has unexpected size % instead of 4", size_of(type_of(SteamUGCDetails_t.m_unVotesDown)));
-        assert(((cast(*void)(*instance.m_flScore)) - cast(*void)(*instance)) == 9756, "SteamUGCDetails_t.m_flScore has unexpected offset % instead of 9756", ((cast(*void)(*instance.m_flScore)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamUGCDetails_t.m_flScore)) == 4, "SteamUGCDetails_t.m_flScore has unexpected size % instead of 4", size_of(type_of(SteamUGCDetails_t.m_flScore)));
-        assert(((cast(*void)(*instance.m_unNumChildren)) - cast(*void)(*instance)) == 9760, "SteamUGCDetails_t.m_unNumChildren has unexpected offset % instead of 9760", ((cast(*void)(*instance.m_unNumChildren)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamUGCDetails_t.m_unNumChildren)) == 4, "SteamUGCDetails_t.m_unNumChildren has unexpected size % instead of 4", size_of(type_of(SteamUGCDetails_t.m_unNumChildren)));
-        assert(((cast(*void)(*instance.m_ulTotalFilesSize)) - cast(*void)(*instance)) == 9764, "SteamUGCDetails_t.m_ulTotalFilesSize has unexpected offset % instead of 9764", ((cast(*void)(*instance.m_ulTotalFilesSize)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamUGCDetails_t.m_ulTotalFilesSize)) == 8, "SteamUGCDetails_t.m_ulTotalFilesSize has unexpected size % instead of 8", size_of(type_of(SteamUGCDetails_t.m_ulTotalFilesSize)));
+        info := type_info(SteamUGCDetails_t);
+        for info.members {
+            if it.name == {
+                case "m_nPublishedFileId";
+                    assert(it.offset_in_bytes == 0, "SteamUGCDetails_t.m_nPublishedFileId has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamUGCDetails_t.m_nPublishedFileId has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 8, "SteamUGCDetails_t.m_eResult has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamUGCDetails_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_eFileType";
+                    assert(it.offset_in_bytes == 12, "SteamUGCDetails_t.m_eFileType has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamUGCDetails_t.m_eFileType has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nCreatorAppID";
+                    assert(it.offset_in_bytes == 16, "SteamUGCDetails_t.m_nCreatorAppID has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamUGCDetails_t.m_nCreatorAppID has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nConsumerAppID";
+                    assert(it.offset_in_bytes == 20, "SteamUGCDetails_t.m_nConsumerAppID has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamUGCDetails_t.m_nConsumerAppID has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_rgchTitle";
+                    assert(it.offset_in_bytes == 24, "SteamUGCDetails_t.m_rgchTitle has unexpected offset % instead of 24", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 129, "SteamUGCDetails_t.m_rgchTitle has unexpected size % instead of 129", it.type.runtime_size);
+                case "m_rgchDescription";
+                    assert(it.offset_in_bytes == 153, "SteamUGCDetails_t.m_rgchDescription has unexpected offset % instead of 153", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8000, "SteamUGCDetails_t.m_rgchDescription has unexpected size % instead of 8000", it.type.runtime_size);
+                case "m_ulSteamIDOwner";
+                    assert(it.offset_in_bytes == 8156, "SteamUGCDetails_t.m_ulSteamIDOwner has unexpected offset % instead of 8156", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamUGCDetails_t.m_ulSteamIDOwner has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_rtimeCreated";
+                    assert(it.offset_in_bytes == 8164, "SteamUGCDetails_t.m_rtimeCreated has unexpected offset % instead of 8164", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamUGCDetails_t.m_rtimeCreated has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_rtimeUpdated";
+                    assert(it.offset_in_bytes == 8168, "SteamUGCDetails_t.m_rtimeUpdated has unexpected offset % instead of 8168", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamUGCDetails_t.m_rtimeUpdated has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_rtimeAddedToUserList";
+                    assert(it.offset_in_bytes == 8172, "SteamUGCDetails_t.m_rtimeAddedToUserList has unexpected offset % instead of 8172", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamUGCDetails_t.m_rtimeAddedToUserList has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_eVisibility";
+                    assert(it.offset_in_bytes == 8176, "SteamUGCDetails_t.m_eVisibility has unexpected offset % instead of 8176", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamUGCDetails_t.m_eVisibility has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_bBanned";
+                    assert(it.offset_in_bytes == 8180, "SteamUGCDetails_t.m_bBanned has unexpected offset % instead of 8180", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "SteamUGCDetails_t.m_bBanned has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_bAcceptedForUse";
+                    assert(it.offset_in_bytes == 8181, "SteamUGCDetails_t.m_bAcceptedForUse has unexpected offset % instead of 8181", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "SteamUGCDetails_t.m_bAcceptedForUse has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_bTagsTruncated";
+                    assert(it.offset_in_bytes == 8182, "SteamUGCDetails_t.m_bTagsTruncated has unexpected offset % instead of 8182", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "SteamUGCDetails_t.m_bTagsTruncated has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_rgchTags";
+                    assert(it.offset_in_bytes == 8183, "SteamUGCDetails_t.m_rgchTags has unexpected offset % instead of 8183", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1025, "SteamUGCDetails_t.m_rgchTags has unexpected size % instead of 1025", it.type.runtime_size);
+                case "m_hFile";
+                    assert(it.offset_in_bytes == 9208, "SteamUGCDetails_t.m_hFile has unexpected offset % instead of 9208", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamUGCDetails_t.m_hFile has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_hPreviewFile";
+                    assert(it.offset_in_bytes == 9216, "SteamUGCDetails_t.m_hPreviewFile has unexpected offset % instead of 9216", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamUGCDetails_t.m_hPreviewFile has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_pchFileName";
+                    assert(it.offset_in_bytes == 9224, "SteamUGCDetails_t.m_pchFileName has unexpected offset % instead of 9224", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 260, "SteamUGCDetails_t.m_pchFileName has unexpected size % instead of 260", it.type.runtime_size);
+                case "m_nFileSize";
+                    assert(it.offset_in_bytes == 9484, "SteamUGCDetails_t.m_nFileSize has unexpected offset % instead of 9484", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamUGCDetails_t.m_nFileSize has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nPreviewFileSize";
+                    assert(it.offset_in_bytes == 9488, "SteamUGCDetails_t.m_nPreviewFileSize has unexpected offset % instead of 9488", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamUGCDetails_t.m_nPreviewFileSize has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_rgchURL";
+                    assert(it.offset_in_bytes == 9492, "SteamUGCDetails_t.m_rgchURL has unexpected offset % instead of 9492", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 256, "SteamUGCDetails_t.m_rgchURL has unexpected size % instead of 256", it.type.runtime_size);
+                case "m_unVotesUp";
+                    assert(it.offset_in_bytes == 9748, "SteamUGCDetails_t.m_unVotesUp has unexpected offset % instead of 9748", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamUGCDetails_t.m_unVotesUp has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_unVotesDown";
+                    assert(it.offset_in_bytes == 9752, "SteamUGCDetails_t.m_unVotesDown has unexpected offset % instead of 9752", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamUGCDetails_t.m_unVotesDown has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_flScore";
+                    assert(it.offset_in_bytes == 9756, "SteamUGCDetails_t.m_flScore has unexpected offset % instead of 9756", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamUGCDetails_t.m_flScore has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_unNumChildren";
+                    assert(it.offset_in_bytes == 9760, "SteamUGCDetails_t.m_unNumChildren has unexpected offset % instead of 9760", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamUGCDetails_t.m_unNumChildren has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_ulTotalFilesSize";
+                    assert(it.offset_in_bytes == 9764, "SteamUGCDetails_t.m_ulTotalFilesSize has unexpected offset % instead of 9764", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamUGCDetails_t.m_ulTotalFilesSize has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
         assert(size_of(SteamUGCDetails_t) == 9772, "SteamUGCDetails_t has size % instead of 9772", size_of(SteamUGCDetails_t));
     }
 
     assert(size_of(ISteamUGC) == 8, "ISteamUGC has size % instead of 8", size_of(ISteamUGC));
 
-    assert(size_of(ISteamUser) == 8, "ISteamUser has size % instead of 8", size_of(ISteamUser));
+    {
+        info := type_info(SteamUGCQueryCompleted_t);
+        for info.members {
+            if it.name == {
+                case "m_handle";
+                    assert(it.offset_in_bytes == 0, "SteamUGCQueryCompleted_t.m_handle has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamUGCQueryCompleted_t.m_handle has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 8, "SteamUGCQueryCompleted_t.m_eResult has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamUGCQueryCompleted_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_unNumResultsReturned";
+                    assert(it.offset_in_bytes == 12, "SteamUGCQueryCompleted_t.m_unNumResultsReturned has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamUGCQueryCompleted_t.m_unNumResultsReturned has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_unTotalMatchingResults";
+                    assert(it.offset_in_bytes == 16, "SteamUGCQueryCompleted_t.m_unTotalMatchingResults has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamUGCQueryCompleted_t.m_unTotalMatchingResults has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_bCachedData";
+                    assert(it.offset_in_bytes == 20, "SteamUGCQueryCompleted_t.m_bCachedData has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "SteamUGCQueryCompleted_t.m_bCachedData has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_rgchNextCursor";
+                    assert(it.offset_in_bytes == 21, "SteamUGCQueryCompleted_t.m_rgchNextCursor has unexpected offset % instead of 21", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 256, "SteamUGCQueryCompleted_t.m_rgchNextCursor has unexpected size % instead of 256", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SteamUGCQueryCompleted_t) == 280, "SteamUGCQueryCompleted_t has size % instead of 280", size_of(SteamUGCQueryCompleted_t));
+    }
 
     {
-        instance: LeaderboardEntry_t;
-        assert(((cast(*void)(*instance.m_steamIDUser)) - cast(*void)(*instance)) == 0, "LeaderboardEntry_t.m_steamIDUser has unexpected offset % instead of 0", ((cast(*void)(*instance.m_steamIDUser)) - cast(*void)(*instance)));
-        assert(size_of(type_of(LeaderboardEntry_t.m_steamIDUser)) == 8, "LeaderboardEntry_t.m_steamIDUser has unexpected size % instead of 8", size_of(type_of(LeaderboardEntry_t.m_steamIDUser)));
-        assert(((cast(*void)(*instance.m_nGlobalRank)) - cast(*void)(*instance)) == 8, "LeaderboardEntry_t.m_nGlobalRank has unexpected offset % instead of 8", ((cast(*void)(*instance.m_nGlobalRank)) - cast(*void)(*instance)));
-        assert(size_of(type_of(LeaderboardEntry_t.m_nGlobalRank)) == 4, "LeaderboardEntry_t.m_nGlobalRank has unexpected size % instead of 4", size_of(type_of(LeaderboardEntry_t.m_nGlobalRank)));
-        assert(((cast(*void)(*instance.m_nScore)) - cast(*void)(*instance)) == 12, "LeaderboardEntry_t.m_nScore has unexpected offset % instead of 12", ((cast(*void)(*instance.m_nScore)) - cast(*void)(*instance)));
-        assert(size_of(type_of(LeaderboardEntry_t.m_nScore)) == 4, "LeaderboardEntry_t.m_nScore has unexpected size % instead of 4", size_of(type_of(LeaderboardEntry_t.m_nScore)));
-        assert(((cast(*void)(*instance.m_cDetails)) - cast(*void)(*instance)) == 16, "LeaderboardEntry_t.m_cDetails has unexpected offset % instead of 16", ((cast(*void)(*instance.m_cDetails)) - cast(*void)(*instance)));
-        assert(size_of(type_of(LeaderboardEntry_t.m_cDetails)) == 4, "LeaderboardEntry_t.m_cDetails has unexpected size % instead of 4", size_of(type_of(LeaderboardEntry_t.m_cDetails)));
-        assert(((cast(*void)(*instance.m_hUGC)) - cast(*void)(*instance)) == 20, "LeaderboardEntry_t.m_hUGC has unexpected offset % instead of 20", ((cast(*void)(*instance.m_hUGC)) - cast(*void)(*instance)));
-        assert(size_of(type_of(LeaderboardEntry_t.m_hUGC)) == 8, "LeaderboardEntry_t.m_hUGC has unexpected size % instead of 8", size_of(type_of(LeaderboardEntry_t.m_hUGC)));
+        info := type_info(SteamUGCRequestUGCDetailsResult_t);
+        for info.members {
+            if it.name == {
+                case "m_details";
+                    assert(it.offset_in_bytes == 0, "SteamUGCRequestUGCDetailsResult_t.m_details has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 9772, "SteamUGCRequestUGCDetailsResult_t.m_details has unexpected size % instead of 9772", it.type.runtime_size);
+                case "m_bCachedData";
+                    assert(it.offset_in_bytes == 9772, "SteamUGCRequestUGCDetailsResult_t.m_bCachedData has unexpected offset % instead of 9772", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "SteamUGCRequestUGCDetailsResult_t.m_bCachedData has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SteamUGCRequestUGCDetailsResult_t) == 9776, "SteamUGCRequestUGCDetailsResult_t has size % instead of 9776", size_of(SteamUGCRequestUGCDetailsResult_t));
+    }
+
+    {
+        info := type_info(CreateItemResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "CreateItemResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "CreateItemResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nPublishedFileId";
+                    assert(it.offset_in_bytes == 4, "CreateItemResult_t.m_nPublishedFileId has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "CreateItemResult_t.m_nPublishedFileId has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_bUserNeedsToAcceptWorkshopLegalAgreement";
+                    assert(it.offset_in_bytes == 12, "CreateItemResult_t.m_bUserNeedsToAcceptWorkshopLegalAgreement has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "CreateItemResult_t.m_bUserNeedsToAcceptWorkshopLegalAgreement has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(CreateItemResult_t) == 16, "CreateItemResult_t has size % instead of 16", size_of(CreateItemResult_t));
+    }
+
+    {
+        info := type_info(SubmitItemUpdateResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "SubmitItemUpdateResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SubmitItemUpdateResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_bUserNeedsToAcceptWorkshopLegalAgreement";
+                    assert(it.offset_in_bytes == 4, "SubmitItemUpdateResult_t.m_bUserNeedsToAcceptWorkshopLegalAgreement has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "SubmitItemUpdateResult_t.m_bUserNeedsToAcceptWorkshopLegalAgreement has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_nPublishedFileId";
+                    assert(it.offset_in_bytes == 8, "SubmitItemUpdateResult_t.m_nPublishedFileId has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SubmitItemUpdateResult_t.m_nPublishedFileId has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SubmitItemUpdateResult_t) == 16, "SubmitItemUpdateResult_t has size % instead of 16", size_of(SubmitItemUpdateResult_t));
+    }
+
+    {
+        info := type_info(ItemInstalled_t);
+        for info.members {
+            if it.name == {
+                case "m_unAppID";
+                    assert(it.offset_in_bytes == 0, "ItemInstalled_t.m_unAppID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "ItemInstalled_t.m_unAppID has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nPublishedFileId";
+                    assert(it.offset_in_bytes == 4, "ItemInstalled_t.m_nPublishedFileId has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "ItemInstalled_t.m_nPublishedFileId has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_hLegacyContent";
+                    assert(it.offset_in_bytes == 12, "ItemInstalled_t.m_hLegacyContent has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "ItemInstalled_t.m_hLegacyContent has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_unManifestID";
+                    assert(it.offset_in_bytes == 20, "ItemInstalled_t.m_unManifestID has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "ItemInstalled_t.m_unManifestID has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(ItemInstalled_t) == 28, "ItemInstalled_t has size % instead of 28", size_of(ItemInstalled_t));
+    }
+
+    {
+        info := type_info(DownloadItemResult_t);
+        for info.members {
+            if it.name == {
+                case "m_unAppID";
+                    assert(it.offset_in_bytes == 0, "DownloadItemResult_t.m_unAppID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "DownloadItemResult_t.m_unAppID has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nPublishedFileId";
+                    assert(it.offset_in_bytes == 4, "DownloadItemResult_t.m_nPublishedFileId has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "DownloadItemResult_t.m_nPublishedFileId has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 12, "DownloadItemResult_t.m_eResult has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "DownloadItemResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(DownloadItemResult_t) == 16, "DownloadItemResult_t has size % instead of 16", size_of(DownloadItemResult_t));
+    }
+
+    {
+        info := type_info(UserFavoriteItemsListChanged_t);
+        for info.members {
+            if it.name == {
+                case "m_nPublishedFileId";
+                    assert(it.offset_in_bytes == 0, "UserFavoriteItemsListChanged_t.m_nPublishedFileId has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "UserFavoriteItemsListChanged_t.m_nPublishedFileId has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 8, "UserFavoriteItemsListChanged_t.m_eResult has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "UserFavoriteItemsListChanged_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_bWasAddRequest";
+                    assert(it.offset_in_bytes == 12, "UserFavoriteItemsListChanged_t.m_bWasAddRequest has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "UserFavoriteItemsListChanged_t.m_bWasAddRequest has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(UserFavoriteItemsListChanged_t) == 16, "UserFavoriteItemsListChanged_t has size % instead of 16", size_of(UserFavoriteItemsListChanged_t));
+    }
+
+    {
+        info := type_info(SetUserItemVoteResult_t);
+        for info.members {
+            if it.name == {
+                case "m_nPublishedFileId";
+                    assert(it.offset_in_bytes == 0, "SetUserItemVoteResult_t.m_nPublishedFileId has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SetUserItemVoteResult_t.m_nPublishedFileId has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 8, "SetUserItemVoteResult_t.m_eResult has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SetUserItemVoteResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_bVoteUp";
+                    assert(it.offset_in_bytes == 12, "SetUserItemVoteResult_t.m_bVoteUp has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "SetUserItemVoteResult_t.m_bVoteUp has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SetUserItemVoteResult_t) == 16, "SetUserItemVoteResult_t has size % instead of 16", size_of(SetUserItemVoteResult_t));
+    }
+
+    {
+        info := type_info(GetUserItemVoteResult_t);
+        for info.members {
+            if it.name == {
+                case "m_nPublishedFileId";
+                    assert(it.offset_in_bytes == 0, "GetUserItemVoteResult_t.m_nPublishedFileId has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "GetUserItemVoteResult_t.m_nPublishedFileId has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 8, "GetUserItemVoteResult_t.m_eResult has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GetUserItemVoteResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_bVotedUp";
+                    assert(it.offset_in_bytes == 12, "GetUserItemVoteResult_t.m_bVotedUp has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "GetUserItemVoteResult_t.m_bVotedUp has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_bVotedDown";
+                    assert(it.offset_in_bytes == 13, "GetUserItemVoteResult_t.m_bVotedDown has unexpected offset % instead of 13", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "GetUserItemVoteResult_t.m_bVotedDown has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_bVoteSkipped";
+                    assert(it.offset_in_bytes == 14, "GetUserItemVoteResult_t.m_bVoteSkipped has unexpected offset % instead of 14", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "GetUserItemVoteResult_t.m_bVoteSkipped has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(GetUserItemVoteResult_t) == 16, "GetUserItemVoteResult_t has size % instead of 16", size_of(GetUserItemVoteResult_t));
+    }
+
+    {
+        info := type_info(StartPlaytimeTrackingResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "StartPlaytimeTrackingResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "StartPlaytimeTrackingResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(StartPlaytimeTrackingResult_t) == 4, "StartPlaytimeTrackingResult_t has size % instead of 4", size_of(StartPlaytimeTrackingResult_t));
+    }
+
+    {
+        info := type_info(StopPlaytimeTrackingResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "StopPlaytimeTrackingResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "StopPlaytimeTrackingResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(StopPlaytimeTrackingResult_t) == 4, "StopPlaytimeTrackingResult_t has size % instead of 4", size_of(StopPlaytimeTrackingResult_t));
+    }
+
+    {
+        info := type_info(AddUGCDependencyResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "AddUGCDependencyResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "AddUGCDependencyResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nPublishedFileId";
+                    assert(it.offset_in_bytes == 4, "AddUGCDependencyResult_t.m_nPublishedFileId has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "AddUGCDependencyResult_t.m_nPublishedFileId has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_nChildPublishedFileId";
+                    assert(it.offset_in_bytes == 12, "AddUGCDependencyResult_t.m_nChildPublishedFileId has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "AddUGCDependencyResult_t.m_nChildPublishedFileId has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(AddUGCDependencyResult_t) == 20, "AddUGCDependencyResult_t has size % instead of 20", size_of(AddUGCDependencyResult_t));
+    }
+
+    {
+        info := type_info(RemoveUGCDependencyResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "RemoveUGCDependencyResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoveUGCDependencyResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nPublishedFileId";
+                    assert(it.offset_in_bytes == 4, "RemoveUGCDependencyResult_t.m_nPublishedFileId has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RemoveUGCDependencyResult_t.m_nPublishedFileId has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_nChildPublishedFileId";
+                    assert(it.offset_in_bytes == 12, "RemoveUGCDependencyResult_t.m_nChildPublishedFileId has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RemoveUGCDependencyResult_t.m_nChildPublishedFileId has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(RemoveUGCDependencyResult_t) == 20, "RemoveUGCDependencyResult_t has size % instead of 20", size_of(RemoveUGCDependencyResult_t));
+    }
+
+    {
+        info := type_info(AddAppDependencyResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "AddAppDependencyResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "AddAppDependencyResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nPublishedFileId";
+                    assert(it.offset_in_bytes == 4, "AddAppDependencyResult_t.m_nPublishedFileId has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "AddAppDependencyResult_t.m_nPublishedFileId has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_nAppID";
+                    assert(it.offset_in_bytes == 12, "AddAppDependencyResult_t.m_nAppID has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "AddAppDependencyResult_t.m_nAppID has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(AddAppDependencyResult_t) == 16, "AddAppDependencyResult_t has size % instead of 16", size_of(AddAppDependencyResult_t));
+    }
+
+    {
+        info := type_info(RemoveAppDependencyResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "RemoveAppDependencyResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoveAppDependencyResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nPublishedFileId";
+                    assert(it.offset_in_bytes == 4, "RemoveAppDependencyResult_t.m_nPublishedFileId has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "RemoveAppDependencyResult_t.m_nPublishedFileId has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_nAppID";
+                    assert(it.offset_in_bytes == 12, "RemoveAppDependencyResult_t.m_nAppID has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "RemoveAppDependencyResult_t.m_nAppID has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(RemoveAppDependencyResult_t) == 16, "RemoveAppDependencyResult_t has size % instead of 16", size_of(RemoveAppDependencyResult_t));
+    }
+
+    {
+        info := type_info(GetAppDependenciesResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "GetAppDependenciesResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GetAppDependenciesResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nPublishedFileId";
+                    assert(it.offset_in_bytes == 4, "GetAppDependenciesResult_t.m_nPublishedFileId has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "GetAppDependenciesResult_t.m_nPublishedFileId has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_rgAppIDs";
+                    assert(it.offset_in_bytes == 12, "GetAppDependenciesResult_t.m_rgAppIDs has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 128, "GetAppDependenciesResult_t.m_rgAppIDs has unexpected size % instead of 128", it.type.runtime_size);
+                case "m_nNumAppDependencies";
+                    assert(it.offset_in_bytes == 140, "GetAppDependenciesResult_t.m_nNumAppDependencies has unexpected offset % instead of 140", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GetAppDependenciesResult_t.m_nNumAppDependencies has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nTotalNumAppDependencies";
+                    assert(it.offset_in_bytes == 144, "GetAppDependenciesResult_t.m_nTotalNumAppDependencies has unexpected offset % instead of 144", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GetAppDependenciesResult_t.m_nTotalNumAppDependencies has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(GetAppDependenciesResult_t) == 148, "GetAppDependenciesResult_t has size % instead of 148", size_of(GetAppDependenciesResult_t));
+    }
+
+    {
+        info := type_info(DeleteItemResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "DeleteItemResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "DeleteItemResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nPublishedFileId";
+                    assert(it.offset_in_bytes == 4, "DeleteItemResult_t.m_nPublishedFileId has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "DeleteItemResult_t.m_nPublishedFileId has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(DeleteItemResult_t) == 12, "DeleteItemResult_t has size % instead of 12", size_of(DeleteItemResult_t));
+    }
+
+    {
+        info := type_info(UserSubscribedItemsListChanged_t);
+        for info.members {
+            if it.name == {
+                case "m_nAppID";
+                    assert(it.offset_in_bytes == 0, "UserSubscribedItemsListChanged_t.m_nAppID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "UserSubscribedItemsListChanged_t.m_nAppID has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(UserSubscribedItemsListChanged_t) == 4, "UserSubscribedItemsListChanged_t has size % instead of 4", size_of(UserSubscribedItemsListChanged_t));
+    }
+
+    {
+        info := type_info(WorkshopEULAStatus_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "WorkshopEULAStatus_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "WorkshopEULAStatus_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nAppID";
+                    assert(it.offset_in_bytes == 4, "WorkshopEULAStatus_t.m_nAppID has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "WorkshopEULAStatus_t.m_nAppID has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_unVersion";
+                    assert(it.offset_in_bytes == 8, "WorkshopEULAStatus_t.m_unVersion has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "WorkshopEULAStatus_t.m_unVersion has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_rtAction";
+                    assert(it.offset_in_bytes == 12, "WorkshopEULAStatus_t.m_rtAction has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "WorkshopEULAStatus_t.m_rtAction has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_bAccepted";
+                    assert(it.offset_in_bytes == 16, "WorkshopEULAStatus_t.m_bAccepted has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "WorkshopEULAStatus_t.m_bAccepted has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_bNeedsAction";
+                    assert(it.offset_in_bytes == 17, "WorkshopEULAStatus_t.m_bNeedsAction has unexpected offset % instead of 17", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "WorkshopEULAStatus_t.m_bNeedsAction has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(WorkshopEULAStatus_t) == 20, "WorkshopEULAStatus_t has size % instead of 20", size_of(WorkshopEULAStatus_t));
+    }
+
+    assert(size_of(ISteamUser) == 8, "ISteamUser has size % instead of 8", size_of(ISteamUser));
+
+    assert(size_of(SteamServersConnected_t) == 1, "SteamServersConnected_t has size % instead of 1", size_of(SteamServersConnected_t));
+
+    {
+        info := type_info(SteamServerConnectFailure_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "SteamServerConnectFailure_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamServerConnectFailure_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_bStillRetrying";
+                    assert(it.offset_in_bytes == 4, "SteamServerConnectFailure_t.m_bStillRetrying has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "SteamServerConnectFailure_t.m_bStillRetrying has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SteamServerConnectFailure_t) == 8, "SteamServerConnectFailure_t has size % instead of 8", size_of(SteamServerConnectFailure_t));
+    }
+
+    {
+        info := type_info(SteamServersDisconnected_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "SteamServersDisconnected_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamServersDisconnected_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SteamServersDisconnected_t) == 4, "SteamServersDisconnected_t has size % instead of 4", size_of(SteamServersDisconnected_t));
+    }
+
+    {
+        info := type_info(ClientGameServerDeny_t);
+        for info.members {
+            if it.name == {
+                case "m_uAppID";
+                    assert(it.offset_in_bytes == 0, "ClientGameServerDeny_t.m_uAppID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "ClientGameServerDeny_t.m_uAppID has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_unGameServerIP";
+                    assert(it.offset_in_bytes == 4, "ClientGameServerDeny_t.m_unGameServerIP has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "ClientGameServerDeny_t.m_unGameServerIP has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_usGameServerPort";
+                    assert(it.offset_in_bytes == 8, "ClientGameServerDeny_t.m_usGameServerPort has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 2, "ClientGameServerDeny_t.m_usGameServerPort has unexpected size % instead of 2", it.type.runtime_size);
+                case "m_bSecure";
+                    assert(it.offset_in_bytes == 10, "ClientGameServerDeny_t.m_bSecure has unexpected offset % instead of 10", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 2, "ClientGameServerDeny_t.m_bSecure has unexpected size % instead of 2", it.type.runtime_size);
+                case "m_uReason";
+                    assert(it.offset_in_bytes == 12, "ClientGameServerDeny_t.m_uReason has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "ClientGameServerDeny_t.m_uReason has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(ClientGameServerDeny_t) == 16, "ClientGameServerDeny_t has size % instead of 16", size_of(ClientGameServerDeny_t));
+    }
+
+    {
+        info := type_info(IPCFailure_t);
+        for info.members {
+            if it.name == {
+                case "m_eFailureType";
+                    assert(it.offset_in_bytes == 0, "IPCFailure_t.m_eFailureType has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "IPCFailure_t.m_eFailureType has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(IPCFailure_t) == 1, "IPCFailure_t has size % instead of 1", size_of(IPCFailure_t));
+    }
+
+    assert(size_of(LicensesUpdated_t) == 1, "LicensesUpdated_t has size % instead of 1", size_of(LicensesUpdated_t));
+
+    {
+        info := type_info(ValidateAuthTicketResponse_t);
+        for info.members {
+            if it.name == {
+                case "m_SteamID";
+                    assert(it.offset_in_bytes == 0, "ValidateAuthTicketResponse_t.m_SteamID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "ValidateAuthTicketResponse_t.m_SteamID has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_eAuthSessionResponse";
+                    assert(it.offset_in_bytes == 8, "ValidateAuthTicketResponse_t.m_eAuthSessionResponse has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "ValidateAuthTicketResponse_t.m_eAuthSessionResponse has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_OwnerSteamID";
+                    assert(it.offset_in_bytes == 12, "ValidateAuthTicketResponse_t.m_OwnerSteamID has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "ValidateAuthTicketResponse_t.m_OwnerSteamID has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(ValidateAuthTicketResponse_t) == 20, "ValidateAuthTicketResponse_t has size % instead of 20", size_of(ValidateAuthTicketResponse_t));
+    }
+
+    {
+        info := type_info(MicroTxnAuthorizationResponse_t);
+        for info.members {
+            if it.name == {
+                case "m_unAppID";
+                    assert(it.offset_in_bytes == 0, "MicroTxnAuthorizationResponse_t.m_unAppID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "MicroTxnAuthorizationResponse_t.m_unAppID has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_ulOrderID";
+                    assert(it.offset_in_bytes == 4, "MicroTxnAuthorizationResponse_t.m_ulOrderID has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "MicroTxnAuthorizationResponse_t.m_ulOrderID has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_bAuthorized";
+                    assert(it.offset_in_bytes == 12, "MicroTxnAuthorizationResponse_t.m_bAuthorized has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "MicroTxnAuthorizationResponse_t.m_bAuthorized has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(MicroTxnAuthorizationResponse_t) == 16, "MicroTxnAuthorizationResponse_t has size % instead of 16", size_of(MicroTxnAuthorizationResponse_t));
+    }
+
+    {
+        info := type_info(EncryptedAppTicketResponse_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "EncryptedAppTicketResponse_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "EncryptedAppTicketResponse_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(EncryptedAppTicketResponse_t) == 4, "EncryptedAppTicketResponse_t has size % instead of 4", size_of(EncryptedAppTicketResponse_t));
+    }
+
+    {
+        info := type_info(GetAuthSessionTicketResponse_t);
+        for info.members {
+            if it.name == {
+                case "m_hAuthTicket";
+                    assert(it.offset_in_bytes == 0, "GetAuthSessionTicketResponse_t.m_hAuthTicket has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GetAuthSessionTicketResponse_t.m_hAuthTicket has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 4, "GetAuthSessionTicketResponse_t.m_eResult has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GetAuthSessionTicketResponse_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(GetAuthSessionTicketResponse_t) == 8, "GetAuthSessionTicketResponse_t has size % instead of 8", size_of(GetAuthSessionTicketResponse_t));
+    }
+
+    {
+        info := type_info(GameWebCallback_t);
+        for info.members {
+            if it.name == {
+                case "m_szURL";
+                    assert(it.offset_in_bytes == 0, "GameWebCallback_t.m_szURL has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 256, "GameWebCallback_t.m_szURL has unexpected size % instead of 256", it.type.runtime_size);
+            }
+        }
+        assert(size_of(GameWebCallback_t) == 256, "GameWebCallback_t has size % instead of 256", size_of(GameWebCallback_t));
+    }
+
+    {
+        info := type_info(StoreAuthURLResponse_t);
+        for info.members {
+            if it.name == {
+                case "m_szURL";
+                    assert(it.offset_in_bytes == 0, "StoreAuthURLResponse_t.m_szURL has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 512, "StoreAuthURLResponse_t.m_szURL has unexpected size % instead of 512", it.type.runtime_size);
+            }
+        }
+        assert(size_of(StoreAuthURLResponse_t) == 512, "StoreAuthURLResponse_t has size % instead of 512", size_of(StoreAuthURLResponse_t));
+    }
+
+    {
+        info := type_info(MarketEligibilityResponse_t);
+        for info.members {
+            if it.name == {
+                case "m_bAllowed";
+                    assert(it.offset_in_bytes == 0, "MarketEligibilityResponse_t.m_bAllowed has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "MarketEligibilityResponse_t.m_bAllowed has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_eNotAllowedReason";
+                    assert(it.offset_in_bytes == 4, "MarketEligibilityResponse_t.m_eNotAllowedReason has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "MarketEligibilityResponse_t.m_eNotAllowedReason has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_rtAllowedAtTime";
+                    assert(it.offset_in_bytes == 8, "MarketEligibilityResponse_t.m_rtAllowedAtTime has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "MarketEligibilityResponse_t.m_rtAllowedAtTime has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_cdaySteamGuardRequiredDays";
+                    assert(it.offset_in_bytes == 12, "MarketEligibilityResponse_t.m_cdaySteamGuardRequiredDays has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "MarketEligibilityResponse_t.m_cdaySteamGuardRequiredDays has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_cdayNewDeviceCooldown";
+                    assert(it.offset_in_bytes == 16, "MarketEligibilityResponse_t.m_cdayNewDeviceCooldown has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "MarketEligibilityResponse_t.m_cdayNewDeviceCooldown has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(MarketEligibilityResponse_t) == 20, "MarketEligibilityResponse_t has size % instead of 20", size_of(MarketEligibilityResponse_t));
+    }
+
+    {
+        info := type_info(DurationControl_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "DurationControl_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "DurationControl_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_appid";
+                    assert(it.offset_in_bytes == 4, "DurationControl_t.m_appid has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "DurationControl_t.m_appid has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_bApplicable";
+                    assert(it.offset_in_bytes == 8, "DurationControl_t.m_bApplicable has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "DurationControl_t.m_bApplicable has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_csecsLast5h";
+                    assert(it.offset_in_bytes == 12, "DurationControl_t.m_csecsLast5h has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "DurationControl_t.m_csecsLast5h has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_progress";
+                    assert(it.offset_in_bytes == 16, "DurationControl_t.m_progress has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "DurationControl_t.m_progress has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_notification";
+                    assert(it.offset_in_bytes == 20, "DurationControl_t.m_notification has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "DurationControl_t.m_notification has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_csecsToday";
+                    assert(it.offset_in_bytes == 24, "DurationControl_t.m_csecsToday has unexpected offset % instead of 24", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "DurationControl_t.m_csecsToday has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_csecsRemaining";
+                    assert(it.offset_in_bytes == 28, "DurationControl_t.m_csecsRemaining has unexpected offset % instead of 28", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "DurationControl_t.m_csecsRemaining has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(DurationControl_t) == 32, "DurationControl_t has size % instead of 32", size_of(DurationControl_t));
+    }
+
+    {
+        info := type_info(GetTicketForWebApiResponse_t);
+        for info.members {
+            if it.name == {
+                case "m_hAuthTicket";
+                    assert(it.offset_in_bytes == 0, "GetTicketForWebApiResponse_t.m_hAuthTicket has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GetTicketForWebApiResponse_t.m_hAuthTicket has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 4, "GetTicketForWebApiResponse_t.m_eResult has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GetTicketForWebApiResponse_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_cubTicket";
+                    assert(it.offset_in_bytes == 8, "GetTicketForWebApiResponse_t.m_cubTicket has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GetTicketForWebApiResponse_t.m_cubTicket has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_rgubTicket";
+                    assert(it.offset_in_bytes == 12, "GetTicketForWebApiResponse_t.m_rgubTicket has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 2560, "GetTicketForWebApiResponse_t.m_rgubTicket has unexpected size % instead of 2560", it.type.runtime_size);
+            }
+        }
+        assert(size_of(GetTicketForWebApiResponse_t) == 2572, "GetTicketForWebApiResponse_t has size % instead of 2572", size_of(GetTicketForWebApiResponse_t));
+    }
+
+    {
+        info := type_info(LeaderboardEntry_t);
+        for info.members {
+            if it.name == {
+                case "m_steamIDUser";
+                    assert(it.offset_in_bytes == 0, "LeaderboardEntry_t.m_steamIDUser has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "LeaderboardEntry_t.m_steamIDUser has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_nGlobalRank";
+                    assert(it.offset_in_bytes == 8, "LeaderboardEntry_t.m_nGlobalRank has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "LeaderboardEntry_t.m_nGlobalRank has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nScore";
+                    assert(it.offset_in_bytes == 12, "LeaderboardEntry_t.m_nScore has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "LeaderboardEntry_t.m_nScore has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_cDetails";
+                    assert(it.offset_in_bytes == 16, "LeaderboardEntry_t.m_cDetails has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "LeaderboardEntry_t.m_cDetails has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_hUGC";
+                    assert(it.offset_in_bytes == 20, "LeaderboardEntry_t.m_hUGC has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "LeaderboardEntry_t.m_hUGC has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
         assert(size_of(LeaderboardEntry_t) == 28, "LeaderboardEntry_t has size % instead of 28", size_of(LeaderboardEntry_t));
     }
 
     assert(size_of(ISteamUserStats) == 8, "ISteamUserStats has size % instead of 8", size_of(ISteamUserStats));
 
+    {
+        info := type_info(UserStatsReceived_t);
+        for info.members {
+            if it.name == {
+                case "m_nGameID";
+                    assert(it.offset_in_bytes == 0, "UserStatsReceived_t.m_nGameID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "UserStatsReceived_t.m_nGameID has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 8, "UserStatsReceived_t.m_eResult has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "UserStatsReceived_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_steamIDUser";
+                    assert(it.offset_in_bytes == 12, "UserStatsReceived_t.m_steamIDUser has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "UserStatsReceived_t.m_steamIDUser has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(UserStatsReceived_t) == 20, "UserStatsReceived_t has size % instead of 20", size_of(UserStatsReceived_t));
+    }
+
+    {
+        info := type_info(UserStatsStored_t);
+        for info.members {
+            if it.name == {
+                case "m_nGameID";
+                    assert(it.offset_in_bytes == 0, "UserStatsStored_t.m_nGameID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "UserStatsStored_t.m_nGameID has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 8, "UserStatsStored_t.m_eResult has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "UserStatsStored_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(UserStatsStored_t) == 12, "UserStatsStored_t has size % instead of 12", size_of(UserStatsStored_t));
+    }
+
+    {
+        info := type_info(UserAchievementStored_t);
+        for info.members {
+            if it.name == {
+                case "m_nGameID";
+                    assert(it.offset_in_bytes == 0, "UserAchievementStored_t.m_nGameID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "UserAchievementStored_t.m_nGameID has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_bGroupAchievement";
+                    assert(it.offset_in_bytes == 8, "UserAchievementStored_t.m_bGroupAchievement has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "UserAchievementStored_t.m_bGroupAchievement has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_rgchAchievementName";
+                    assert(it.offset_in_bytes == 9, "UserAchievementStored_t.m_rgchAchievementName has unexpected offset % instead of 9", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 128, "UserAchievementStored_t.m_rgchAchievementName has unexpected size % instead of 128", it.type.runtime_size);
+                case "m_nCurProgress";
+                    assert(it.offset_in_bytes == 140, "UserAchievementStored_t.m_nCurProgress has unexpected offset % instead of 140", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "UserAchievementStored_t.m_nCurProgress has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nMaxProgress";
+                    assert(it.offset_in_bytes == 144, "UserAchievementStored_t.m_nMaxProgress has unexpected offset % instead of 144", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "UserAchievementStored_t.m_nMaxProgress has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(UserAchievementStored_t) == 148, "UserAchievementStored_t has size % instead of 148", size_of(UserAchievementStored_t));
+    }
+
+    {
+        info := type_info(LeaderboardFindResult_t);
+        for info.members {
+            if it.name == {
+                case "m_hSteamLeaderboard";
+                    assert(it.offset_in_bytes == 0, "LeaderboardFindResult_t.m_hSteamLeaderboard has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "LeaderboardFindResult_t.m_hSteamLeaderboard has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_bLeaderboardFound";
+                    assert(it.offset_in_bytes == 8, "LeaderboardFindResult_t.m_bLeaderboardFound has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "LeaderboardFindResult_t.m_bLeaderboardFound has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(LeaderboardFindResult_t) == 12, "LeaderboardFindResult_t has size % instead of 12", size_of(LeaderboardFindResult_t));
+    }
+
+    {
+        info := type_info(LeaderboardScoresDownloaded_t);
+        for info.members {
+            if it.name == {
+                case "m_hSteamLeaderboard";
+                    assert(it.offset_in_bytes == 0, "LeaderboardScoresDownloaded_t.m_hSteamLeaderboard has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "LeaderboardScoresDownloaded_t.m_hSteamLeaderboard has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_hSteamLeaderboardEntries";
+                    assert(it.offset_in_bytes == 8, "LeaderboardScoresDownloaded_t.m_hSteamLeaderboardEntries has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "LeaderboardScoresDownloaded_t.m_hSteamLeaderboardEntries has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_cEntryCount";
+                    assert(it.offset_in_bytes == 16, "LeaderboardScoresDownloaded_t.m_cEntryCount has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "LeaderboardScoresDownloaded_t.m_cEntryCount has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(LeaderboardScoresDownloaded_t) == 20, "LeaderboardScoresDownloaded_t has size % instead of 20", size_of(LeaderboardScoresDownloaded_t));
+    }
+
+    {
+        info := type_info(LeaderboardScoreUploaded_t);
+        for info.members {
+            if it.name == {
+                case "m_bSuccess";
+                    assert(it.offset_in_bytes == 0, "LeaderboardScoreUploaded_t.m_bSuccess has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "LeaderboardScoreUploaded_t.m_bSuccess has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_hSteamLeaderboard";
+                    assert(it.offset_in_bytes == 4, "LeaderboardScoreUploaded_t.m_hSteamLeaderboard has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "LeaderboardScoreUploaded_t.m_hSteamLeaderboard has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_nScore";
+                    assert(it.offset_in_bytes == 12, "LeaderboardScoreUploaded_t.m_nScore has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "LeaderboardScoreUploaded_t.m_nScore has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_bScoreChanged";
+                    assert(it.offset_in_bytes == 16, "LeaderboardScoreUploaded_t.m_bScoreChanged has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "LeaderboardScoreUploaded_t.m_bScoreChanged has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_nGlobalRankNew";
+                    assert(it.offset_in_bytes == 20, "LeaderboardScoreUploaded_t.m_nGlobalRankNew has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "LeaderboardScoreUploaded_t.m_nGlobalRankNew has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_nGlobalRankPrevious";
+                    assert(it.offset_in_bytes == 24, "LeaderboardScoreUploaded_t.m_nGlobalRankPrevious has unexpected offset % instead of 24", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "LeaderboardScoreUploaded_t.m_nGlobalRankPrevious has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(LeaderboardScoreUploaded_t) == 28, "LeaderboardScoreUploaded_t has size % instead of 28", size_of(LeaderboardScoreUploaded_t));
+    }
+
+    {
+        info := type_info(NumberOfCurrentPlayers_t);
+        for info.members {
+            if it.name == {
+                case "m_bSuccess";
+                    assert(it.offset_in_bytes == 0, "NumberOfCurrentPlayers_t.m_bSuccess has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "NumberOfCurrentPlayers_t.m_bSuccess has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_cPlayers";
+                    assert(it.offset_in_bytes == 4, "NumberOfCurrentPlayers_t.m_cPlayers has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "NumberOfCurrentPlayers_t.m_cPlayers has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(NumberOfCurrentPlayers_t) == 8, "NumberOfCurrentPlayers_t has size % instead of 8", size_of(NumberOfCurrentPlayers_t));
+    }
+
+    {
+        info := type_info(UserStatsUnloaded_t);
+        for info.members {
+            if it.name == {
+                case "m_steamIDUser";
+                    assert(it.offset_in_bytes == 0, "UserStatsUnloaded_t.m_steamIDUser has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "UserStatsUnloaded_t.m_steamIDUser has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(UserStatsUnloaded_t) == 8, "UserStatsUnloaded_t has size % instead of 8", size_of(UserStatsUnloaded_t));
+    }
+
+    {
+        info := type_info(UserAchievementIconFetched_t);
+        for info.members {
+            if it.name == {
+                case "m_nGameID";
+                    assert(it.offset_in_bytes == 0, "UserAchievementIconFetched_t.m_nGameID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "UserAchievementIconFetched_t.m_nGameID has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_rgchAchievementName";
+                    assert(it.offset_in_bytes == 8, "UserAchievementIconFetched_t.m_rgchAchievementName has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 128, "UserAchievementIconFetched_t.m_rgchAchievementName has unexpected size % instead of 128", it.type.runtime_size);
+                case "m_bAchieved";
+                    assert(it.offset_in_bytes == 136, "UserAchievementIconFetched_t.m_bAchieved has unexpected offset % instead of 136", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "UserAchievementIconFetched_t.m_bAchieved has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_nIconHandle";
+                    assert(it.offset_in_bytes == 140, "UserAchievementIconFetched_t.m_nIconHandle has unexpected offset % instead of 140", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "UserAchievementIconFetched_t.m_nIconHandle has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(UserAchievementIconFetched_t) == 144, "UserAchievementIconFetched_t has size % instead of 144", size_of(UserAchievementIconFetched_t));
+    }
+
+    {
+        info := type_info(GlobalAchievementPercentagesReady_t);
+        for info.members {
+            if it.name == {
+                case "m_nGameID";
+                    assert(it.offset_in_bytes == 0, "GlobalAchievementPercentagesReady_t.m_nGameID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "GlobalAchievementPercentagesReady_t.m_nGameID has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 8, "GlobalAchievementPercentagesReady_t.m_eResult has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GlobalAchievementPercentagesReady_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(GlobalAchievementPercentagesReady_t) == 12, "GlobalAchievementPercentagesReady_t has size % instead of 12", size_of(GlobalAchievementPercentagesReady_t));
+    }
+
+    {
+        info := type_info(LeaderboardUGCSet_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "LeaderboardUGCSet_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "LeaderboardUGCSet_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_hSteamLeaderboard";
+                    assert(it.offset_in_bytes == 4, "LeaderboardUGCSet_t.m_hSteamLeaderboard has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "LeaderboardUGCSet_t.m_hSteamLeaderboard has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(LeaderboardUGCSet_t) == 12, "LeaderboardUGCSet_t has size % instead of 12", size_of(LeaderboardUGCSet_t));
+    }
+
+    {
+        info := type_info(PS3TrophiesInstalled_t);
+        for info.members {
+            if it.name == {
+                case "m_nGameID";
+                    assert(it.offset_in_bytes == 0, "PS3TrophiesInstalled_t.m_nGameID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "PS3TrophiesInstalled_t.m_nGameID has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 8, "PS3TrophiesInstalled_t.m_eResult has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "PS3TrophiesInstalled_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_ulRequiredDiskSpace";
+                    assert(it.offset_in_bytes == 12, "PS3TrophiesInstalled_t.m_ulRequiredDiskSpace has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "PS3TrophiesInstalled_t.m_ulRequiredDiskSpace has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(PS3TrophiesInstalled_t) == 20, "PS3TrophiesInstalled_t has size % instead of 20", size_of(PS3TrophiesInstalled_t));
+    }
+
+    {
+        info := type_info(GlobalStatsReceived_t);
+        for info.members {
+            if it.name == {
+                case "m_nGameID";
+                    assert(it.offset_in_bytes == 0, "GlobalStatsReceived_t.m_nGameID has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "GlobalStatsReceived_t.m_nGameID has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 8, "GlobalStatsReceived_t.m_eResult has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GlobalStatsReceived_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(GlobalStatsReceived_t) == 12, "GlobalStatsReceived_t has size % instead of 12", size_of(GlobalStatsReceived_t));
+    }
+
     assert(size_of(ISteamUtils) == 8, "ISteamUtils has size % instead of 8", size_of(ISteamUtils));
 
+    assert(size_of(IPCountry_t) == 1, "IPCountry_t has size % instead of 1", size_of(IPCountry_t));
+
+    {
+        info := type_info(LowBatteryPower_t);
+        for info.members {
+            if it.name == {
+                case "m_nMinutesBatteryLeft";
+                    assert(it.offset_in_bytes == 0, "LowBatteryPower_t.m_nMinutesBatteryLeft has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "LowBatteryPower_t.m_nMinutesBatteryLeft has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(LowBatteryPower_t) == 1, "LowBatteryPower_t has size % instead of 1", size_of(LowBatteryPower_t));
+    }
+
+    {
+        info := type_info(SteamAPICallCompleted_t);
+        for info.members {
+            if it.name == {
+                case "m_hAsyncCall";
+                    assert(it.offset_in_bytes == 0, "SteamAPICallCompleted_t.m_hAsyncCall has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamAPICallCompleted_t.m_hAsyncCall has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_iCallback";
+                    assert(it.offset_in_bytes == 8, "SteamAPICallCompleted_t.m_iCallback has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamAPICallCompleted_t.m_iCallback has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_cubParam";
+                    assert(it.offset_in_bytes == 12, "SteamAPICallCompleted_t.m_cubParam has unexpected offset % instead of 12", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamAPICallCompleted_t.m_cubParam has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SteamAPICallCompleted_t) == 16, "SteamAPICallCompleted_t has size % instead of 16", size_of(SteamAPICallCompleted_t));
+    }
+
+    assert(size_of(SteamShutdown_t) == 1, "SteamShutdown_t has size % instead of 1", size_of(SteamShutdown_t));
+
+    {
+        info := type_info(CheckFileSignature_t);
+        for info.members {
+            if it.name == {
+                case "m_eCheckFileSignature";
+                    assert(it.offset_in_bytes == 0, "CheckFileSignature_t.m_eCheckFileSignature has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "CheckFileSignature_t.m_eCheckFileSignature has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(CheckFileSignature_t) == 4, "CheckFileSignature_t has size % instead of 4", size_of(CheckFileSignature_t));
+    }
+
+    {
+        info := type_info(GamepadTextInputDismissed_t);
+        for info.members {
+            if it.name == {
+                case "m_bSubmitted";
+                    assert(it.offset_in_bytes == 0, "GamepadTextInputDismissed_t.m_bSubmitted has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "GamepadTextInputDismissed_t.m_bSubmitted has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_unSubmittedText";
+                    assert(it.offset_in_bytes == 4, "GamepadTextInputDismissed_t.m_unSubmittedText has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GamepadTextInputDismissed_t.m_unSubmittedText has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_unAppID";
+                    assert(it.offset_in_bytes == 8, "GamepadTextInputDismissed_t.m_unAppID has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GamepadTextInputDismissed_t.m_unAppID has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(GamepadTextInputDismissed_t) == 12, "GamepadTextInputDismissed_t has size % instead of 12", size_of(GamepadTextInputDismissed_t));
+    }
+
+    assert(size_of(AppResumingFromSuspend_t) == 1, "AppResumingFromSuspend_t has size % instead of 1", size_of(AppResumingFromSuspend_t));
+
+    assert(size_of(FloatingGamepadTextInputDismissed_t) == 1, "FloatingGamepadTextInputDismissed_t has size % instead of 1", size_of(FloatingGamepadTextInputDismissed_t));
+
+    {
+        info := type_info(FilterTextDictionaryChanged_t);
+        for info.members {
+            if it.name == {
+                case "m_eLanguage";
+                    assert(it.offset_in_bytes == 0, "FilterTextDictionaryChanged_t.m_eLanguage has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "FilterTextDictionaryChanged_t.m_eLanguage has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(FilterTextDictionaryChanged_t) == 4, "FilterTextDictionaryChanged_t has size % instead of 4", size_of(FilterTextDictionaryChanged_t));
+    }
+
     assert(size_of(ISteamVideo) == 8, "ISteamVideo has size % instead of 8", size_of(ISteamVideo));
+
+    {
+        info := type_info(GetVideoURLResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "GetVideoURLResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GetVideoURLResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_unVideoAppID";
+                    assert(it.offset_in_bytes == 4, "GetVideoURLResult_t.m_unVideoAppID has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GetVideoURLResult_t.m_unVideoAppID has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_rgchURL";
+                    assert(it.offset_in_bytes == 8, "GetVideoURLResult_t.m_rgchURL has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 256, "GetVideoURLResult_t.m_rgchURL has unexpected size % instead of 256", it.type.runtime_size);
+            }
+        }
+        assert(size_of(GetVideoURLResult_t) == 264, "GetVideoURLResult_t has size % instead of 264", size_of(GetVideoURLResult_t));
+    }
+
+    {
+        info := type_info(GetOPFSettingsResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "GetOPFSettingsResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GetOPFSettingsResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_unVideoAppID";
+                    assert(it.offset_in_bytes == 4, "GetOPFSettingsResult_t.m_unVideoAppID has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "GetOPFSettingsResult_t.m_unVideoAppID has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(GetOPFSettingsResult_t) == 8, "GetOPFSettingsResult_t has size % instead of 8", size_of(GetOPFSettingsResult_t));
+    }
 
     assert(size_of(ISteamNetworkingFakeUDPPort) == 8, "ISteamNetworkingFakeUDPPort has size % instead of 8", size_of(ISteamNetworkingFakeUDPPort));
 
     {
-        instance: SteamNetworkingFakeIPResult_t;
-        assert(((cast(*void)(*instance.m_eResult)) - cast(*void)(*instance)) == 0, "SteamNetworkingFakeIPResult_t.m_eResult has unexpected offset % instead of 0", ((cast(*void)(*instance.m_eResult)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkingFakeIPResult_t.m_eResult)) == 4, "SteamNetworkingFakeIPResult_t.m_eResult has unexpected size % instead of 4", size_of(type_of(SteamNetworkingFakeIPResult_t.m_eResult)));
-        assert(((cast(*void)(*instance.m_identity)) - cast(*void)(*instance)) == 4, "SteamNetworkingFakeIPResult_t.m_identity has unexpected offset % instead of 4", ((cast(*void)(*instance.m_identity)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkingFakeIPResult_t.m_identity)) == 136, "SteamNetworkingFakeIPResult_t.m_identity has unexpected size % instead of 136", size_of(type_of(SteamNetworkingFakeIPResult_t.m_identity)));
-        assert(((cast(*void)(*instance.m_unIP)) - cast(*void)(*instance)) == 140, "SteamNetworkingFakeIPResult_t.m_unIP has unexpected offset % instead of 140", ((cast(*void)(*instance.m_unIP)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkingFakeIPResult_t.m_unIP)) == 4, "SteamNetworkingFakeIPResult_t.m_unIP has unexpected size % instead of 4", size_of(type_of(SteamNetworkingFakeIPResult_t.m_unIP)));
-        assert(((cast(*void)(*instance.m_unPorts)) - cast(*void)(*instance)) == 144, "SteamNetworkingFakeIPResult_t.m_unPorts has unexpected offset % instead of 144", ((cast(*void)(*instance.m_unPorts)) - cast(*void)(*instance)));
-        assert(size_of(type_of(SteamNetworkingFakeIPResult_t.m_unPorts)) == 16, "SteamNetworkingFakeIPResult_t.m_unPorts has unexpected size % instead of 16", size_of(type_of(SteamNetworkingFakeIPResult_t.m_unPorts)));
+        info := type_info(SteamNetworkingFakeIPResult_t);
+        for info.members {
+            if it.name == {
+                case "m_eResult";
+                    assert(it.offset_in_bytes == 0, "SteamNetworkingFakeIPResult_t.m_eResult has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetworkingFakeIPResult_t.m_eResult has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_identity";
+                    assert(it.offset_in_bytes == 4, "SteamNetworkingFakeIPResult_t.m_identity has unexpected offset % instead of 4", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 136, "SteamNetworkingFakeIPResult_t.m_identity has unexpected size % instead of 136", it.type.runtime_size);
+                case "m_unIP";
+                    assert(it.offset_in_bytes == 140, "SteamNetworkingFakeIPResult_t.m_unIP has unexpected offset % instead of 140", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamNetworkingFakeIPResult_t.m_unIP has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_unPorts";
+                    assert(it.offset_in_bytes == 144, "SteamNetworkingFakeIPResult_t.m_unPorts has unexpected offset % instead of 144", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 16, "SteamNetworkingFakeIPResult_t.m_unPorts has unexpected size % instead of 16", it.type.runtime_size);
+            }
+        }
         assert(size_of(SteamNetworkingFakeIPResult_t) == 160, "SteamNetworkingFakeIPResult_t has size % instead of 160", size_of(SteamNetworkingFakeIPResult_t));
+    }
+
+    {
+        info := type_info(SteamPS3Params_t.Ps3netInit_t);
+        for info.members {
+            if it.name == {
+                case "m_bNeedInit";
+                    assert(it.offset_in_bytes == 0, "SteamPS3Params_t.Ps3netInit_t.m_bNeedInit has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "SteamPS3Params_t.Ps3netInit_t.m_bNeedInit has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_pMemory";
+                    assert(it.offset_in_bytes == 8, "SteamPS3Params_t.Ps3netInit_t.m_pMemory has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamPS3Params_t.Ps3netInit_t.m_pMemory has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_nMemorySize";
+                    assert(it.offset_in_bytes == 16, "SteamPS3Params_t.Ps3netInit_t.m_nMemorySize has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamPS3Params_t.Ps3netInit_t.m_nMemorySize has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_flags";
+                    assert(it.offset_in_bytes == 20, "SteamPS3Params_t.Ps3netInit_t.m_flags has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamPS3Params_t.Ps3netInit_t.m_flags has unexpected size % instead of 4", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SteamPS3Params_t.Ps3netInit_t) == 24, "SteamPS3Params_t.Ps3netInit_t has size % instead of 24", size_of(SteamPS3Params_t.Ps3netInit_t));
+    }
+
+    {
+        info := type_info(SteamPS3Params_t.Ps3jpgInit_t);
+        for info.members {
+            if it.name == {
+                case "m_bNeedInit";
+                    assert(it.offset_in_bytes == 0, "SteamPS3Params_t.Ps3jpgInit_t.m_bNeedInit has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "SteamPS3Params_t.Ps3jpgInit_t.m_bNeedInit has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SteamPS3Params_t.Ps3jpgInit_t) == 1, "SteamPS3Params_t.Ps3jpgInit_t has size % instead of 1", size_of(SteamPS3Params_t.Ps3jpgInit_t));
+    }
+
+    {
+        info := type_info(SteamPS3Params_t.Ps3pngInit_t);
+        for info.members {
+            if it.name == {
+                case "m_bNeedInit";
+                    assert(it.offset_in_bytes == 0, "SteamPS3Params_t.Ps3pngInit_t.m_bNeedInit has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "SteamPS3Params_t.Ps3pngInit_t.m_bNeedInit has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SteamPS3Params_t.Ps3pngInit_t) == 1, "SteamPS3Params_t.Ps3pngInit_t has size % instead of 1", size_of(SteamPS3Params_t.Ps3pngInit_t));
+    }
+
+    {
+        info := type_info(SteamPS3Params_t.Ps3sysutilUserInfo_t);
+        for info.members {
+            if it.name == {
+                case "m_bNeedInit";
+                    assert(it.offset_in_bytes == 0, "SteamPS3Params_t.Ps3sysutilUserInfo_t.m_bNeedInit has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "SteamPS3Params_t.Ps3sysutilUserInfo_t.m_bNeedInit has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SteamPS3Params_t.Ps3sysutilUserInfo_t) == 1, "SteamPS3Params_t.Ps3sysutilUserInfo_t has size % instead of 1", size_of(SteamPS3Params_t.Ps3sysutilUserInfo_t));
+    }
+
+    {
+        info := type_info(SteamPS3Params_t);
+        for info.members {
+            if it.name == {
+                case "m_unVersion";
+                    assert(it.offset_in_bytes == 0, "SteamPS3Params_t.m_unVersion has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamPS3Params_t.m_unVersion has unexpected size % instead of 4", it.type.runtime_size);
+                case "pReserved";
+                    assert(it.offset_in_bytes == 8, "SteamPS3Params_t.pReserved has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamPS3Params_t.pReserved has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_nAppId";
+                    assert(it.offset_in_bytes == 16, "SteamPS3Params_t.m_nAppId has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamPS3Params_t.m_nAppId has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_rgchInstallationPath";
+                    assert(it.offset_in_bytes == 20, "SteamPS3Params_t.m_rgchInstallationPath has unexpected offset % instead of 20", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1055, "SteamPS3Params_t.m_rgchInstallationPath has unexpected size % instead of 1055", it.type.runtime_size);
+                case "m_rgchSystemCache";
+                    assert(it.offset_in_bytes == 1075, "SteamPS3Params_t.m_rgchSystemCache has unexpected offset % instead of 1075", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1055, "SteamPS3Params_t.m_rgchSystemCache has unexpected size % instead of 1055", it.type.runtime_size);
+                case "m_rgchGameData";
+                    assert(it.offset_in_bytes == 2130, "SteamPS3Params_t.m_rgchGameData has unexpected offset % instead of 2130", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1055, "SteamPS3Params_t.m_rgchGameData has unexpected size % instead of 1055", it.type.runtime_size);
+                case "m_rgchNpServiceID";
+                    assert(it.offset_in_bytes == 3185, "SteamPS3Params_t.m_rgchNpServiceID has unexpected offset % instead of 3185", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 32, "SteamPS3Params_t.m_rgchNpServiceID has unexpected size % instead of 32", it.type.runtime_size);
+                case "m_rgchNpCommunicationID";
+                    assert(it.offset_in_bytes == 3217, "SteamPS3Params_t.m_rgchNpCommunicationID has unexpected offset % instead of 3217", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 10, "SteamPS3Params_t.m_rgchNpCommunicationID has unexpected size % instead of 10", it.type.runtime_size);
+                case "m_rgchNpCommunicationSig";
+                    assert(it.offset_in_bytes == 3227, "SteamPS3Params_t.m_rgchNpCommunicationSig has unexpected offset % instead of 3227", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 160, "SteamPS3Params_t.m_rgchNpCommunicationSig has unexpected size % instead of 160", it.type.runtime_size);
+                case "m_rgchSteamLanguage";
+                    assert(it.offset_in_bytes == 3387, "SteamPS3Params_t.m_rgchSteamLanguage has unexpected offset % instead of 3387", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 64, "SteamPS3Params_t.m_rgchSteamLanguage has unexpected size % instead of 64", it.type.runtime_size);
+                case "m_rgchRegionCode";
+                    assert(it.offset_in_bytes == 3451, "SteamPS3Params_t.m_rgchRegionCode has unexpected offset % instead of 3451", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 16, "SteamPS3Params_t.m_rgchRegionCode has unexpected size % instead of 16", it.type.runtime_size);
+                case "m_cSteamInputTTY";
+                    assert(it.offset_in_bytes == 3468, "SteamPS3Params_t.m_cSteamInputTTY has unexpected offset % instead of 3468", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 4, "SteamPS3Params_t.m_cSteamInputTTY has unexpected size % instead of 4", it.type.runtime_size);
+                case "m_sysNetInitInfo";
+                    assert(it.offset_in_bytes == 3472, "SteamPS3Params_t.m_sysNetInitInfo has unexpected offset % instead of 3472", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 24, "SteamPS3Params_t.m_sysNetInitInfo has unexpected size % instead of 24", it.type.runtime_size);
+                case "m_sysJpgInitInfo";
+                    assert(it.offset_in_bytes == 3496, "SteamPS3Params_t.m_sysJpgInitInfo has unexpected offset % instead of 3496", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "SteamPS3Params_t.m_sysJpgInitInfo has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_sysPngInitInfo";
+                    assert(it.offset_in_bytes == 3497, "SteamPS3Params_t.m_sysPngInitInfo has unexpected offset % instead of 3497", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "SteamPS3Params_t.m_sysPngInitInfo has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_sysSysUtilUserInfo";
+                    assert(it.offset_in_bytes == 3498, "SteamPS3Params_t.m_sysSysUtilUserInfo has unexpected offset % instead of 3498", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "SteamPS3Params_t.m_sysSysUtilUserInfo has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_bIncludeNewsPage";
+                    assert(it.offset_in_bytes == 3499, "SteamPS3Params_t.m_bIncludeNewsPage has unexpected offset % instead of 3499", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "SteamPS3Params_t.m_bIncludeNewsPage has unexpected size % instead of 1", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SteamPS3Params_t) == 3504, "SteamPS3Params_t has size % instead of 3504", size_of(SteamPS3Params_t));
+    }
+
+    {
+        info := type_info(SteamPS3Memory_t);
+        for info.members {
+            if it.name == {
+                case "m_bSingleAllocation";
+                    assert(it.offset_in_bytes == 0, "SteamPS3Memory_t.m_bSingleAllocation has unexpected offset % instead of 0", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 1, "SteamPS3Memory_t.m_bSingleAllocation has unexpected size % instead of 1", it.type.runtime_size);
+                case "m_pfMalloc";
+                    assert(it.offset_in_bytes == 8, "SteamPS3Memory_t.m_pfMalloc has unexpected offset % instead of 8", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamPS3Memory_t.m_pfMalloc has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_pfRealloc";
+                    assert(it.offset_in_bytes == 16, "SteamPS3Memory_t.m_pfRealloc has unexpected offset % instead of 16", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamPS3Memory_t.m_pfRealloc has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_pfFree";
+                    assert(it.offset_in_bytes == 24, "SteamPS3Memory_t.m_pfFree has unexpected offset % instead of 24", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamPS3Memory_t.m_pfFree has unexpected size % instead of 8", it.type.runtime_size);
+                case "m_pUsable_size";
+                    assert(it.offset_in_bytes == 32, "SteamPS3Memory_t.m_pUsable_size has unexpected offset % instead of 32", it.offset_in_bytes);
+                    assert(it.type.runtime_size == 8, "SteamPS3Memory_t.m_pUsable_size has unexpected size % instead of 8", it.type.runtime_size);
+            }
+        }
+        assert(size_of(SteamPS3Memory_t) == 40, "SteamPS3Memory_t has size % instead of 40", size_of(SteamPS3Memory_t));
     }
 }
 
