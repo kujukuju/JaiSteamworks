@@ -709,7 +709,7 @@ CGameID :: struct {
     //
     GameID_t :: struct {
         m_nAppID: u32;
-        #place m_nAppID; /*bitfield 24*/ m_nType:  u32;
+        #overlay (m_nAppID) /*bitfield 24*/ m_nType:  u32;
         m_nModID: u32;
     }
 
