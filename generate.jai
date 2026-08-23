@@ -1,5 +1,6 @@
 #import "Bindings_Generator";
 #import "Basic";
+#import "Compiler";
 #import "File";
 #import "String";
 #import "BuildCpp";
@@ -7,11 +8,14 @@
 #import "Hash_Table";
 
 #run {
+    set_build_options_dc(.{do_output = false});
+    set_working_directory(#filepath);
+
     using opts: Generate_Bindings_Options;
 
     #if OS == .WINDOWS {
-        array_add(*libpaths, "bin/windows");
-        array_add(*libnames, "steam_api64");
+        array_add(*library_search_paths, "bin/windows");
+        array_add(*libraries, Library.{"steam_api64", "steam_api64"});
 
         array_add(*extra_clang_arguments, "-DVALVE_CALLBACK_PACK_LARGE");
 
@@ -23,15 +27,13 @@
         // array_add(*system_include_paths, "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.31.31103/include");
         array_add(*system_include_paths, "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/Llvm/lib/clang/17/include");
     } else #if OS == .LINUX {
-        array_add(*libpaths, "bin/linux");
-        array_add(*libnames, "libsteam_api");
+        array_add(*library_search_paths, "bin/linux");
+        array_add(*libraries, Library.{"libsteam_api", "libsteam_api"});
 
         array_add(*extra_clang_arguments, "-DVALVE_CALLBACK_PACK_SMALL");
     } else #if OS == .MACOS {
-        array_add(*libpaths, "bin/osx");
-        array_add(*libnames, "libsteam_api");
-
-        array_add(*extra_clang_arguments, "-DVALVE_CALLBACK_PACK_SMALL");
+        array_add(*library_search_paths, "bin/osx");
+        array_add(*libraries, Library.{"libsteam_api", "libsteam_api"});
     }
 
     array_add(*extra_clang_arguments, "-DBUILD_SHARED_LIB=ON", "-DBUILD_STATIC_LIB=OFF");
@@ -95,14 +97,14 @@
         if decl && decl.location.file {
             decl_filename_clang := clang_getFileName(decl.location.file);
             defer clang_disposeString(decl_filename_clang);
-            decl_filename = to_lower_copy_new(to_string(clang_getCString(decl_filename_clang)),, temp);
+            decl_filename = to_lower_copy(to_string(clang_getCString(decl_filename_clang)),, temp);
         }
 
         parent_decl_filename: string;
         if parent_decl && parent_decl.location.file {
             parent_decl_filename_clang := clang_getFileName(parent_decl.location.file);
             defer clang_disposeString(parent_decl_filename_clang);
-            parent_decl_filename = to_lower_copy_new(to_string(clang_getCString(parent_decl_filename_clang)),, temp);
+            parent_decl_filename = to_lower_copy(to_string(clang_getCString(parent_decl_filename_clang)),, temp);
         }
 
         valid_binding := ends_with(decl_filename, "steam_api_flat.h");
@@ -129,7 +131,7 @@
     } else #if OS == .LINUX {
         generate_bindings(opts, "module_linux.jai");
     } else #if OS == .MACOS {
-        generate_bindings(opts, "module_macos.jai");
+        generate_bindings(opts, "module_macos_new.jai");
     }
 }
 
@@ -189,6 +191,12 @@ readd_declarations_recusive :: (decl: *Declaration) {
             }
             for template_type_params: struct_decl.template_type_params {
                 readd_declarations_recusive(template_type_params);
+            }
+
+        case .ENUM;
+            enum_decl := cast(*Enum) decl;
+            for enumerate: enum_decl.enumerates {
+                readd_declarations_recusive(enumerate);
             }
 
         case .NAMESPACE;
