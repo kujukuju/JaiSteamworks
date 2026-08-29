@@ -6,3 +6,5 @@
 } else #if OS == .MACOS {
     #load "module_macos.jai";
 }
+
+#load "steam_networking_messages.jai";
